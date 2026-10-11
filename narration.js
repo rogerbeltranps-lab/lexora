@@ -69,6 +69,16 @@ function openResults(term,source){inspect.hidden=true;results.hidden=false;resul
  else discovery.textContent="Dictionary is unavailable. Try reopening Lexora.";
 }
 $("lex-results-close").onclick=closeResults;
+// Both guide and EPUB selections call choose(). Route them to the visible reader sheet.
+const originalChoose=window.choose;
+if(typeof originalChoose==="function"){
+ window.choose=function(term,source=""){
+  if(document.body.classList.contains("lex-reader-fullscreen")){
+   stop();openResults(term,source);
+  }else originalChoose(term,source);
+ };
+}
+
 function sentences(s){return (s.match(/[^.!?]+(?:[.!?]+(?=\s|$)|$)/g)||[]).map(v=>v.trim()).filter(v=>/[a-z]/i.test(v))}
 function clear(){if(marker){marker.classList.remove("lex-active");marker=null}}
 function stop(){run++;playing=false;window.lexoraKokoro?.stop();if(window.speechSynthesis)speechSynthesis.cancel();$("lex-play").textContent="▶ Play"}
