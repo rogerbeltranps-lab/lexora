@@ -1,0 +1,25 @@
+name: Import Kaikki phrase dictionary
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download Kaikki English phrase extract
+        run: |
+          curl --fail --location --retry 3 --output /tmp/kaikki-phrase.jsonl \
+            "https://kaikki.org/dictionary/English/pos-phrase/kaikki.org-dictionary-English-by-pos-phrase.jsonl"
+      - name: Convert to compact Lexora shards
+        run: python3 scripts/import_kaikki.py /tmp/kaikki-phrase.jsonl
+      - name: Commit generated dictionary files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add dictionary/wiktionary
+          if ! git diff --cached --quiet; then
+            git commit -m "Import Kaikki Wiktionary phrase entries"
+            git push
+          fi
