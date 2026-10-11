@@ -45,6 +45,24 @@ body.lex-reader-fullscreen #read .grid>.panel:first-child>.lex-inspect p{font-si
 body.lex-reader-fullscreen #read .grid>.panel:first-child>.lex-inspect .lex-sheet-close{float:right}
 @media(max-width:650px){body.lex-reader-fullscreen #read .grid>.panel:first-child>.lex-narr{top:8px;max-width:calc(100% - 12px)}body.lex-reader-fullscreen #read .grid>.panel:first-child>.reader-foot{padding:5px 9px}body.lex-reader-fullscreen #read .grid>.panel:first-child>.reader .prose{padding:80px 20px 85px}body.lex-reader-fullscreen #read .grid>.panel:first-child>.lex-narr .btn{padding:7px 9px;font-size:13px}}
 
+
+/* Mobile dictionary: keep the selected word visible and the actions reachable. */
+#lex-reader-results{display:flex;flex-direction:column;overflow:hidden;max-height:min(76dvh,720px);min-height:0}
+#lex-reader-results #lex-results-content{min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding-bottom:calc(18px + env(safe-area-inset-bottom,0px))}
+#lex-reader-results .lex-results-top{position:relative;top:auto;flex:none;padding:4px 0 10px}
+#lex-reader-results .lex-dictionary-heading{position:sticky;top:0;z-index:3;background:#fff;padding:6px 0 10px;border-bottom:1px solid #e1e9ef}
+#lex-reader-results .lex-selected-word{display:block!important;visibility:visible!important;font-family:Georgia,serif;font-weight:700;font-size:clamp(27px,5vw,38px);line-height:1.2;color:#1c3547!important;overflow-wrap:anywhere;white-space:normal;margin:9px 0 0}
+#lex-reader-results #discovery{min-width:0}
+#lex-reader-results .quote{overflow-wrap:anywhere}
+@media(max-width:650px){
+ #lex-reader-results{position:fixed;top:auto;bottom:0;left:0;right:0;transform:none;width:100%;max-width:none;height:min(77dvh,760px);max-height:calc(100dvh - env(safe-area-inset-top,0px) - 75px);padding:12px 16px 0;border-radius:20px 20px 0 0;box-sizing:border-box}
+ #lex-reader-results #lex-results-content{padding-bottom:calc(22px + env(safe-area-inset-bottom,0px))}
+ #lex-reader-results .chip{max-width:100%;white-space:normal}
+ #lex-reader-results .sense-entry{min-width:0}
+ #lex-reader-results .sense-entry label{overflow-wrap:anywhere}
+ #lex-reader-results #dictionary-listen{min-height:44px}
+}
+
 /* Reader appearance controls share the application's existing theme and font settings. */
 body.lex-reader-fullscreen #read .grid>.panel:first-child:has(.reader.black){background:#000!important;color:#fff}
 body.lex-reader-fullscreen #read .grid>.panel:first-child>.reader.black{background:#000!important}
