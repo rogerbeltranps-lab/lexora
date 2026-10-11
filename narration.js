@@ -63,6 +63,14 @@ body.lex-reader-fullscreen #read .grid>.panel:first-child>.lex-inspect .lex-shee
  #lex-reader-results #dictionary-listen{min-height:44px}
 }
 
+/* Keep each radio and its full answer together in the mobile discovery sheet. */
+#discovery .lex-sense-option{display:grid!important;grid-template-columns:22px minmax(0,1fr)!important;column-gap:12px!important;align-items:start!important;justify-content:initial!important;width:100%;margin:10px 0!important;padding:12px 8px!important;border-radius:10px;line-height:1.5;font-size:15px;text-align:left;white-space:normal}
+#discovery .lex-sense-radio{appearance:auto;-webkit-appearance:radio;display:block;position:static;flex:none;width:20px;height:20px;margin:2px 0 0!important;align-self:start}
+#discovery .lex-sense-copy{display:block;min-width:0;overflow-wrap:anywhere;white-space:normal;text-align:left}
+#discovery .lex-sense-copy .muted{display:inline}
+#discovery .sense-entry fieldset{min-width:0}
+@media(max-width:650px){#discovery .lex-sense-option{grid-template-columns:22px minmax(0,1fr)!important;padding:10px 4px!important;font-size:14px}}
+
 /* Reader appearance controls share the application's existing theme and font settings. */
 body.lex-reader-fullscreen #read .grid>.panel:first-child:has(.reader.black){background:#000!important;color:#fff}
 body.lex-reader-fullscreen #read .grid>.panel:first-child>.reader.black{background:#000!important}
