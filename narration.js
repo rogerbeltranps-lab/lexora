@@ -4,24 +4,25 @@ let engine=localStorage.getItem("lexora-narration-engine")||"kokoro";let mode="r
 const css=document.createElement("style");css.textContent=".lex-narr{display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:#eaf4f7;padding:10px;border-radius:12px;margin-bottom:12px}.lex-narr select{padding:9px;border:1px solid #cbd8df;border-radius:8px}.lex-narr-status{font-size:12px;color:#617589}.lex-tappable{cursor:pointer;border-radius:3px}.lex-tappable:focus-visible{outline:2px solid #297eaa}.lex-active{background:#b8e6f1!important;color:#153b49!important}.reader.lex-audio-only .prose,.reader.lex-audio-only #epub-view{visibility:hidden}.lex-inspect{background:#edf6f9;padding:15px;border-radius:12px;margin:0 0 12px;border:1px solid #cbdfe6}.lex-inspect p{line-height:1.6}";
 css.textContent+=`
 body.lex-reader-fullscreen{overflow:hidden}
-body.lex-reader-fullscreen #read .grid>.panel:first-child{position:fixed;inset:0;z-index:1000;background:#fff;display:flex;flex-direction:column;min-height:0;padding:12px clamp(10px,3vw,32px);border-radius:0;border:0;box-shadow:none}
-body.lex-reader-fullscreen #read .grid>.panel:first-child>.section-title{display:none}
-body.lex-reader-fullscreen #read .grid>.panel:first-child>.callout{display:none}
+body.lex-reader-fullscreen #read .grid>.panel:first-child, #read .grid>.panel:first-child:fullscreen{position:fixed;inset:0;z-index:1000;background:#fff;display:flex;flex-direction:column;min-height:0;padding:12px clamp(10px,3vw,32px);border-radius:0;border:0;box-shadow:none}
+body.lex-reader-fullscreen #read .grid>.panel:first-child>.section-title, #read .grid>.panel:first-child:fullscreen>.section-title{display:none}
+body.lex-reader-fullscreen #read .grid>.panel:first-child>.callout, #read .grid>.panel:first-child:fullscreen>.callout{display:none}
 body.lex-reader-fullscreen #read .grid>.panel:first-child>.reader-toolbar{flex-shrink:0;margin-bottom:7px}
 body.lex-reader-fullscreen #read .grid>.panel:first-child>.lex-narr{flex-shrink:0;margin-bottom:8px}
-body.lex-reader-fullscreen #read .grid>.panel:first-child>.reader{flex:1;min-height:0;height:auto}
-body.lex-reader-fullscreen #read .grid>.panel:first-child>.reader-foot{flex-shrink:0;margin-top:8px}
+body.lex-reader-fullscreen #read .grid>.panel:first-child>.reader, #read .grid>.panel:first-child:fullscreen>.reader{flex:1;min-height:0;height:auto}
+body.lex-reader-fullscreen #read .grid>.panel:first-child>.reader-foot, #read .grid>.panel:first-child:fullscreen>.reader-foot{flex-shrink:0;margin-top:8px}
 body.lex-reader-fullscreen #read .grid>.panel:first-child>.lex-inspect:not([hidden]){position:absolute;z-index:3;bottom:64px;left:12px;right:12px;max-height:45vh;overflow:auto;box-shadow:0 8px 25px #122c4226}
 body.lex-reader-fullscreen #read .reader .prose{max-width:800px}
 .lex-reader-exit{display:none}
 body.lex-reader-fullscreen .lex-reader-exit{display:inline-flex}
 @media(max-width:650px){body.lex-reader-fullscreen #read .grid>.panel:first-child{padding:8px}body.lex-reader-fullscreen #read .grid>.panel:first-child>.reader-toolbar{gap:5px}body.lex-reader-fullscreen #read .grid>.panel:first-child>.reader-foot .reader-copyright{display:none}body.lex-reader-fullscreen #read .grid>.panel:first-child>.lex-narr{gap:5px;padding:7px}body.lex-reader-fullscreen #read .grid>.panel:first-child>.lex-narr .lex-narr-status{flex-basis:100%}}
 `;document.head.appendChild(css);
-const controls=document.createElement("div");controls.className="lex-narr";controls.innerHTML='<select id="lex-mode"><option value="read">Read only</option><option value="both">Read &amp; Listen</option></select><select id="lex-engine" aria-label="Narration voice"><option value="kokoro">Natural voice · Kokoro</option><option value="system">Device voice</option></select><button class="btn primary" id="lex-play">▶ Play</button><button class="btn" id="lex-back">← Sentence</button><button class="btn" id="lex-forward">Sentence →</button><span class="lex-narr-status" id="lex-status">Ready</span><button class="btn" id="lex-enter" type="button">⛶ Full screen</button><button class="btn lex-reader-exit" id="lex-exit" type="button">✕ Exit</button>';
+const controls=document.createElement("div");controls.className="lex-narr";controls.innerHTML='<button class="btn" type="button" id="lex-read">Read</button><button class="btn" type="button" id="lex-listen">Read &amp; Listen</button><select id="lex-engine" aria-label="Narration voice"><option value="kokoro">Natural voice · Kokoro</option><option value="system">Device voice</option></select><button class="btn primary" id="lex-play">▶ Play</button><button class="btn" id="lex-back">← Sentence</button><button class="btn" id="lex-forward">Sentence →</button><span class="lex-narr-status" id="lex-status">Ready</span><button class="btn" id="lex-enter" type="button">⛶ Full screen</button><button class="btn lex-reader-exit" id="lex-exit" type="button">✕ Exit</button>';
 document.querySelector(".reader-toolbar").insertAdjacentElement("afterend",controls);
-function enterReader(){document.body.classList.add("lex-reader-fullscreen");$("lex-enter").hidden=true;requestAnimationFrame(()=>{try{window.rendition?.resize?.()}catch{}})}
-function exitReader(){document.body.classList.remove("lex-reader-fullscreen");$("lex-enter").hidden=false;stop();requestAnimationFrame(()=>{try{window.rendition?.resize?.()}catch{}})}
+async function enterReader(){document.body.classList.add("lex-reader-fullscreen");$("lex-enter").hidden=true;const panel=document.querySelector("#read .grid>.panel:first-child");if(panel.requestFullscreen&&!document.fullscreenElement){try{await panel.requestFullscreen({navigationUI:"hide"})}catch(e){console.info("Using screen-filling reader layout",e)}}requestAnimationFrame(()=>{try{window.rendition?.resize?.()}catch{}})}
+function exitReader(){document.body.classList.remove("lex-reader-fullscreen");$("lex-enter").hidden=false;stop();if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});requestAnimationFrame(()=>{try{window.rendition?.resize?.()}catch{}})}
 $("lex-enter").onclick=enterReader;$("lex-exit").onclick=exitReader;
+document.addEventListener("fullscreenchange",()=>{if(!document.fullscreenElement&&document.body.classList.contains("lex-reader-fullscreen"))exitReader()});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&document.body.classList.contains("lex-reader-fullscreen"))exitReader()});
 $("lex-engine").value=engine;const inspect=document.createElement("div");inspect.className="lex-inspect";inspect.hidden=true;controls.insertAdjacentElement("afterend",inspect);
 function sentences(s){return (s.match(/[^.!?]+(?:[.!?]+(?=\s|$)|$)/g)||[]).map(v=>v.trim()).filter(v=>/[a-z]/i.test(v))}
@@ -62,8 +63,9 @@ function examine(i){const item=items[i];if(!item)return;inspect.hidden=false;ins
  $("lex-analyze").onclick=()=>{window.getSelection()?.removeAllRanges();send()};$("lex-sentence").addEventListener("mouseup",()=>{if(window.getSelection()?.toString().trim())send()})
 }
 function pause(){stop();clear();inspect.hidden=false;inspect.innerHTML='<b>Paused — explore a sentence</b><div class="buttonrow" style="margin-top:10px"><button class="btn" id="lex-current">Current sentence</button><button class="btn" id="lex-previous">Previous sentence</button></div>';$("lex-current").onclick=()=>examine(Math.min(index,items.length-1));$("lex-previous").onclick=()=>examine(Math.max(0,index-1))}
-$("lex-play").onclick=()=>{if(playing)pause();else{if(mode==="read"){mode="both";$("lex-mode").value="both"}enterReader();play()}};
-$("lex-mode").onchange=e=>{stop();mode=e.target.value;enterReader();inspect.hidden=true;if(mode==="read")clear()};
+function chooseMode(next){mode=next;stop();inspect.hidden=true;clear();$("lex-read").classList.toggle("primary",mode==="read");$("lex-listen").classList.toggle("primary",mode==="both");$("lex-play").hidden=mode==="read";$("lex-back").hidden=mode==="read";$("lex-forward").hidden=mode==="read";$("lex-engine").hidden=mode==="read";$("lex-status").hidden=mode==="read";enterReader();if(mode==="both")play()}
+$("lex-read").onclick=()=>chooseMode("read");$("lex-listen").onclick=()=>chooseMode("both");
+$("lex-play").onclick=()=>{if(playing)pause();else{if(mode==="read")chooseMode("both");else{enterReader();play()}}};
 $("lex-engine").onchange=e=>{stop();engine=e.target.value;localStorage.setItem("lexora-narration-engine",engine);$("lex-status").textContent=engine==="kokoro"?"Kokoro ready to load on Play":"Device voice selected"};
 $("lex-back").onclick=()=>{stop();if(!items.length)prepare(true);index=Math.max(0,index-1);highlight()};
 $("lex-forward").onclick=()=>{stop();if(!items.length)prepare(true);index=Math.min(items.length-1,index+1);highlight()};
@@ -71,5 +73,6 @@ $("lex-forward").onclick=()=>{stop();if(!items.length)prepare(true);index=Math.m
 $("chapter").addEventListener("change",()=>{stop();setTimeout(()=>prepare(true),100)});
 $("booklist").addEventListener("change",()=>{stop();setTimeout(()=>prepare(true),900)});
 const observer=new MutationObserver(()=>{if($("booklist").value!=="guide"&&!playing){setTimeout(()=>prepare(true),250)}});observer.observe($("epub-view"),{childList:true});
+$("lex-read").classList.add("primary");$("lex-play").hidden=$("lex-back").hidden=$("lex-forward").hidden=$("lex-engine").hidden=$("lex-status").hidden=true;
 prepare(true);
 })();
