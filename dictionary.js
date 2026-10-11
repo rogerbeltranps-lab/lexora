@@ -59,6 +59,15 @@ async function candidates(raw){
 // Free dictionary fallback for individual English words (dictionaryapi.dev).
 // Phrase discovery still uses Lexora's existing contextual dictionary.
 const builtInWords={
+ "phrase":{ipa:"/freɪz/",type:"noun",senses:[["A small group of words that forms part of a sentence or expresses an idea.","frase; expressió","The phrase ‘come across’ is common in English."],["A particular way of saying something.","expressió; manera de dir","That's an interesting phrase."]]},
+ "word":{ipa:"/wɝd/",type:"noun",senses:[["A single unit of language with meaning.","paraula","Choose a word to look up."]]},
+ "expression":{ipa:"/ɪkˈsprɛʃən/",type:"noun",senses:[["A word or group of words used to express an idea.","expressió","This expression is used in everyday conversation."]]},
+ "chapter":{ipa:"/ˈtʃæptɚ/",type:"noun",senses:[["One of the main sections of a book.","capítol","Read the next chapter."]]},
+ "meaning":{ipa:"/ˈmiːnɪŋ/",type:"noun",senses:[["What a word, phrase, or idea expresses.","significat","Choose the correct meaning."]]},
+ "select":{ipa:"/səˈlɛkt/",type:"verb",senses:[["To choose something from several options.","seleccionar; triar","Select the expression you want to learn."]]},
+ "paragraph":{ipa:"/ˈpærəˌɡræf/",type:"noun",senses:[["A group of sentences about one main idea.","paràgraf","Read the first paragraph."]]},
+ "example":{ipa:"/ɪɡˈzæmpəl/",type:"noun",senses:[["Something that shows how a rule or idea works.","exemple","Write an example sentence."]]},
+
  "read":{ipa:"/riːd/ (present), /rɛd/ (past)",type:"verb",senses:[["To look at and understand written words.","llegir","I read books every evening."],["To speak written words aloud.","llegir en veu alta","She read the story to her children."]]},
  "between":{ipa:"/bɪˈtwiːn/",type:"preposition",senses:[["In the space separating two things, people, or places.","entre","The library is between the school and the park."],["In the time separating two moments.","entre","We meet between three and four."],["Involving two people or things.","entre","The agreement is between the two teachers."]]},
  "hold":{ipa:"/hoʊld/",type:"verb",senses:[["To keep something in your hands.","agafar; sostenir","Hold the book carefully."],["To keep something in a position or condition.","mantenir","Hold the door open."],["To organize or conduct an event.","celebrar; organitzar","They will hold a meeting tomorrow."]]},
