@@ -123,22 +123,22 @@ function cleanSenses(senses){
 }
 function renderCandidates(raw,source,items,warning){
  const root=document.getElementById("discovery");if(!root)return;
- const title=panelTitle(raw,source);
+ const title=panelTitle(raw,source)+'<button class="btn" type="button" id="dictionary-listen">🔊 Listen</button>';
  items=items.map(entry=>({...entry,senses:cleanSenses(entry.senses)})).filter(entry=>entry.senses.length);
  if(!items.length){root.innerHTML=title+'<div class="discovery-empty">No clear dictionary match found. Try another phrase or add your own card.<p class="small muted">'+escapeHtml(warning||"This first dictionary edition is deliberately small.")+'</p></div><button class="btn primary" id="manual-entry">＋ Create a flashcard</button>';
- root.querySelector("#manual-entry").onclick=()=>editCard(null,raw,source);return}
+ root.querySelector("#manual-entry").onclick=()=>editCard(null,raw,source);root.querySelector("#dictionary-listen").onclick=()=>speak(raw);return}
  root.innerHTML=title+'<p class="small muted">Found '+items.length+' possible '+(items.length===1?"entry":"entries")+'. Select the meaning that best fits the text. The app does not assume your answer is correct.</p>'+
  items.map((entry,i)=>'<div class="sense-entry" style="border-top:1px solid #e0e9ec;padding:15px 0" data-entry="'+i+'"><div class="buttonrow" style="justify-content:space-between;align-items:center"><b style="font-family:Georgia,serif;font-size:20px">'+escapeHtml(entry.term)+'</b><span class="chip">'+escapeHtml(entry.type)+'</span></div><div class="ipa">'+escapeHtml(entry.ipa||"")+'</div><fieldset style="border:0;margin:0;padding:0"><legend class="small muted">Which meaning fits?</legend>'+
  entry.senses.map((sense,k)=>'<label style="display:flex;gap:11px;align-items:flex-start;margin:13px 0;padding:10px 8px;border-radius:9px;line-height:1.5;font-size:15px"><input type="radio" name="sense-'+i+'" value="'+k+'" '+(entry.senses.length===1?"checked":"")+'><span>'+escapeHtml(sense.definition)+'<br><span class="muted">'+escapeHtml(sense.catalan||"")+'</span><br><span style="display:block;margin-top:5px;font-size:14px;font-style:normal;color:#435b6b;line-height:1.55">'+escapeHtml(sense.example||"")+'</span></span></label>').join("")+
  '<label style="display:block;font-size:12px;margin:9px 0"><input type="radio" name="sense-'+i+'" value="unsure"> Not sure / None of these</label></fieldset><button class="btn primary" type="button" data-save-entry="'+i+'">＋ Save chosen meaning</button></div>').join("")+
- '<button class="btn" id="manual-entry">Add a different expression</button><p class="small muted">Dictionary: Wiktionary via Kaikki and Lexora starter entries. Context choices are self-assessed, not automatically graded.</p>';
+ '';
  root.querySelectorAll("[data-save-entry]").forEach(button=>button.onclick=()=>{
   const i=Number(button.dataset.saveEntry),selected=root.querySelector('input[name="sense-'+i+'"]:checked');
   if(!selected){toast("Choose a meaning first");return}
   if(selected.value==="unsure"){toast("No problem — try another definition or create a manual card");return}
   addSelectedCard(items[i],Number(selected.value),source)
  });
- root.querySelector("#manual-entry").onclick=()=>editCard(null,raw,source);
+ root.querySelector("#dictionary-listen").onclick=()=>speak(raw);
 }
 async function analyze(raw,source){
  const seq=++selectionSequence;
@@ -163,13 +163,12 @@ async function analyze(raw,source){
  }
 }
 window.lexoraAnalyze=analyze;
-window.lexoraDictionaryInfo={matching:"phrase and some separated particles",sources:["Lexora original starter glossary"],entries:"36 initial entries",cloudSync:false};
+window.lexoraDictionaryInfo={matching:"words, phrases and expressions",sources:["Wiktionary via Kaikki","Lexora starter glossary"],cloudSync:false};
 choose=function(term,source=""){
  selected=term.trim().slice(0,500);
  context=source.trim().slice(0,700);
  document.getElementById("lookup").value=selected;
  if(selected)analyze(selected,context);
 };
-document.getElementById("lookup-btn").onclick=()=>{const val=document.getElementById("lookup").value.trim();if(val)choose(val)};
-document.getElementById("lookup").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();document.getElementById("lookup-btn").click()}});
+
 })();
