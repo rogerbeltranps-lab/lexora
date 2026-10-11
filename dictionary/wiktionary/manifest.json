@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "source": "Wiktionary via Kaikki",
+  "license": "CC BY-SA / GFDL",
+  "buckets": {
+    "a-h": 988,
+    "i-p": 1046,
+    "q-z": 1118
+  }
+}
