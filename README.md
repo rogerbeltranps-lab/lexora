@@ -4,7 +4,7 @@
 
 Lexora is a planned web application for learning natural American English through reading, exploration, and long-term vocabulary practice. It brings an EPUB reader, contextual language explanations, pronunciation support, and a unified flashcard collection into one learning environment.
 
-> **Project status:** Early planning. The features below describe the intended product, not a completed implementation.
+> **Project status:** v0.1 personal MVP. The reader, an in-app guide, local EPUB imports, built-in glossary, personal flashcards, review scheduling, and local backups are implemented. Other features described below remain planned.
 
 ## The idea
 
@@ -88,3 +88,25 @@ This repository is the future home of Lexora. The initial prototype previously m
 ---
 
 *Lexora — Read. Discover. Remember.*
+
+
+## Try the v0.1 preview
+
+The app is at [Lexora](https://rogerbeltranps-lab.github.io/lexora/) **once GitHub Pages is enabled** for the main branch (root directory). Open `index.html` through a local web server during development.
+
+### Available now
+
+- Seven-chapter **in-app** Lexora guide (the original EPUB can be imported separately).
+- Import EPUB books into browser IndexedDB, navigate pages, and restore reading location on the same device.
+- Select words or expressions in the guide or an EPUB and see built-in glossary entries.
+- Add/edit one unified collection of flashcards with AmE IPA, Catalan translations, examples, structures and source context.
+- Text-to-speech via your browser, spaced-repetition review, and JSON backup/import.
+- Responsive desktop/mobile interface and basic web-app manifest/offline app shell.
+
+### Not connected yet
+
+- Google Sign-In, Firebase authentication, Firestore sync or cross-device EPUB storage.
+- Automated AI-generated explanations and ChatGPT-to-Lexora additions.
+- Full offline EPUB engine dependency, student accounts and App Store release.
+
+**Privacy note:** This version saves content locally in the current browser. Browser data removal may delete your flashcards and books; export backups regularly. EPUBs must be reimported on another device. The built-in glossary is limited; unfamiliar selections open a manual card editor, not a live AI explanation.
