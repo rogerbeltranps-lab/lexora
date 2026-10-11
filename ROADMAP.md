@@ -127,3 +127,12 @@ Last updated: 2026-10-11.
 - [ ] Add optional caching and storage limits for offline dictionary access.
 
 This is an **initial implementation**, not a complete dictionary. Cloud login and AI APIs are not required for the first dictionary experience.
+
+### Kaikki import pipeline — 2026-10-11
+- [x] Add reproducible Wiktionary JSONL → compact Lexora shard converter.
+- [x] Add attribution/licensing notes and a manually triggered GitHub Actions import workflow.
+- [x] Configure the reader to use imported shards if present, falling back to the starter dictionary.
+- [ ] Run the importer and verify actual Wiktionary-derived dictionary entries in GitHub Pages.
+- [ ] Expand beyond the initial Kaikki **phrase** subset to verbs, phrasal verbs, and general vocabulary.
+
+**Important:** The first importer uses Kaikki's English *phrase* export only. That is a practical initial batch, not a complete English dictionary and not a full phrasal-verb database. To run it, open GitHub → Actions → **Import Kaikki phrase dictionary** → **Run workflow**; the repository's Actions permissions must allow workflow commits.
