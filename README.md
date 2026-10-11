@@ -1,0 +1,2 @@
+# lexora
+Read. Discover. Remember.
