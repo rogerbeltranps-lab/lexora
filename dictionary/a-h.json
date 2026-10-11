@@ -1,0 +1,278 @@
+{
+  "version": 1,
+  "source": "Lexora original starter glossary",
+  "license": "© 2026 Roger Beltran",
+  "entries": [
+    {
+      "term": "come across",
+      "type": "Phrasal verb",
+      "ipa": "/kʌm əˈkrɔs/",
+      "senses": [
+        {
+          "definition": "Meet or find unexpectedly",
+          "catalan": "trobar per casualitat",
+          "example": "I came across an old friend."
+        },
+        {
+          "definition": "Seem or be perceived in a particular way",
+          "catalan": "semblar; transmetre una impressió",
+          "example": "She comes across as confident."
+        }
+      ]
+    },
+    {
+      "term": "figure out",
+      "type": "Phrasal verb",
+      "ipa": "/ˈfɪɡjɚ aʊt/",
+      "senses": [
+        {
+          "definition": "Understand or solve",
+          "catalan": "esbrinar; entendre",
+          "example": "I figured it out."
+        },
+        {
+          "definition": "Find a way to do something",
+          "catalan": "trobar la manera de",
+          "example": "We figured out how to get there."
+        }
+      ]
+    },
+    {
+      "term": "give up",
+      "type": "Phrasal verb",
+      "ipa": "/ɡɪv ʌp/",
+      "senses": [
+        {
+          "definition": "Stop trying",
+          "catalan": "rendir-se; desistir",
+          "example": "Don't give up."
+        },
+        {
+          "definition": "Stop doing a habit",
+          "catalan": "deixar un hàbit",
+          "example": "She gave up coffee."
+        }
+      ]
+    },
+    {
+      "term": "end up",
+      "type": "Phrasal verb",
+      "ipa": "/ɛnd ʌp/",
+      "senses": [
+        {
+          "definition": "Eventually arrive at a result or situation",
+          "catalan": "acabar fent o sent",
+          "example": "We ended up staying home."
+        }
+      ]
+    },
+    {
+      "term": "catch up",
+      "type": "Phrasal verb",
+      "ipa": "/kætʃ ʌp/",
+      "senses": [
+        {
+          "definition": "Exchange news after time apart",
+          "catalan": "posar-se al dia",
+          "example": "We caught up over coffee."
+        },
+        {
+          "definition": "Reach the same level",
+          "catalan": "atrapar; posar-se al dia",
+          "example": "I need to catch up with the class."
+        }
+      ]
+    },
+    {
+      "term": "break down",
+      "type": "Phrasal verb",
+      "ipa": "/breɪk daʊn/",
+      "senses": [
+        {
+          "definition": "Stop working (machine)",
+          "catalan": "avariar-se",
+          "example": "Our car broke down."
+        },
+        {
+          "definition": "Lose emotional control",
+          "catalan": "enfonsar-se emocionalment",
+          "example": "He broke down in tears."
+        },
+        {
+          "definition": "Explain in smaller parts",
+          "catalan": "desglossar",
+          "example": "Break down the instructions."
+        }
+      ]
+    },
+    {
+      "term": "hold on",
+      "type": "Phrasal verb",
+      "ipa": "/hoʊld ɑn/",
+      "senses": [
+        {
+          "definition": "Wait",
+          "catalan": "esperar",
+          "example": "Hold on a second."
+        },
+        {
+          "definition": "Grip tightly",
+          "catalan": "agafar-se fort",
+          "example": "Hold on to the railing."
+        }
+      ]
+    },
+    {
+      "term": "get over",
+      "type": "Phrasal verb",
+      "ipa": "/ɡɛt ˈoʊvɚ/",
+      "senses": [
+        {
+          "definition": "Recover from an illness or difficulty",
+          "catalan": "superar; recuperar-se",
+          "example": "It took weeks to get over the flu."
+        },
+        {
+          "definition": "Overcome an emotional experience",
+          "catalan": "superar",
+          "example": "She got over the disappointment."
+        }
+      ]
+    },
+    {
+      "term": "carry out",
+      "type": "Phrasal verb",
+      "ipa": "/ˈkæri aʊt/",
+      "senses": [
+        {
+          "definition": "Perform a task or plan",
+          "catalan": "dur a terme",
+          "example": "They carried out the experiment."
+        }
+      ]
+    },
+    {
+      "term": "be about to",
+      "type": "Expression",
+      "ipa": "/bi əˈbaʊt tu/",
+      "senses": [
+        {
+          "definition": "Be on the point of doing something",
+          "catalan": "estar a punt de",
+          "example": "I was about to leave."
+        }
+      ]
+    },
+    {
+      "term": "at the end of the day",
+      "type": "Idiomatic expression",
+      "ipa": "/æt ði ɛnd əv ðə deɪ/",
+      "senses": [
+        {
+          "definition": "When everything is considered",
+          "catalan": "al capdavall; en definitiva",
+          "example": "At the end of the day, it matters."
+        }
+      ]
+    },
+    {
+      "term": "a piece of cake",
+      "type": "Idiom",
+      "ipa": "/ə pis əv keɪk/",
+      "senses": [
+        {
+          "definition": "Something very easy",
+          "catalan": "bufar i fer ampolles",
+          "example": "That exam was a piece of cake."
+        }
+      ]
+    },
+    {
+      "term": "get the hang of",
+      "type": "Idiomatic expression",
+      "ipa": "/ɡɛt ðə hæŋ əv/",
+      "senses": [
+        {
+          "definition": "Learn to do something with practice",
+          "catalan": "agafar-li el truc",
+          "example": "I'm getting the hang of it."
+        }
+      ]
+    },
+    {
+      "term": "come up with",
+      "type": "Phrasal verb",
+      "ipa": "/kʌm ʌp wɪð/",
+      "senses": [
+        {
+          "definition": "Think of an idea or solution",
+          "catalan": "idear; proposar",
+          "example": "She came up with a plan."
+        }
+      ]
+    },
+    {
+      "term": "bring up",
+      "type": "Phrasal verb",
+      "ipa": "/brɪŋ ʌp/",
+      "senses": [
+        {
+          "definition": "Mention a topic",
+          "catalan": "treure un tema",
+          "example": "She brought up an interesting point."
+        },
+        {
+          "definition": "Raise a child",
+          "catalan": "criar",
+          "example": "He was brought up in Boston."
+        }
+      ]
+    },
+    {
+      "term": "get back to",
+      "type": "Phrasal verb",
+      "ipa": "/ɡɛt bæk tu/",
+      "senses": [
+        {
+          "definition": "Return to an activity",
+          "catalan": "tornar a",
+          "example": "Let's get back to the book."
+        },
+        {
+          "definition": "Reply to someone later",
+          "catalan": "respondre més tard",
+          "example": "I'll get back to you."
+        }
+      ]
+    },
+    {
+      "term": "commit",
+      "type": "Vocabulary",
+      "ipa": "/kəˈmɪt/",
+      "senses": [
+        {
+          "definition": "Save a snapshot of changes in Git",
+          "catalan": "confirmar canvis",
+          "example": "Commit your changes."
+        },
+        {
+          "definition": "Devote yourself to something",
+          "catalan": "comprometre's",
+          "example": "She committed to the project."
+        }
+      ]
+    },
+    {
+      "term": "context",
+      "type": "Vocabulary",
+      "ipa": "/ˈkɑntɛkst/",
+      "senses": [
+        {
+          "definition": "The surrounding words or situation that clarify meaning",
+          "catalan": "context",
+          "example": "Read the expression in context."
+        }
+      ]
+    }
+  ]
+}
