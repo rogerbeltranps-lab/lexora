@@ -136,3 +136,15 @@ This is an **initial implementation**, not a complete dictionary. Cloud login an
 - [ ] Expand beyond the initial Kaikki **phrase** subset to verbs, phrasal verbs, and general vocabulary.
 
 **Important:** The first importer uses Kaikki's English *phrase* export only. That is a practical initial batch, not a complete English dictionary and not a full phrasal-verb database. To run it, open GitHub → Actions → **Import Kaikki phrase dictionary** → **Run workflow**; the repository's Actions permissions must allow workflow commits.
+
+## Read & Listen preview — 2026-10-11
+
+- [x] Add Read only, Read & Listen, and Listen only controls to the shared reader.
+- [x] Narrate visible text sentence by sentence with browser speech synthesis.
+- [x] Highlight each sentence in the built-in guide while it is spoken.
+- [x] On pause, offer current or previous sentence for dictionary analysis.
+- [ ] Improve EPUB sentence-level visual highlighting: currently imported EPUBs highlight the containing paragraph rather than the exact sentence.
+- [ ] Test sentence navigation and voice playback on iOS Safari and real imported EPUBs.
+- [ ] Preserve narration position reliably across EPUB page turns and reloads.
+- [ ] Consider Kokoro or another locally downloaded neural voice after the browser-voice version is stable.
+
