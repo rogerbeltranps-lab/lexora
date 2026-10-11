@@ -1,0 +1,160 @@
+{
+  "version": 1,
+  "source": "Lexora original starter glossary",
+  "license": "© 2026 Roger Beltran",
+  "entries": [
+    {
+      "term": "turn in",
+      "type": "Phrasal verb",
+      "ipa": "/tɝn ɪn/",
+      "senses": [
+        {
+          "definition": "Go to bed",
+          "catalan": "anar-se'n a dormir",
+          "example": "I was tired, so I turned in early."
+        },
+        {
+          "definition": "Submit something",
+          "catalan": "lliurar",
+          "example": "Please turn in your homework."
+        },
+        {
+          "definition": "Report or surrender someone to authorities",
+          "catalan": "denunciar; lliurar",
+          "example": "They turned the suspect in."
+        }
+      ]
+    },
+    {
+      "term": "run into",
+      "type": "Phrasal verb",
+      "ipa": "/rʌn ˈɪntu/",
+      "senses": [
+        {
+          "definition": "Meet unexpectedly",
+          "catalan": "trobar-se per casualitat",
+          "example": "I ran into my neighbor."
+        },
+        {
+          "definition": "Encounter a problem",
+          "catalan": "topar amb",
+          "example": "We ran into difficulties."
+        }
+      ]
+    },
+    {
+      "term": "take off",
+      "type": "Phrasal verb",
+      "ipa": "/teɪk ɔf/",
+      "senses": [
+        {
+          "definition": "Remove clothing",
+          "catalan": "treure's",
+          "example": "Take off your jacket."
+        },
+        {
+          "definition": "Leave the ground (aircraft)",
+          "catalan": "enlairar-se",
+          "example": "Our plane took off."
+        },
+        {
+          "definition": "Become successful quickly",
+          "catalan": "enlairar-se figuradament",
+          "example": "Her business took off."
+        }
+      ]
+    },
+    {
+      "term": "work out",
+      "type": "Phrasal verb",
+      "ipa": "/wɝk aʊt/",
+      "senses": [
+        {
+          "definition": "Exercise",
+          "catalan": "fer exercici",
+          "example": "I work out twice a week."
+        },
+        {
+          "definition": "Find a solution",
+          "catalan": "resoldre",
+          "example": "We'll work it out."
+        },
+        {
+          "definition": "Happen successfully",
+          "catalan": "sortir bé",
+          "example": "Everything worked out."
+        }
+      ]
+    },
+    {
+      "term": "set up",
+      "type": "Phrasal verb",
+      "ipa": "/sɛt ʌp/",
+      "senses": [
+        {
+          "definition": "Arrange or install",
+          "catalan": "configurar; preparar",
+          "example": "I set up my account."
+        },
+        {
+          "definition": "Establish an organization",
+          "catalan": "fundar; muntar",
+          "example": "They set up a company."
+        }
+      ]
+    },
+    {
+      "term": "wind down",
+      "type": "Phrasal verb",
+      "ipa": "/waɪnd daʊn/",
+      "senses": [
+        {
+          "definition": "Relax gradually",
+          "catalan": "desconnectar; relaxar-se",
+          "example": "I read to wind down."
+        },
+        {
+          "definition": "Reduce operations gradually",
+          "catalan": "reduir gradualment",
+          "example": "They are winding down production."
+        }
+      ]
+    },
+    {
+      "term": "slip my mind",
+      "type": "Idiom",
+      "ipa": "/slɪp maɪ maɪnd/",
+      "senses": [
+        {
+          "definition": "Forget unintentionally",
+          "catalan": "passar-me per alt; oblidar-me'n",
+          "example": "It completely slipped my mind."
+        }
+      ]
+    },
+    {
+      "term": "take into account",
+      "type": "Expression",
+      "ipa": "/teɪk ˈɪntu əˈkaʊnt/",
+      "senses": [
+        {
+          "definition": "Consider a factor",
+          "catalan": "tenir en compte",
+          "example": "Take the context into account."
+        }
+      ]
+    },
+    {
+      "term": "sink in",
+      "type": "Phrasal verb",
+      "ipa": "/sɪŋk ɪn/",
+      "senses": [
+        {
+          "definition": "Become understood gradually",
+          "catalan": "assimilar-se",
+          "example": "It took a while to sink in."
+        }
+      ]
+    }
+  ]
+}
