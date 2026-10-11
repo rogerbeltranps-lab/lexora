@@ -115,9 +115,24 @@ function renderCandidates(raw,source,items,warning){
 async function analyze(raw,source){
  const seq=++selectionSequence;
  const root=document.getElementById("discovery");if(!root)return;
- root.innerHTML=panelTitle(raw,source)+'<p class="small muted">Looking for expressions in the online dictionary…</p>';
- try{let items=await candidates(raw);if(/^[a-z]+(?:[\u0027-][a-z]+)?$/i.test(raw.trim())){const words=await singleWordEntries(raw);if(words.length)items=[...words,...items.filter(e=>e.term.toLowerCase()!==raw.trim().toLowerCase())]}if(seq===selectionSequence)renderCandidates(raw,source,items)}
- catch(err){if(seq===selectionSequence)renderCandidates(raw,source,[],"Could not fetch the dictionary; check your connection.")}
+ root.innerHTML=panelTitle(raw,source)+'<p class="small muted">Looking up meanings…</p>';
+ const single=/^[a-z]+(?:['-][a-z]+)?$/i.test(raw.trim());
+ // The phrase dictionary may be unavailable or too large. Never let it block a word lookup.
+ if(single){
+   try{
+     const words=await singleWordEntries(raw);
+     if(seq!==selectionSequence)return;
+     if(words.length){renderCandidates(raw,source,words);return}
+   }catch(error){console.warn("Word lookup failed",error)}
+ }
+ try{
+   const items=await candidates(raw);
+   if(seq===selectionSequence)renderCandidates(raw,source,items,
+     single?"The word dictionary could not provide a definition. Check connectivity.":"No matching expression found.");
+ }catch(error){
+   if(seq===selectionSequence)renderCandidates(raw,source,[],
+     single?"The word dictionary could not provide a definition. Check connectivity.":"Could not fetch the dictionary; check your connection.");
+ }
 }
 window.lexoraAnalyze=analyze;
 window.lexoraDictionaryInfo={matching:"phrase and some separated particles",sources:["Lexora original starter glossary"],entries:"36 initial entries",cloudSync:false};
