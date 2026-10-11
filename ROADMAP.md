@@ -55,6 +55,22 @@ Lexora starts as a personal English-learning web app. Once it works reliably, it
 
 **Milestone:** Install Lexora on a phone and continue reading and reviewing across devices.
 
+## ⭐ VERY IMPORTANT — Cross-App Vocabulary Capture (After Prototype)
+
+**Priority: VERY HIGH · Status: PLANNED / DEFERRED · Do not start until the current prototype is finished.**
+
+**Vision:** Lexora must collect and explain vocabulary from *anywhere*, not only EPUB books, using the same contextual analysis and unified flashcard collection as the reader.
+
+- [ ] Provide a user-authorized **ChatGPT → Lexora** integration so a request such as “Add this to Lexora” saves the word or expression discussed, with context, IPA, Catalan meaning, grammar, examples, and duplicate detection.
+- [ ] Create a **Chrome/Chromium browser extension** that lets users select text on webpages and choose “Add to Lexora” from the context menu.
+- [ ] Support **iPhone/iPad sharing** of selected text to Lexora (evaluate Shortcuts for a first test, followed by an iOS Share Extension if needed).
+- [ ] Support **Android sharing** of selected text to Lexora through the system sharing interface.
+- [ ] Reuse the existing Lexora web UI and common analysis service; assess **Capacitor** or another shared-codebase option rather than building two mobile apps from scratch.
+- [ ] Use one secure, synchronized collection with source attribution and contextual sentences; let users review/edit cards before saving and avoid duplicate entries.
+- [ ] **First pilot on the owner's phone**, only once the prototype is stable, before broadening to other devices or app stores.
+
+**Development order after prototype:** shared API/database → browser capture → phone sharing pilot → ChatGPT integration (subject to supported permissions and feasibility). No mobile app or extension work in the current prototype sprint.
+
 ## Phase 4 — Optional Mobile App
 
 **Goal:** Consider app-store distribution only if the PWA is insufficient.
