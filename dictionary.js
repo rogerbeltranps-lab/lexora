@@ -100,7 +100,7 @@ function panelTitle(title,context){
 }
 function addSelectedCard(entry,sense,source){
  const fallback=entry.senses[sense]||entry.senses[0];if(!fallback)return;
- const fresh={id:"",term:entry.term,type:entry.type==="Idiomatic expression"?"Expression":entry.type,ipa:entry.ipa||"",definition:fallback.definition,catalan:fallback.catalan||"",structure:entry.structure||"",examples:[fallback.example].filter(Boolean),tip:"",context:source||""};
+ const fresh={id:"",term:entry.term,type:(["Phrasal verb","Idiom","Expression","Vocabulary","Pronunciation","Grammar"].includes(entry.type)?entry.type:(["Idiomatic expression","Proverb"].includes(entry.type)?"Idiom":(entry.term.trim().includes(" ")?"Expression":"Vocabulary"))),ipa:entry.ipa||"",definition:fallback.definition,catalan:fallback.catalan||"",structure:entry.structure||"",examples:[fallback.example].filter(Boolean),tip:"",context:source||""};
  editCard(fresh);
 }
 function renderCandidates(raw,source,items,warning){
