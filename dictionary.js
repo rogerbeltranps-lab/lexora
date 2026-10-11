@@ -95,7 +95,7 @@ async function singleWordEntries(raw){
  return local;
 }
 function panelTitle(title,context){
- return '<span class="chip">Contextual discovery · offline-style dictionary</span><div class="word">'+escapeHtml(title)+'</div>'+
+ return '<div class="lex-dictionary-heading"><span class="chip">Contextual discovery · offline-style dictionary</span><div class="word lex-selected-word" aria-label="Selected word or phrase">'+escapeHtml(title)+'</div></div>'+
  (context?'<p class="quote">'+escapeHtml(context)+'</p>':'');
 }
 function addSelectedCard(entry,sense,source){
@@ -121,12 +121,37 @@ function cleanSenses(senses){
  }
  return result;
 }
+// Keep speech inside the user's tap handler: iOS requires a user gesture.
+let dictionaryUtterance=null;
+function playDictionaryAudio(raw){
+ const button=document.getElementById("dictionary-listen");
+ if(!raw||!button)return;
+ if(!("speechSynthesis" in window)||!("SpeechSynthesisUtterance" in window)){
+   toast("Audio is unavailable in this browser.");return;
+ }
+ try{
+   window.speechSynthesis.cancel();
+   const utterance=new SpeechSynthesisUtterance(raw);
+   dictionaryUtterance=utterance;
+   utterance.lang="en-US";
+   utterance.rate=0.88;
+   const voices=window.speechSynthesis.getVoices();
+   const american=voices.find(v=>v.lang.toLowerCase().replace("_","-")==="en-us");
+   if(american)utterance.voice=american;
+   button.textContent="🔊 Playing…";
+   utterance.onend=()=>{if(dictionaryUtterance===utterance){button.textContent="🔊 Listen";dictionaryUtterance=null}};
+   utterance.onerror=()=>{if(dictionaryUtterance===utterance){button.textContent="🔊 Retry audio";dictionaryUtterance=null;toast("Audio did not play. Check silent mode, volume, or try Safari.")}};
+   window.speechSynthesis.speak(utterance);
+   // On iOS a paused speech engine sometimes needs a resume after interruption.
+   if(window.speechSynthesis.paused)window.speechSynthesis.resume();
+ }catch(error){button.textContent="🔊 Retry audio";toast("Unable to play pronunciation: "+error.message)}
+}
 function renderCandidates(raw,source,items,warning){
  const root=document.getElementById("discovery");if(!root)return;
  const title=panelTitle(raw,source)+'<button class="btn" type="button" id="dictionary-listen">🔊 Listen</button>';
  items=items.map(entry=>({...entry,senses:cleanSenses(entry.senses)})).filter(entry=>entry.senses.length);
  if(!items.length){root.innerHTML=title+'<div class="discovery-empty">No clear dictionary match found. Try another phrase or add your own card.<p class="small muted">'+escapeHtml(warning||"This first dictionary edition is deliberately small.")+'</p></div>';
- root.querySelector("#dictionary-listen").onclick=()=>speak(raw);return}
+ root.querySelector("#dictionary-listen").onclick=()=>playDictionaryAudio(raw);return}
  root.innerHTML=title+'<p class="small muted">Found '+items.length+' possible '+(items.length===1?"entry":"entries")+'. Select the meaning that best fits the text. The app does not assume your answer is correct.</p>'+
  items.map((entry,i)=>'<div class="sense-entry" style="border-top:1px solid #e0e9ec;padding:15px 0" data-entry="'+i+'"><div class="buttonrow" style="justify-content:space-between;align-items:center"><b style="font-family:Georgia,serif;font-size:20px">'+escapeHtml(entry.term)+'</b><span class="chip">'+escapeHtml(entry.type)+'</span></div><div class="ipa">'+escapeHtml(entry.ipa||"")+'</div><fieldset style="border:0;margin:0;padding:0"><legend class="small muted">Which meaning fits?</legend>'+
  entry.senses.map((sense,k)=>'<label style="display:flex;gap:11px;align-items:flex-start;margin:13px 0;padding:10px 8px;border-radius:9px;line-height:1.5;font-size:15px"><input type="radio" name="sense-'+i+'" value="'+k+'" '+(entry.senses.length===1?"checked":"")+'><span>'+escapeHtml(sense.definition)+'<br><span class="muted">'+escapeHtml(sense.catalan||"")+'</span><br><span style="display:block;margin-top:5px;font-size:14px;font-style:normal;color:#435b6b;line-height:1.55">'+escapeHtml(sense.example||"")+'</span></span></label>').join("")+
@@ -138,7 +163,7 @@ function renderCandidates(raw,source,items,warning){
   if(selected.value==="unsure"){toast("No problem — try another definition or create a manual card");return}
   addSelectedCard(items[i],Number(selected.value),source)
  });
- root.querySelector("#dictionary-listen").onclick=()=>speak(raw);
+ root.querySelector("#dictionary-listen").onclick=()=>playDictionaryAudio(raw);
 }
 async function analyze(raw,source){
  const seq=++selectionSequence;
