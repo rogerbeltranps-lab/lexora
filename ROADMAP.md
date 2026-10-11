@@ -74,6 +74,10 @@ Lexora starts as a personal English-learning web app. Once it works reliably, it
 - [ ] Define teacher and student roles with separate accounts and data.
 - [ ] Decide whether students can import their own EPUBs or only teacher-provided books.
 - [ ] Add assigned readings and age-appropriate differentiated language support.
+- [ ] Build a **unit-end vocabulary book generator** for teachers: collect the vocabulary, phrasal verbs, idioms, and expressions learned during each unit into a student revision book.
+- [ ] Generate **three differentiated versions** of each book (Insecure, Safe, Daring), aligned to the same unit vocabulary but adapted in language complexity, scaffolding, examples, and practice activities.
+- [ ] Include clear meanings, contextual examples, and retrieval/revision activities so students can remember what they learned after finishing the unit.
+- [ ] Allow teacher review and editing before exporting or sharing the books (EPUB first; printable formats may follow).
 - [ ] Consider teacher-curated vocabulary sets and optional learning insights.
 - [ ] Review child privacy, school policies, consent, retention, and data minimization before onboarding minors.
 - [ ] Pilot with a small group, gather feedback, and improve accessibility.
