@@ -56,6 +56,35 @@ async function candidates(raw){
  results.sort((a,b)=>tokenize(b.term).length-tokenize(a.term).length||a.term.localeCompare(b.term));
  return results.slice(0,15);
 }
+// Free dictionary fallback for individual English words (dictionaryapi.dev).
+// Phrase discovery still uses Lexora's existing contextual dictionary.
+async function singleWordEntries(raw){
+ const word=raw.trim().toLowerCase();
+ if(!/^[a-z]+(?:['-][a-z]+)?$/.test(word))return [];
+ const attempts=[word];
+ const base=lemma(word);
+ if(base!==word)attempts.push(base);
+ for(const term of attempts){
+  try{
+   const response=await fetch("https://api.dictionaryapi.dev/api/v2/entries/en/"+encodeURIComponent(term));
+   if(!response.ok)continue;
+   const data=await response.json();
+   if(!Array.isArray(data))continue;
+   const entries=[];
+   for(const item of data){
+    const ipa=item.phonetic||item.phonetics?.find(x=>x.text)?.text||"";
+    for(const meaning of item.meanings||[]){
+     const definitions=(meaning.definitions||[]).filter(d=>d.definition).slice(0,6);
+     if(!definitions.length)continue;
+     entries.push({term:item.word||term,type:meaning.partOfSpeech||"Vocabulary",ipa,
+       senses:definitions.map(d=>({definition:d.definition,catalan:"",example:d.example||""}))});
+    }
+   }
+   if(entries.length)return entries.slice(0,8);
+  }catch(e){console.warn("Single-word dictionary request failed",e)}
+ }
+ return [];
+}
 function panelTitle(title,context){
  return '<span class="chip">Contextual discovery · offline-style dictionary</span><div class="word">'+escapeHtml(title)+'</div>'+
  (context?'<p class="quote">'+escapeHtml(context)+'</p>':'');
@@ -74,7 +103,7 @@ function renderCandidates(raw,source,items,warning){
  items.map((entry,i)=>'<div class="sense-entry" style="border-top:1px solid #e0e9ec;padding:15px 0" data-entry="'+i+'"><div class="buttonrow" style="justify-content:space-between;align-items:center"><b style="font-family:Georgia,serif;font-size:20px">'+escapeHtml(entry.term)+'</b><span class="chip">'+escapeHtml(entry.type)+'</span></div><div class="ipa">'+escapeHtml(entry.ipa||"")+'</div><fieldset style="border:0;margin:0;padding:0"><legend class="small muted">Which meaning fits?</legend>'+
  entry.senses.map((sense,k)=>'<label style="display:flex;gap:8px;align-items:flex-start;margin:9px 0;font-size:13px"><input type="radio" name="sense-'+i+'" value="'+k+'" '+(entry.senses.length===1?"checked":"")+'><span>'+escapeHtml(sense.definition)+'<br><span class="muted">'+escapeHtml(sense.catalan||"")+'</span><br><em class="small">'+escapeHtml(sense.example||"")+'</em></span></label>').join("")+
  '<label style="display:block;font-size:12px;margin:9px 0"><input type="radio" name="sense-'+i+'" value="unsure"> Not sure / None of these</label></fieldset><button class="btn primary" type="button" data-save-entry="'+i+'">＋ Save chosen meaning</button></div>').join("")+
- '<button class="btn" id="manual-entry">Add a different expression</button><p class="small muted">Dictionary: Lexora original starter data, © Roger Beltran. Context choices are self-assessed, not automatically graded.</p>';
+ '<button class="btn" id="manual-entry">Add a different expression</button><p class="small muted">Dictionary: Lexora starter data and Free Dictionary API for individual words. Context choices are self-assessed, not automatically graded.</p>';
  root.querySelectorAll("[data-save-entry]").forEach(button=>button.onclick=()=>{
   const i=Number(button.dataset.saveEntry),selected=root.querySelector('input[name="sense-'+i+'"]:checked');
   if(!selected){toast("Choose a meaning first");return}
@@ -87,7 +116,7 @@ async function analyze(raw,source){
  const seq=++selectionSequence;
  const root=document.getElementById("discovery");if(!root)return;
  root.innerHTML=panelTitle(raw,source)+'<p class="small muted">Looking for expressions in the online dictionary…</p>';
- try{const items=await candidates(raw);if(seq===selectionSequence)renderCandidates(raw,source,items)}
+ try{let items=await candidates(raw);if(/^[a-z]+(?:[\u0027-][a-z]+)?$/i.test(raw.trim())){const words=await singleWordEntries(raw);if(words.length)items=[...words,...items.filter(e=>e.term.toLowerCase()!==raw.trim().toLowerCase())]}if(seq===selectionSequence)renderCandidates(raw,source,items)}
  catch(err){if(seq===selectionSequence)renderCandidates(raw,source,[],"Could not fetch the dictionary; check your connection.")}
 }
 window.lexoraAnalyze=analyze;
