@@ -113,3 +113,17 @@ Last updated: 2026-10-11.
 - [ ] Add an AI explanation service and user-authorized ChatGPT card ingestion.
 - [ ] QA on real EPUB files, Safari, Chrome, desktop, and phone.
 
+
+## Dictionary and contextual meaning selection (started 2026-10-11)
+
+- [x] Create small GitHub-hosted JSON dictionary shards fetched on demand.
+- [x] Provide an original starter lexicon with 36 expressions and vocabulary entries, several with multiple senses.
+- [x] Match many multiword expressions in selected sentences, including common inflected verbs and some separated particles.
+- [x] Allow readers to choose a sense, use “Not sure / None of these”, and create a contextual flashcard.
+- [ ] Evaluate downloadable Wiktionary/Kaikki and WordNet data and comply with each source's attribution and license terms before redistribution.
+- [ ] Expand to broad general vocabulary, idioms, and phrasal verbs through automated data processing.
+- [ ] Improve lemmatization, syntactic matching, phrase boundaries, and contextual precision.
+- [ ] QA dictionary matches and sense selection across a wide range of EPUBs and sentence forms.
+- [ ] Add optional caching and storage limits for offline dictionary access.
+
+This is an **initial implementation**, not a complete dictionary. Cloud login and AI APIs are not required for the first dictionary experience.
