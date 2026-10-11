@@ -1,0 +1,10 @@
+{
+  "name": "Lexora — Read. Discover. Remember.",
+  "short_name": "Lexora",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f6f8",
+  "theme_color": "#152d42",
+  "description": "An English-reading and flashcard app."
+}
