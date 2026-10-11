@@ -103,16 +103,35 @@ function addSelectedCard(entry,sense,source){
  const fresh={id:"",term:entry.term,type:(["Phrasal verb","Idiom","Expression","Vocabulary","Pronunciation","Grammar"].includes(entry.type)?entry.type:(["Idiomatic expression","Proverb"].includes(entry.type)?"Idiom":(entry.term.trim().includes(" ")?"Expression":"Vocabulary"))),ipa:entry.ipa||"",definition:fallback.definition,catalan:fallback.catalan||"",structure:entry.structure||"",examples:[fallback.example].filter(Boolean),tip:"",context:source||""};
  editCard(fresh);
 }
+// Kaikki can repeat one gloss for several citations. Show the meaning once.
+function cleanSenses(senses){
+ const result=[],seen=new Map();
+ for(const sense of senses||[]){
+  const def=String(sense.definition||"").trim();
+  if(!def)continue;
+  const key=def.toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+  if(seen.has(key)){
+   const old=result[seen.get(key)];
+   if(!old.example&&sense.example)old.example=sense.example;
+   if(!old.catalan&&sense.catalan)old.catalan=sense.catalan;
+   continue;
+  }
+  seen.set(key,result.length);
+  result.push({...sense,definition:def});
+ }
+ return result;
+}
 function renderCandidates(raw,source,items,warning){
  const root=document.getElementById("discovery");if(!root)return;
  const title=panelTitle(raw,source);
+ items=items.map(entry=>({...entry,senses:cleanSenses(entry.senses)})).filter(entry=>entry.senses.length);
  if(!items.length){root.innerHTML=title+'<div class="discovery-empty">No clear dictionary match found. Try another phrase or add your own card.<p class="small muted">'+escapeHtml(warning||"This first dictionary edition is deliberately small.")+'</p></div><button class="btn primary" id="manual-entry">＋ Create a flashcard</button>';
  root.querySelector("#manual-entry").onclick=()=>editCard(null,raw,source);return}
  root.innerHTML=title+'<p class="small muted">Found '+items.length+' possible '+(items.length===1?"entry":"entries")+'. Select the meaning that best fits the text. The app does not assume your answer is correct.</p>'+
  items.map((entry,i)=>'<div class="sense-entry" style="border-top:1px solid #e0e9ec;padding:15px 0" data-entry="'+i+'"><div class="buttonrow" style="justify-content:space-between;align-items:center"><b style="font-family:Georgia,serif;font-size:20px">'+escapeHtml(entry.term)+'</b><span class="chip">'+escapeHtml(entry.type)+'</span></div><div class="ipa">'+escapeHtml(entry.ipa||"")+'</div><fieldset style="border:0;margin:0;padding:0"><legend class="small muted">Which meaning fits?</legend>'+
- entry.senses.map((sense,k)=>'<label style="display:flex;gap:8px;align-items:flex-start;margin:9px 0;font-size:13px"><input type="radio" name="sense-'+i+'" value="'+k+'" '+(entry.senses.length===1?"checked":"")+'><span>'+escapeHtml(sense.definition)+'<br><span class="muted">'+escapeHtml(sense.catalan||"")+'</span><br><em class="small">'+escapeHtml(sense.example||"")+'</em></span></label>').join("")+
+ entry.senses.map((sense,k)=>'<label style="display:flex;gap:11px;align-items:flex-start;margin:13px 0;padding:10px 8px;border-radius:9px;line-height:1.5;font-size:15px"><input type="radio" name="sense-'+i+'" value="'+k+'" '+(entry.senses.length===1?"checked":"")+'><span>'+escapeHtml(sense.definition)+'<br><span class="muted">'+escapeHtml(sense.catalan||"")+'</span><br><span style="display:block;margin-top:5px;font-size:14px;font-style:normal;color:#435b6b;line-height:1.55">'+escapeHtml(sense.example||"")+'</span></span></label>').join("")+
  '<label style="display:block;font-size:12px;margin:9px 0"><input type="radio" name="sense-'+i+'" value="unsure"> Not sure / None of these</label></fieldset><button class="btn primary" type="button" data-save-entry="'+i+'">＋ Save chosen meaning</button></div>').join("")+
- '<button class="btn" id="manual-entry">Add a different expression</button><p class="small muted">Dictionary: Lexora starter data and Free Dictionary API for individual words. Context choices are self-assessed, not automatically graded.</p>';
+ '<button class="btn" id="manual-entry">Add a different expression</button><p class="small muted">Dictionary: Wiktionary via Kaikki and Lexora starter entries. Context choices are self-assessed, not automatically graded.</p>';
  root.querySelectorAll("[data-save-entry]").forEach(button=>button.onclick=()=>{
   const i=Number(button.dataset.saveEntry),selected=root.querySelector('input[name="sense-'+i+'"]:checked');
   if(!selected){toast("Choose a meaning first");return}
