@@ -102,9 +102,9 @@ function prepare(reset){
 function enableTap(item,number){
  const el=item.el;
  if(!el)return;
- if(el.dataset.lexReplay==="1")return;el.dataset.lexReplay="1";el.classList.add("lex-tappable");el.tabIndex=0;el.title="Tap to listen again";
+ if(el.dataset.lexReplay==="1")return;el.dataset.lexReplay="1";el.classList.add("lex-tappable");el.tabIndex=0;el.title="Double-click to replay sentence; click a word for its meaning";
  function replay(){if(mode!=="both")return;const selection=el.ownerDocument.getSelection?.();if(selection&&!selection.isCollapsed)return;stop();index=number;play()}
- el.addEventListener("click",replay);
+ el.addEventListener("dblclick",replay);
  el.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();replay()}});
 }
 function highlight(){clear();const item=items[index];if(!item)return;if(mode!=="listen"){marker=item.el;marker.classList.add("lex-active");marker.scrollIntoView?.({block:"nearest",behavior:"smooth"})}$("lex-status").textContent="Sentence "+(index+1)+" / "+items.length}
