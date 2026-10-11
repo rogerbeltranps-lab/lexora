@@ -16,6 +16,7 @@ function prepare(text,options={}){
  while(cache.size>MAX_CACHE)cache.delete(cache.keys().next().value);
  return promise
 }
+function unlock(){const audioCtx=ctx();if(audioCtx.state!=="running"){audioCtx.resume().catch(()=>{})}return audioCtx}
 async function speak(text,options={}){
  const audioCtx=ctx();await audioCtx.resume();
  options.status?.("Preparing natural voice…");
@@ -28,5 +29,5 @@ async function speak(text,options={}){
  const node=audioCtx.createBufferSource();node.buffer=buffer;node.connect(audioCtx.destination);source=node;
  await new Promise((resolve,reject)=>{node.onended=()=>{if(source===node)source=null;node.disconnect();resolve()};try{node.start()}catch(e){reject(e)}})
 }
-window.lexoraKokoro={speak,prepare,stop};
+window.lexoraKokoro={speak,prepare,stop,unlock};
 })();
