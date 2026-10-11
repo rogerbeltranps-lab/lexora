@@ -4,7 +4,7 @@
 
 Lexora starts as a personal English-learning web app. Once it works reliably, it may expand to students and, eventually, dedicated mobile distribution.
 
-> **Status:** Planning. All tasks below are proposals, not completed features.
+> **Status:** v0.1 MVP implemented on 2026-10-11. Checked tasks reflect features implemented at an initial level, not final production quality.
 >
 > **Repository boundary:** Development happens in `rogerbeltranps-lab/lexora` only. Changes to other repositories require separate permission.
 
@@ -12,14 +12,14 @@ Lexora starts as a personal English-learning web app. Once it works reliably, it
 
 **Goal:** Establish a responsive foundation for personal use.
 
-- [ ] Set up a maintainable project structure and responsive design system.
+- [x] Set up an initial responsive single-page app (architecture can be modularized later).
 - [ ] Configure Firebase Authentication with Google Sign-In.
 - [ ] Set up Cloud Firestore with user-specific security rules.
-- [ ] Define the unified flashcard data model (vocabulary, idioms, phrasal verbs, expressions, grammar, pronunciation).
-- [ ] Build a searchable collection and a card editor.
-- [ ] Implement a basic EPUB reader.
+- [x] Define an initial unified flashcard data model (vocabulary, idioms, phrasal verbs, expressions, grammar, pronunciation).
+- [x] Build a searchable local collection and a card editor.
+- [x] Implement basic EPUB import and navigation using epub.js (requires network for the dependency).
 - [ ] Write and include **one original introductory EPUB** that explains how to use Lexora and doubles as a reader test.
-- [ ] Save reading position and basic preferences.
+- [x] Save same-device reading position and basic preferences.
 - [ ] Verify usability on desktop, iPhone, and Chromebook.
 
 **Milestone:** Sign in, read the Lexora guide, and manually save and review cards.
@@ -31,10 +31,10 @@ Lexora starts as a personal English-learning web app. Once it works reliably, it
 - [ ] Select a word, phrase, or passage in an EPUB.
 - [ ] Provide context-aware meanings in clear English and translations into Catalan.
 - [ ] Explain literal/figurative meanings, idioms, phrasal verbs, collocations, prepositions, and natural grammar patterns.
-- [ ] Add American English IPA, audio playback, word stress, and pronunciation notes.
+- [ ] Expand American English IPA, audio playback, word stress, and pronunciation notes (basic IPA and browser audio available).
 - [ ] Include natural usage examples and optional memory tips.
 - [ ] Create flashcards directly from selected EPUB passages while preserving source context.
-- [ ] Introduce spaced-repetition reviews and progress tracking.
+- [x] Introduce initial local spaced-repetition reviews and progress tracking.
 - [ ] Specify a user-authorized ChatGPT-to-Lexora workflow for requests such as “Add this to Lexora.”
 - [ ] Test explanation quality and make uncertainty visible when interpretations depend on context.
 
@@ -47,7 +47,7 @@ Lexora starts as a personal English-learning web app. Once it works reliably, it
 - [ ] Sync flashcards, review history, highlights, and reading progress through Firestore.
 - [ ] Decide whether EPUB files stay on-device or need optional cloud storage.
 - [ ] Handle offline edits and synchronization conflicts safely.
-- [ ] Add PWA manifest, icons, and installable home-screen experience.
+- [ ] Complete PWA manifest, icons, and installable home-screen experience (manifest and shell caching started; icons pending).
 - [ ] Enable offline access to permitted books and cached flashcards.
 - [ ] Test iPhone Safari, Android Chrome, and desktop browsers.
 - [ ] Add data export, import, and recovery options.
@@ -96,3 +96,16 @@ Lexora starts as a personal English-learning web app. Once it works reliably, it
 Use GitHub Markdown checkboxes to track completed work. Mark tasks complete only when implemented and tested. Adjust priorities as requirements become clearer.
 
 Last updated: 2026-10-11.
+
+## Current preview (v0.1)
+
+- [x] Create single-page responsive reader, glossary, flashcards, and practice screens.
+- [x] Include a seven-chapter in-app guide for testing selections.
+- [x] Add local EPUB import using IndexedDB.
+- [x] Add JSON flashcard/review backup and import.
+- [ ] Import the original editable guide EPUB directly into the app bundle.
+- [ ] Configure GitHub Pages and test the live deployed build.
+- [ ] Add Firebase project credentials, Google provider, Firestore rules, and secure data synchronization.
+- [ ] Add an AI explanation service and user-authorized ChatGPT card ingestion.
+- [ ] QA on real EPUB files, Safari, Chrome, desktop, and phone.
+
