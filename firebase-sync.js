@@ -9,6 +9,8 @@ const bridge=window.lexoraSyncBridge;
 const login=document.getElementById("lex-cloud-login"),logout=document.getElementById("lex-cloud-logout"),syncBtn=document.getElementById("lex-cloud-sync"),status=document.getElementById("lex-cloud-status");
 let uid=null,unsubscribe=null,busy=false,queued=false,clock=null,ready=false,loginFailure="";
 const message=t=>{status.textContent=t};
+const authState=document.getElementById("lex-cloud-auth-state");
+const authMessage=t=>{if(authState)authState.textContent=t};
 const validCard=c=>c&&typeof c.id==="string"&&typeof c.term==="string"&&typeof c.definition==="string";
 const timestamp=c=>Date.parse(c?.modifiedAt||"")||0;
 function merge(local,remote){
@@ -30,7 +32,7 @@ const same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
 async function synchronize(){
  if(!uid||!bridge)return;
  if(busy){queued=true;return}
- busy=true;message("Sincronitzant...");
+ busy=true;message("Firestore: sincronitzant...");
  const currentUid=uid;
  try{
   const reference=doc(db,"users",currentUid,"state","lexora");
@@ -58,29 +60,29 @@ function authError(e){
   "auth/network-request-failed":"No s'ha pogut contactar amb Google. Revisa la connexió o els bloquejadors."
  };
  loginFailure="Google Sign-In: "+code+". "+(hints[code]||e?.message||"Obre Lexora en una pestanya normal del navegador.");
- message(loginFailure);
+ authMessage(loginFailure);
 }
 login.onclick=async()=>{
- login.disabled=true;loginFailure="";message("Obrint Google...");
- try{await signInWithPopup(auth,provider)}
+ login.disabled=true;loginFailure="";authMessage("Google: obrint la finestra per identificar-te...");
+ try{const result=await signInWithPopup(auth,provider);authMessage("Google: sessió iniciada · "+(result.user.email||"usuari autenticat"))}
  catch(e){authError(e)}
  finally{login.disabled=false}
 };
 const redirect=document.getElementById("lex-cloud-redirect");
 if(redirect)redirect.onclick=async()=>{
- loginFailure="";message("Redirigint a Google…");
+ loginFailure="";authMessage("Google: redirigint...");
  try{await signInWithRedirect(auth,provider)}catch(e){authError(e)}
 };
-getRedirectResult(auth).catch(authError);
+getRedirectResult(auth).then(result=>{if(result?.user)authMessage("Google: sessió iniciada per redirecció · "+(result.user.email||"usuari autenticat"))}).catch(authError);
 
 logout.onclick=async()=>{await signOut(auth);message("Sessió tancada. Les targetes locals es mantenen.")};
 syncBtn.onclick=()=>synchronize();
 window.addEventListener("lexora:changed",queueSync);
 onAuthStateChanged(auth,async user=>{
  if(unsubscribe){unsubscribe();unsubscribe=null}
- uid=user?.uid||null;ready=false;clearTimeout(clock);if(user)loginFailure="";
+ uid=user?.uid||null;ready=false;clearTimeout(clock);if(user){loginFailure="";authMessage("Google: connectat · "+(user.email||"usuari autenticat"))}else if(!loginFailure){authMessage("Google: sessió no iniciada")}
  login.hidden=!!user;logout.hidden=!user;syncBtn.hidden=!user;
- if(!user){message(loginFailure||"Les targetes es desen en aquest dispositiu. Inicia sessió per sincronitzar.");return}
+ if(!user){message("Firestore: sense sincronització; les targetes es desen localment.");return}
  message("Connectat com "+(user.email||"Google")+". Fusionant dades...");
  await synchronize();
  if(!uid||uid!==user.uid)return;
