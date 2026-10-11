@@ -110,3 +110,66 @@ The app is at [Lexora](https://rogerbeltranps-lab.github.io/lexora/) **once GitH
 - Full offline EPUB engine dependency, student accounts and App Store release.
 
 **Privacy note:** This version saves content locally in the current browser. Browser data removal may delete your flashcards and books; export backups regularly. EPUBs must be reimported on another device. The built-in glossary is limited; unfamiliar selections open a manual card editor, not a live AI explanation.
+
+
+## Informe d'incidència: Google Sign-In i sincronització Firebase — 11/10/2026
+
+**Estat: PENDENT DE RESOLDRE.** No es pot confirmar l'inici de sessió ni la sincronització entre dispositius. Aquesta secció documenta les observacions i les hipòtesis; no dona per diagnosticada una causa encara no verificada.
+
+### Entorn i configuració confirmada
+
+- Aplicació: https://rogerbeltranps-lab.github.io/lexora/ (GitHub Pages; també oberta com a finestra d'aplicació de Chrome a macOS).
+- Projecte Firebase: `lexora-2d1f4`, pla Spark.
+- Firebase Authentication: proveïdor **Google — Enabled**.
+- Authorized domains: `rogerbeltranps-lab.github.io` afegit.
+- Cloud Firestore: base de dades `(default)`, edició Standard, ubicació `europe-west1 (Belgium)`, creada inicialment en mode producció.
+- Regles publicades (captura verificada a la consola):
+  ```javascript
+  rules_version = '2';
+  service cloud.firestore {
+    match /databases/{database}/documents {
+      match /users/{userId}/{document=**} {
+        allow read, write: if request.auth != null
+                           && request.auth.uid == userId;
+      }
+    }
+  }
+  ```
+- El codi de sincronització escriu a `users/{uid}/state/lexora`, una ruta que **hauria** d'estar permesa per aquestes regles si l'usuari realment està autenticat amb el `uid` corresponent.
+
+### Símptomes observats
+
+1. A `Settings → Compte Lexora`, apareix el botó **Inicia sessió amb Google**. No hi ha confirmació d'una sessió activa.
+2. Amb `signInWithPopup`, s'obre una finestra d'autenticació que queda **completament en blanc**; a la captura es veu l'adreça `https://lexora-2d1f4.firebaseapp.com/__/auth/handler`. La finestra es tanca o no permet escollir el compte.
+3. L'opció alternativa amb `signInWithRedirect` tampoc ha permès completar l'accés en les proves explicades; s'ha descrit que s'obre i es tanca una pestanya.
+4. Lexora ha mostrat repetidament `permission-denied` en la sincronització de Firestore. És un **error d'accés a dades**, i **no prova per si sol** que l'autenticació Google hagi funcionat o fallat.
+5. En tornar a carregar, la interfície pot mostrar «Les targetes es desen en aquest dispositiu. Inicia sessió per sincronitzar», cosa coherent amb una sessió no establerta.
+6. Els problemes s'han observat també en **Chrome normal al Mac**, no només a la finestra instal·lada de l'aplicació. Encara no hi ha prova concloent al navegador de l'iPhone per a Firebase.
+7. Les flashcards i els repassos continuen disponibles localment. S'ha fet **una exportació JSON de seguretat** abans de començar la integració; no s'ha confirmat cap sincronització completa.
+
+### Codi actual relacionat
+
+- `firebase-sync.js`: inicialitza SDK Firebase v13, Google Authentication (`signInWithPopup` i `signInWithRedirect`), Firestore i sincronització per transacció amb fusió de dades.
+- `index.html`: exposa els botons de connexió i el pont `window.lexoraSyncBridge` cap a les targetes locals.
+- S'han afegit estats separats per **Google** i **Firestore** i errors d'autenticació visibles per poder diagnosticar el següent intent.
+- `sw.js`: service worker amb memòria cau del shell; pot complicar la verificació de versions noves. No eliminar dades locals per forçar una actualització.
+
+### Hipòtesis a comprovar (no verificades)
+
+- El handler OAuth a `firebaseapp.com/__/auth/handler` podria no carregar-se correctament per restriccions del navegador, bloquejadors de contingut, cookies o polítiques d'emmagatzematge entre orígens.
+- La configuració d'Authentication/OAuth o la implementació de la redirecció en GitHub Pages (origen diferent de `authDomain`) pot requerir un ajust.
+- L'error `permission-denied` podria reflectir una sessió no vàlida o una discrepància de permisos/ruta. S'ha de confirmar amb el codi d'error i el `auth.currentUser?.uid`, sense publicar dades personals.
+- Pot haver-hi fallades addicionals de sincronització després d'autenticar-se; encara no s'ha verificat el flux de fusió de dades de dos dispositius.
+
+### Pla de represa
+
+1. Obrir Lexora en una pestanya normal de Chrome actualitzat i comprovar la línia **Google:** per veure si diu «sessió no iniciada» o mostra un error `auth/...`; recollir el missatge complet de consola/red sense exposar tokens.
+2. Comprovar si `https://lexora-2d1f4.firebaseapp.com/__/auth/handler` carrega en el flux d'OAuth i si hi ha errors de xarxa/JavaScript. Fer-ho abans de modificar les regles.
+3. Verificar a la consola Firebase els dominis autoritzats, el proveïdor Google i la configuració del client OAuth. Si el problema és el domini d'auth en hosting extern, aplicar una solució compatible amb els requisits actuals de Firebase per a redireccions.
+4. Quan hi hagi sessió real (`auth.currentUser`), comprovar la ruta `users/{uid}/state/lexora` amb el simulador de regles i diagnosticar el `permission-denied` sense obrir accés públic.
+5. Provar la primera sincronització amb el Mac, després amb l'iPhone: conservar targetes locals, comparar recompte/contingut/repassos i provar reconnexió, recàrrega i exportació JSON.
+6. Revisar conflictes entre dispositius i la política de fusió abans d'anunciar que la sincronització funciona.
+
+**Precaucions:** conservar `lexora-backup.json`; no esborrar localStorage/IndexedDB/cau de Safari fins que les dades estiguin recuperables i s'hagi comprovat la sincronització. No relaxar Firestore a `allow read, write: if true` ni activar Blaze per resoldre aquest problema.
+
+---
