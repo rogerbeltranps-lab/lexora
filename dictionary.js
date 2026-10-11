@@ -58,15 +58,25 @@ async function candidates(raw){
 }
 // Free dictionary fallback for individual English words (dictionaryapi.dev).
 // Phrase discovery still uses Lexora's existing contextual dictionary.
+const builtInWords={
+ "read":{ipa:"/riːd/ (present), /rɛd/ (past)",type:"verb",senses:[["To look at and understand written words.","llegir","I read books every evening."],["To speak written words aloud.","llegir en veu alta","She read the story to her children."]]},
+ "between":{ipa:"/bɪˈtwiːn/",type:"preposition",senses:[["In the space separating two things, people, or places.","entre","The library is between the school and the park."],["In the time separating two moments.","entre","We meet between three and four."],["Involving two people or things.","entre","The agreement is between the two teachers."]]},
+ "hold":{ipa:"/hoʊld/",type:"verb",senses:[["To keep something in your hands.","agafar; sostenir","Hold the book carefully."],["To keep something in a position or condition.","mantenir","Hold the door open."],["To organize or conduct an event.","celebrar; organitzar","They will hold a meeting tomorrow."]]},
+ "guide":{ipa:"/ɡaɪd/",type:"noun",senses:[["A book or resource explaining how to do something.","guia","Read the guide before starting."]]},
+ "listen":{ipa:"/ˈlɪsən/",type:"verb",senses:[["To pay attention to sounds or someone's speech.","escoltar","Listen to the story."]]}
+};
+function builtInEntry(word){const data=builtInWords[word];return data?[{term:word,type:data.type,ipa:data.ipa,senses:data.senses.map(([definition,catalan,example])=>({definition,catalan,example}))}]:[]}
+async function fetchWord(url){const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),3500);try{return await fetch(url,{signal:controller.signal})}finally{clearTimeout(timer)}}
 async function singleWordEntries(raw){
  const word=raw.trim().toLowerCase();
+ const local=builtInEntry(word);if(local.length)return local;
  if(!/^[a-z]+(?:['-][a-z]+)?$/.test(word))return [];
  const attempts=[word];
  const base=lemma(word);
  if(base!==word)attempts.push(base);
  for(const term of attempts){
   try{
-   const response=await fetch("https://api.dictionaryapi.dev/api/v2/entries/en/"+encodeURIComponent(term));
+   const response=await fetchWord("https://api.dictionaryapi.dev/api/v2/entries/en/"+encodeURIComponent(term));
    if(!response.ok)continue;
    const data=await response.json();
    if(!Array.isArray(data))continue;
@@ -81,9 +91,9 @@ async function singleWordEntries(raw){
     }
    }
    if(entries.length)return entries.slice(0,8);
-  }catch(e){console.warn("Single-word dictionary request failed",e)}
+  }catch(e){console.warn("Single-word dictionary request failed",e);break}
  }
- return [];
+ return builtInEntry(lemma(word));
 }
 function panelTitle(title,context){
  return '<span class="chip">Contextual discovery · offline-style dictionary</span><div class="word">'+escapeHtml(title)+'</div>'+
