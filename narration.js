@@ -1,7 +1,7 @@
 (()=>{"use strict";
 const $=id=>document.getElementById(id);
 let engine=localStorage.getItem("lexora-narration-engine")||"kokoro";let mode="read",playing=false,items=[],index=0,run=0,marker=null;
-const css=document.createElement("style");css.textContent=".lex-narr{display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:#eaf4f7;padding:10px;border-radius:12px;margin-bottom:12px}.lex-narr select{padding:9px;border:1px solid #cbd8df;border-radius:8px}.lex-narr-status{font-size:12px;color:#617589}.lex-active{background:#b8e6f1!important;color:#153b49!important}.reader.lex-audio-only .prose,.reader.lex-audio-only #epub-view{visibility:hidden}.lex-inspect{background:#edf6f9;padding:15px;border-radius:12px;margin:0 0 12px;border:1px solid #cbdfe6}.lex-inspect p{line-height:1.6}";
+const css=document.createElement("style");css.textContent=".lex-narr{display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:#eaf4f7;padding:10px;border-radius:12px;margin-bottom:12px}.lex-narr select{padding:9px;border:1px solid #cbd8df;border-radius:8px}.lex-narr-status{font-size:12px;color:#617589}.lex-tappable{cursor:pointer;border-radius:3px}.lex-tappable:focus-visible{outline:2px solid #297eaa}.lex-active{background:#b8e6f1!important;color:#153b49!important}.reader.lex-audio-only .prose,.reader.lex-audio-only #epub-view{visibility:hidden}.lex-inspect{background:#edf6f9;padding:15px;border-radius:12px;margin:0 0 12px;border:1px solid #cbdfe6}.lex-inspect p{line-height:1.6}";
 document.head.appendChild(css);
 const controls=document.createElement("div");controls.className="lex-narr";controls.innerHTML='<select id="lex-mode"><option value="read">Read only</option><option value="both">Read &amp; Listen</option></select><select id="lex-engine" aria-label="Narration voice"><option value="kokoro">Natural voice · Kokoro</option><option value="system">Device voice</option></select><button class="btn primary" id="lex-play">▶ Play</button><button class="btn" id="lex-back">← Sentence</button><button class="btn" id="lex-forward">Sentence →</button><span class="lex-narr-status" id="lex-status">Ready</span>';
 document.querySelector(".reader-toolbar").insertAdjacentElement("afterend",controls);
@@ -20,11 +20,19 @@ function prepare(reset){
    let parts=sentences(txt);p.replaceChildren(...parts.map((part,i)=>{const sp=document.createElement("span");sp.textContent=part+(i<parts.length-1?" ":"");return sp}));
    p.querySelectorAll("span").forEach(sp=>items.push({text:sp.textContent.trim(),el:sp}))
   }else{
-   sentences(txt).forEach(t=>items.push({text:t,el:p}))
+   if(p.children.length===0){const parts=sentences(txt);p.replaceChildren(...parts.map((part,i)=>{const sp=p.ownerDocument.createElement("span");sp.textContent=part+(i<parts.length-1?" ":"");return sp}));p.querySelectorAll("span").forEach(sp=>items.push({text:sp.textContent.trim(),el:sp}))}else{sentences(txt).forEach(t=>items.push({text:t,el:p}))}
   }
  });
- index=Math.min(index,Math.max(0,items.length-1));$("lex-status").textContent=items.length?"Sentence "+(index+1)+" / "+items.length:"No text on this page";
+ items.forEach(enableTap);index=Math.min(index,Math.max(0,items.length-1));$("lex-status").textContent=items.length?"Sentence "+(index+1)+" / "+items.length:"No text on this page";
  return items.length>0
+}
+function enableTap(item,number){
+ const el=item.el;
+ if(!el)return;
+ if(el.dataset.lexReplay==="1")return;el.dataset.lexReplay="1";el.classList.add("lex-tappable");el.tabIndex=0;el.title="Tap to listen again";
+ function replay(){if(mode!=="both")return;const selection=el.ownerDocument.getSelection?.();if(selection&&!selection.isCollapsed)return;stop();index=number;play()}
+ el.addEventListener("click",replay);
+ el.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();replay()}});
 }
 function highlight(){clear();const item=items[index];if(!item)return;if(mode!=="listen"){marker=item.el;marker.classList.add("lex-active");marker.scrollIntoView?.({block:"nearest",behavior:"smooth"})}$("lex-status").textContent="Sentence "+(index+1)+" / "+items.length}
 function play(){if(!items.length&&!prepare(true))return;if(engine==="system"&&!window.speechSynthesis){$("lex-status").textContent="Voice unavailable";return}const session=++run;playing=true;inspect.hidden=true;$("lex-play").textContent="Ⅱ Pause";speechSynthesis.cancel();
