@@ -78,31 +78,21 @@ function builtInEntry(word){const data=builtInWords[word];return data?[{term:wor
 async function fetchWord(url){const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),3500);try{return await fetch(url,{signal:controller.signal})}finally{clearTimeout(timer)}}
 async function singleWordEntries(raw){
  const word=raw.trim().toLowerCase();
- const local=builtInEntry(word);if(local.length)return local;
- if(!/^[a-z]+(?:['-][a-z]+)?$/.test(word))return [];
- const attempts=[word];
- const base=lemma(word);
- if(base!==word)attempts.push(base);
- for(const term of attempts){
-  try{
-   const response=await fetchWord("https://api.dictionaryapi.dev/api/v2/entries/en/"+encodeURIComponent(term));
-   if(!response.ok)continue;
-   const data=await response.json();
-   if(!Array.isArray(data))continue;
-   const entries=[];
-   for(const item of data){
-    const ipa=item.phonetic||item.phonetics?.find(x=>x.text)?.text||"";
-    for(const meaning of item.meanings||[]){
-     const definitions=(meaning.definitions||[]).filter(d=>d.definition).slice(0,6);
-     if(!definitions.length)continue;
-     entries.push({term:item.word||term,type:meaning.partOfSpeech||"Vocabulary",ipa,
-       senses:definitions.map(d=>({definition:d.definition,catalan:"",example:d.example||""}))});
-    }
-   }
-   if(entries.length)return entries.slice(0,8);
-  }catch(e){console.warn("Single-word dictionary request failed",e);break}
+ const local=builtInEntry(word);
+ if(!/^[a-z]+(?:['-][a-z]+)?$/.test(word))return local;
+ const terms=[word,lemma(word)].filter((v,i,a)=>v&&a.indexOf(v)===i);
+ for(const term of terms){
+   const k=(term[0]||"_")+(term[1]||"_");
+   try{
+     const response=await fetch("./dictionary/words/"+k+".json",{cache:"force-cache"});
+     if(response.ok){
+       const json=await response.json();
+       const entries=(json.entries||[]).filter(e=>e.term?.toLowerCase()===term);
+       if(entries.length)return entries;
+     }
+   }catch(e){console.warn("Local word shard unavailable",e)}
  }
- return builtInEntry(lemma(word));
+ return local;
 }
 function panelTitle(title,context){
  return '<span class="chip">Contextual discovery · offline-style dictionary</span><div class="word">'+escapeHtml(title)+'</div>'+
@@ -147,7 +137,7 @@ async function analyze(raw,source){
  try{
    const items=await candidates(raw);
    if(seq===selectionSequence)renderCandidates(raw,source,items,
-     single?"The word dictionary could not provide a definition. Check connectivity.":"No matching expression found.");
+     single?"The complete word dictionary has not been published yet, or this word is missing.":"No matching expression found.");
  }catch(error){
    if(seq===selectionSequence)renderCandidates(raw,source,[],
      single?"The word dictionary could not provide a definition. Check connectivity.":"Could not fetch the dictionary; check your connection.");
