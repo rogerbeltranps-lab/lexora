@@ -1,0 +1,140 @@
+{
+  "version": 1,
+  "source": "Lexora original starter glossary",
+  "license": "© 2026 Roger Beltran",
+  "entries": [
+    {
+      "term": "look up",
+      "type": "Phrasal verb",
+      "ipa": "/lʊk ʌp/",
+      "senses": [
+        {
+          "definition": "Search for information",
+          "catalan": "consultar; cercar",
+          "example": "I looked the word up."
+        },
+        {
+          "definition": "Raise your eyes",
+          "catalan": "alçar la mirada",
+          "example": "She looked up at the ceiling."
+        },
+        {
+          "definition": "Improve",
+          "catalan": "millorar",
+          "example": "Things are looking up."
+        }
+      ]
+    },
+    {
+      "term": "pick up",
+      "type": "Phrasal verb",
+      "ipa": "/pɪk ʌp/",
+      "senses": [
+        {
+          "definition": "Lift something",
+          "catalan": "aixecar; recollir",
+          "example": "Pick up the bag."
+        },
+        {
+          "definition": "Learn something informally",
+          "catalan": "aprendre sense estudiar expressament",
+          "example": "I picked up Spanish while traveling."
+        },
+        {
+          "definition": "Collect someone",
+          "catalan": "passar a buscar",
+          "example": "Can you pick me up?"
+        }
+      ]
+    },
+    {
+      "term": "put off",
+      "type": "Phrasal verb",
+      "ipa": "/pʊt ɔf/",
+      "senses": [
+        {
+          "definition": "Postpone",
+          "catalan": "ajornar",
+          "example": "Don't put it off."
+        },
+        {
+          "definition": "Make someone dislike something",
+          "catalan": "fer perdre les ganes",
+          "example": "The smell put me off."
+        }
+      ]
+    },
+    {
+      "term": "look after",
+      "type": "Phrasal verb",
+      "ipa": "/lʊk ˈæftɚ/",
+      "senses": [
+        {
+          "definition": "Care for someone",
+          "catalan": "tenir cura de",
+          "example": "She looks after the children."
+        }
+      ]
+    },
+    {
+      "term": "once in a blue moon",
+      "type": "Idiom",
+      "ipa": "/wʌns ɪn ə blu mun/",
+      "senses": [
+        {
+          "definition": "Very rarely",
+          "catalan": "molt de tant en tant",
+          "example": "I eat out once in a blue moon."
+        }
+      ]
+    },
+    {
+      "term": "on the same page",
+      "type": "Idiomatic expression",
+      "ipa": "/ɑn ðə seɪm peɪdʒ/",
+      "senses": [
+        {
+          "definition": "Agree or share the same understanding",
+          "catalan": "estar d'acord; entendre el mateix",
+          "example": "Let's make sure we're on the same page."
+        }
+      ]
+    },
+    {
+      "term": "make sense",
+      "type": "Expression",
+      "ipa": "/meɪk sɛns/",
+      "senses": [
+        {
+          "definition": "Be understandable or reasonable",
+          "catalan": "tenir sentit",
+          "example": "That explanation makes sense."
+        }
+      ]
+    },
+    {
+      "term": "point out",
+      "type": "Phrasal verb",
+      "ipa": "/pɔɪnt aʊt/",
+      "senses": [
+        {
+          "definition": "Draw attention to a fact",
+          "catalan": "assenyalar; remarcar",
+          "example": "He pointed out the mistake."
+        }
+      ]
+    },
+    {
+      "term": "lose the thread",
+      "type": "Idiomatic expression",
+      "ipa": "/luz ðə θrɛd/",
+      "senses": [
+        {
+          "definition": "Stop following a discussion or story",
+          "catalan": "perdre el fil",
+          "example": "I lost the thread of the story."
+        }
+      ]
+    }
+  ]
+}
