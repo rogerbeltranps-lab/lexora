@@ -41,7 +41,16 @@ function uniqueByTerm(list){const seen=new Set();return list.filter(e=>{if(seen.
 async function candidates(raw){
  const words=tokenize(raw),sets=new Set();
  for(const w of words)sets.add(bucketOf(lemma(w)));
- const loaded=await Promise.all([...sets].map(shard));
+ const loaded=await Promise.all([...sets].map(async b=>{
+   const starter=await shard(b);
+   try {
+    const response=await fetch("./dictionary/wiktionary/"+b+".json",{cache:"force-cache"});
+    if(!response.ok)return starter;
+    const data=await response.json();
+    const imported=Array.isArray(data.entries)?data.entries:[];
+    return [...starter,...imported];
+   } catch{return starter}
+ }));
  const entries=loaded.flat().filter(x=>x.term&&Array.isArray(x.senses));
  let results=uniqueByTerm(entries.filter(x=>matches(raw,x)));
  results.sort((a,b)=>tokenize(b.term).length-tokenize(a.term).length||a.term.localeCompare(b.term));
