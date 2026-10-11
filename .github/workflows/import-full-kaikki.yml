@@ -1,0 +1,47 @@
+name: Import full Kaikki English dictionary
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/import-full-kaikki.yml
+permissions:
+  contents: write
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check out free disk space
+        run: df -h .
+      - name: Download full English Kaikki export
+        run: |
+          curl --fail --location --retry 3 --connect-timeout 45 \
+            --output /tmp/kaikki-english.jsonl \
+            "https://kaikki.org/dictionary/English/kaikki.org-dictionary-English.jsonl"
+          ls -lh /tmp/kaikki-english.jsonl
+      - name: Convert English words, phrasal verbs, idioms and expressions
+        run: python3 scripts/import_full_kaikki.py /tmp/kaikki-english.jsonl
+      - name: Validate sample entries
+        run: |
+          python3 - <<'PY'
+          import json,pathlib
+          p=pathlib.Path("dictionary/words")
+          manifest=json.loads((p/"manifest.json").read_text())
+          assert manifest["entries"]>100000, "Too few dictionary words imported"
+          for term in ("phrase","between","hold","read","figure out"):
+              key=term[:2]
+              j=json.loads((p/(key+".json")).read_text())
+              assert any(e["term"].lower()==term for e in j["entries"]),term
+          print("Validated",manifest["entries"],"words and expressions")
+          PY
+      - name: Publish dictionary to repository
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add dictionary/words
+          if ! git diff --cached --quiet; then
+            git commit -m "Import general English Wiktionary dictionary from Kaikki"
+            git pull --rebase
+            git push
+          fi
