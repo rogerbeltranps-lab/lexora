@@ -46,10 +46,12 @@ body.lex-reader-fullscreen #read .grid>.panel:first-child>.lex-inspect .lex-shee
 @media(max-width:650px){body.lex-reader-fullscreen #read .grid>.panel:first-child>.lex-narr{top:8px;max-width:calc(100% - 12px)}body.lex-reader-fullscreen #read .grid>.panel:first-child>.reader-foot{padding:5px 9px}body.lex-reader-fullscreen #read .grid>.panel:first-child>.reader .prose{padding:80px 20px 85px}body.lex-reader-fullscreen #read .grid>.panel:first-child>.lex-narr .btn{padding:7px 9px;font-size:13px}}
 
 /* Reader appearance controls share the application's existing theme and font settings. */
-body.lex-reader-fullscreen #read .grid>.panel:first-child:has(.reader.dark){background:#192936!important}
-body.lex-reader-fullscreen #read .grid>.panel:first-child>.reader.dark{background:#192936!important}
-body.lex-reader-fullscreen #read .grid>.panel:first-child:has(.reader.dark)>.reader-foot{background:linear-gradient(transparent,#192936ed);color:#dce5e8}
-body.lex-reader-fullscreen #read .grid>.panel:first-child:has(.reader.dark)>.reader-foot .muted{color:#dce5e8}
+body.lex-reader-fullscreen #read .grid>.panel:first-child:has(.reader.black){background:#000!important;color:#fff}
+body.lex-reader-fullscreen #read .grid>.panel:first-child>.reader.black{background:#000!important}
+body.lex-reader-fullscreen #read .grid>.panel:first-child:has(.reader.black)>.reader-foot{background:linear-gradient(transparent,#000);color:#fff}
+body.lex-reader-fullscreen #read .grid>.panel:first-child:has(.reader.black)>.reader-foot .muted{color:#fff}
+body.lex-reader-fullscreen #read .grid>.panel:first-child:has(.reader.white){background:#fff!important}
+body.lex-reader-fullscreen #read .grid>.panel:first-child>.reader.white{background:#fff!important}
 #lex-appearance{display:none}
 body.lex-reader-fullscreen #lex-appearance:not([hidden]){display:flex;position:absolute;top:68px;right:clamp(10px,5vw,80px);z-index:12;align-items:center;gap:9px;flex-wrap:wrap;padding:12px;background:#fff;border:1px solid #cbdde6;box-shadow:0 9px 27px #122c4229;border-radius:15px}
 body.lex-reader-fullscreen #lex-appearance[hidden]{display:none!important}
@@ -60,13 +62,13 @@ const controls=document.createElement("div");controls.className="lex-narr";contr
 document.querySelector(".reader-toolbar").insertAdjacentElement("afterend",controls);
 const appearance=document.createElement("div");
 appearance.id="lex-appearance";appearance.hidden=true;
-appearance.innerHTML='<span class="lex-appearance-label">Appearance</span><button class="btn" type="button" id="lex-font-down" aria-label="Smaller text">A−</button><button class="btn" type="button" id="lex-font-up" aria-label="Larger text">A＋</button><button class="btn" type="button" id="lex-dark-toggle">☾ Dark mode</button><button class="btn" type="button" id="lex-appearance-close" aria-label="Close appearance settings">✕</button>';
+appearance.innerHTML='<span class="lex-appearance-label">Appearance</span><button class="btn" type="button" id="lex-font-down" aria-label="Smaller text">A−</button><button class="btn" type="button" id="lex-font-up" aria-label="Larger text">A＋</button><button class="btn" type="button" id="lex-theme-sepia">Sèpia</button><button class="btn" type="button" id="lex-theme-white">Blanc</button><button class="btn" type="button" id="lex-theme-black">Negre</button><button class="btn" type="button" id="lex-appearance-close" aria-label="Close appearance settings">✕</button>';
 document.querySelector("#read .grid>.panel:first-child").appendChild(appearance);
 $("lex-font-down").onclick=()=>{$("smaller").click()};
 $("lex-font-up").onclick=()=>{$("bigger").click()};
-$("lex-dark-toggle").onclick=()=>{$("theme").click();updateAppearance()};
+["sepia","white","black"].forEach(t=>{$("lex-theme-"+t).onclick=()=>{window.lexoraSetReadingTheme?.(t);updateAppearance()}});
 $("lex-appearance-close").onclick=()=>{appearance.hidden=true;controls.classList.remove("lex-show-advanced")};
-function updateAppearance(){$("lex-dark-toggle").textContent=$("reader").classList.contains("dark")?"☀ Light mode":"☾ Dark mode"}
+function updateAppearance(){const active=$("reader").classList.contains("black")?"black":$("reader").classList.contains("white")?"white":"sepia";["sepia","white","black"].forEach(t=>{$("lex-theme-"+t).classList.toggle("primary",t===active);$("lex-theme-"+t).setAttribute("aria-pressed",String(t===active))})}
 
 async function enterReader(){document.body.classList.add("lex-reader-fullscreen");document.body.classList.remove("lex-controls-hidden");$("lex-enter").hidden=true;const panel=document.querySelector("#read .grid>.panel:first-child");if(panel.requestFullscreen&&!document.fullscreenElement){try{await panel.requestFullscreen({navigationUI:"hide"})}catch(e){console.info("Using screen-filling reader layout",e)}}requestAnimationFrame(()=>{try{window.rendition?.resize?.()}catch{}})}
 function exitReader(){appearance.hidden=true;closeResults();clearTimeout(fadeTimer);document.body.classList.remove("lex-reader-fullscreen","lex-controls-hidden");$("lex-enter").hidden=false;stop();if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});requestAnimationFrame(()=>{try{window.rendition?.resize?.()}catch{}})}
