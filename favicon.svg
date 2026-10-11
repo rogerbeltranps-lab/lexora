@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Lexora">
+<defs>
+<linearGradient id="bg" x2="1" y2="1"><stop stop-color="#102c69"/><stop offset=".55" stop-color="#06163f"/><stop offset="1" stop-color="#03091b"/></linearGradient>
+<linearGradient id="upright" x1="0" x2=".9" y2="1"><stop stop-color="#5cfde3"/><stop offset=".5" stop-color="#04cfe7"/><stop offset="1" stop-color="#047bdc"/></linearGradient>
+<linearGradient id="fold" x2=".9" y2="1"><stop stop-color="#0267bd"/><stop offset=".6" stop-color="#0c8afa"/><stop offset="1" stop-color="#002880"/></linearGradient>
+<linearGradient id="foot" x1="0" x2="1" y2="1"><stop stop-color="#72fff1"/><stop offset=".46" stop-color="#0dd1e9"/><stop offset="1" stop-color="#005cc8"/></linearGradient>
+</defs>
+<rect width="512" height="512" rx="100" fill="url(#bg)"/>
+<path d="M143 117 Q198 117 228 143 Q244 159 244 193 L244 331 Q221 369 176 406 Q143 386 143 350 Z" fill="url(#upright)"/>
+<path d="M143 117 C196 136 169 221 192 244 C211 268 240 293 244 331 C236 354 198 387 176 406 C153 381 143 365 143 337Z" fill="url(#fold)"/>
+<path d="M176 406 C208 356 244 327 264 327 L396 327 Q376 410 308 411 L219 411 Q192 411 176 406Z" fill="url(#foot)"/>
+<text x="318" y="394" font-family="Arial Rounded MT Bold,Arial,sans-serif" font-size="18" font-weight="bold" letter-spacing="2" fill="white">RBP</text>
+</svg>
