@@ -78,21 +78,29 @@ function builtInEntry(word){const data=builtInWords[word];return data?[{term:wor
 async function fetchWord(url){const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),3500);try{return await fetch(url,{signal:controller.signal})}finally{clearTimeout(timer)}}
 async function singleWordEntries(raw){
  const word=raw.trim().toLowerCase();
- const local=builtInEntry(word);
- if(!/^[a-z]+(?:['-][a-z]+)?$/.test(word))return local;
- const terms=[word,lemma(word)].filter((v,i,a)=>v&&a.indexOf(v)===i);
+ const base=lemma(word);
+ const terms=[base,word].filter((v,i,a)=>v&&a.indexOf(v)===i);
+ const results=[];
+ if(!/^[a-z]+(?:['-][a-z]+)?$/.test(word))return builtInEntry(word);
  for(const term of terms){
    const k=(term[0]||"_")+(term[1]||"_");
    try{
      const response=await fetch("./dictionary/words/"+k+".json",{cache:"force-cache"});
-     if(response.ok){
-       const json=await response.json();
-       const entries=(json.entries||[]).filter(e=>e.term?.toLowerCase()===term);
-       if(entries.length)return entries;
-     }
+     if(!response.ok)continue;
+     const json=await response.json();
+     const entries=(json.entries||[]).filter(e=>e.term?.toLowerCase()===term);
+     for(const entry of entries)results.push({...entry,term:word,baseTerm:term});
    }catch(e){console.warn("Local word shard unavailable",e)}
  }
- return local;
+ // Inflected forms sometimes contain only rare, specialized senses.
+ // Always include the dictionary senses of the lemma, then the inflected form.
+ const local=builtInEntry(word);
+ if(local.length&&!results.length)return local;
+ const seen=new Set();
+ return results.filter(entry=>{
+   const signature=(entry.type||"")+"|"+(entry.senses||[]).map(s=>s.definition).join("|");
+   if(seen.has(signature))return false;seen.add(signature);return true;
+ });
 }
 function panelTitle(title,context){
  return '<div class="lex-dictionary-heading"><span class="chip">Contextual discovery · offline-style dictionary</span><div class="word lex-selected-word" aria-label="Selected word or phrase">'+escapeHtml(title)+'</div></div>'+
