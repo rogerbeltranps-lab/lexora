@@ -3,7 +3,7 @@
 Source: Wiktionary through Kaikki / Wiktextract (CC BY-SA / GFDL).
 The original multiword phrase dictionary is retained untouched.
 """
-import argparse, json, re, hashlib
+import argparse, json, re, sqlite3, tempfile
 from collections import defaultdict
 from pathlib import Path
 
@@ -44,28 +44,41 @@ def main():
     parser.add_argument("source",type=Path)
     args=parser.parse_args()
     if not args.source.is_file():parser.error("Missing English JSONL export")
-    records=defaultdict(dict);accepted=0
-    with args.source.open(encoding="utf8") as fp:
-        for line in fp:
-            try: entry=normalize(json.loads(line))
-            except (ValueError,TypeError):continue
-            if entry is None:continue
-            k=key_for(entry["term"]);term=entry["term"].lower()
-            older=records[k].get(term)
-            if older:
-                seen={v["definition"] for v in older["senses"]}
-                for sense in entry["senses"]:
-                    if sense["definition"] not in seen and len(older["senses"])<MAX_SENSES:
-                        older["senses"].append(sense);seen.add(sense["definition"])
-                if not older["ipa"]:older["ipa"]=entry["ipa"]
-            else:records[k][term]=entry;accepted+=1
     DEST.mkdir(parents=True,exist_ok=True)
-    manifest={"version":1,"source":"Wiktionary via Kaikki","license":"CC BY-SA / GFDL","entries":accepted,"shards":{}}
-    for k,entries in sorted(records.items()):
-        filename=k+".json"
-        blob={"version":1,"source":"Wiktionary via Kaikki","entries":list(entries.values())}
-        (DEST/filename).write_text(json.dumps(blob,ensure_ascii=False,separators=(",",":")),encoding="utf8")
-        manifest["shards"][k]=len(entries)
+    with tempfile.TemporaryDirectory() as temp:
+        db=sqlite3.connect(str(Path(temp)/"lexora.sqlite"))
+        db.execute("CREATE TABLE terms (shard TEXT, term TEXT, payload TEXT, PRIMARY KEY(shard,term))")
+        accepted=0
+        with args.source.open(encoding="utf8") as fp:
+            for line in fp:
+                try: entry=normalize(json.loads(line))
+                except (ValueError,TypeError):continue
+                if entry is None:continue
+                k=key_for(entry["term"]);term=entry["term"].lower()
+                existing=db.execute("SELECT payload FROM terms WHERE shard=? AND term=?",(k,term)).fetchone()
+                if existing:
+                    older=json.loads(existing[0]);seen={x["definition"] for x in older["senses"]}
+                    for sense in entry["senses"]:
+                        if sense["definition"] not in seen and len(older["senses"])<MAX_SENSES:
+                            older["senses"].append(sense);seen.add(sense["definition"])
+                    if not older["ipa"]:older["ipa"]=entry["ipa"]
+                    entry=older
+                else:accepted+=1
+                db.execute("INSERT OR REPLACE INTO terms VALUES (?,?,?)",(k,term,json.dumps(entry,ensure_ascii=False,separators=(",",":"))))
+                if accepted%10000==0:db.commit()
+        db.commit()
+        manifest={"version":1,"source":"Wiktionary via Kaikki","license":"CC BY-SA / GFDL","entries":accepted,"shards":{}}
+        shards=[r[0] for r in db.execute("SELECT DISTINCT shard FROM terms ORDER BY shard")]
+        for k in shards:
+            count=0
+            with (DEST/(k+".json")).open("w",encoding="utf8") as out:
+                out.write('{"version":1,"source":"Wiktionary via Kaikki","entries":[')
+                for row in db.execute("SELECT payload FROM terms WHERE shard=? ORDER BY term",(k,)):
+                    if count:out.write(",")
+                    out.write(row[0]);count+=1
+                out.write("]}")
+            manifest["shards"][k]=count
+        db.close()
     (DEST/"manifest.json").write_text(json.dumps(manifest,indent=2)+"\n",encoding="utf8")
     print("Imported",accepted,"terms across",len(manifest["shards"]),"shards",flush=True)
 if __name__=="__main__":main()
