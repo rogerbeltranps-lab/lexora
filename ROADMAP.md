@@ -71,6 +71,37 @@ Lexora starts as a personal English-learning web app. Once it works reliably, it
 
 **Development order after prototype:** shared API/database → browser capture → phone sharing pilot → ChatGPT integration (subject to supported permissions and feasibility). No mobile app or extension work in the current prototype sprint.
 
+## 🌱 Future Vision — Learning from Real Experiences
+
+**Status: VISION / FUTURE · Only the first step (exact book sentences as card examples) is implemented.**
+
+Lexora should help people learn vocabulary from what they actually read, watch and hear (books, videos, conversations and more), keep the moment where each word was found, and bring it back with gentle reminders rather than constant tests.
+
+- [x] Use the exact sentence from the book as the first example when a card is created from a reader selection (2026-10-12).
+- [x] Store the original source on new cards in an optional `source` field (see the data model below); cards saved before this have no `source` and still load, sync and import unchanged.
+- [ ] Capture words from other experiences: videos (with timestamp), conversations, webpages and other apps, each keeping its exact original sentence.
+- [ ] **Gentle reminders** instead of always testing, for example a notification such as: “Remember that *look up* means *buscar*? You came across it in this sentence: ‘[exact original sentence from the book].’”
+- [ ] Introduce known words in **new contexts** (new sentences, other books or media) so they are recognized beyond the place they were first met.
+- [ ] Integrate with **AI agents** (for example “Add this to Lexora”), **iPhone**, **Apple Watch** (short glanceable reminders) and **browser extensions**, building on the cross-app capture plan above.
+- [ ] Let users choose how often reminders arrive and when they prefer active practice.
+
+### Flashcard data model for source context
+
+Every field below is optional, so older cards and backups keep working. The card's existing `context` field still holds the surrounding passage; `examples` stays editable, while `source.sentence` keeps the original wording.
+
+```jsonc
+"source": {
+  "kind": "book",             // today; later "video", "conversation", "web", "app"…
+  "title": "Book or video title",
+  "bookId": "local EPUB id or \"guide\"",
+  "sentence": "The exact sentence where the word was found.",
+  "location": "EPUB CFI, guide chapter, video timestamp, URL…",
+  "capturedAt": "2026-10-12T21:00:00.000Z"
+}
+```
+
+Future fields can sit alongside these (for example `url`, `timestamp`, `speaker`, or a `contexts` list for new contexts met later) without changing existing cards.
+
 ## Phase 4 — Optional Mobile App
 
 **Goal:** Consider app-store distribution only if the PWA is insufficient.
@@ -115,7 +146,7 @@ Lexora starts as a personal English-learning web app. Once it works reliably, it
 
 Use GitHub Markdown checkboxes to track completed work. Mark tasks complete only when implemented and tested. Adjust priorities as requirements become clearer.
 
-Last updated: 2026-10-11.
+Last updated: 2026-10-12.
 
 ## Current preview (v0.1)
 
