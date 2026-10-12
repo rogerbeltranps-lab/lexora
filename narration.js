@@ -134,7 +134,7 @@ epubHost.addEventListener("load",applyReaderFont,true);
 applyReaderFont();
 
 const guideEl=$("guide");
-let paginating=false,guideSource="",guidePageIndex=0,guidePageTotal=1;
+let paginating=false,guideSource="",lastPageMarkup="",guidePageIndex=0,guidePageTotal=1;
 const themeMeta=document.querySelector('meta[name="theme-color"]'),originalTheme=themeMeta?.content||"#152d42";
 function syncStatusBar(){if(themeMeta)themeMeta.content=document.body.classList.contains("lex-reader-fullscreen")?($("reader").classList.contains("black")?"#000000":$("reader").classList.contains("white")?"#ffffff":"#fffaf1"):originalTheme}
 function makeBookPage(){const p=document.createElement("div");p.className="lex-book-page";return p}
@@ -181,6 +181,7 @@ function paginateGuide(reset=false){
   guidePageTotal=guideEl.children.length;
   guidePageIndex=Math.min(guidePageIndex,guidePageTotal-1);
   guideEl.scrollLeft=guidePageIndex*guideEl.clientWidth;
+  lastPageMarkup=guideEl.innerHTML;
  }finally{paginating=false}
 }
 function clearGuidePagination(){
@@ -188,7 +189,7 @@ function clearGuidePagination(){
  paginating=true;guideEl.classList.remove("lex-paginated");guideEl.innerHTML=guideSource;guideEl.scrollLeft=0;paginating=false;
 }
 new MutationObserver(()=>{if(paginating)return;if(document.body.classList.contains("lex-reader-fullscreen")&&$("booklist").value==="guide"){
- if(guideEl.classList.contains("lex-paginated")){guideSource=guideEl.innerHTML;guideEl.classList.remove("lex-paginated")}
+ if(guideEl.classList.contains("lex-paginated")){if(guideEl.innerHTML===lastPageMarkup)return;guideSource=guideEl.innerHTML;guideEl.classList.remove("lex-paginated")}
  requestAnimationFrame(()=>paginateGuide(true));
 }}).observe(guideEl,{childList:true});
 let bookResizeTimer;window.addEventListener("resize",()=>{clearTimeout(bookResizeTimer);bookResizeTimer=setTimeout(()=>{if(guideEl.classList.contains("lex-paginated")){paginating=true;guideEl.classList.remove("lex-paginated");paginating=false;paginateGuide()}},160)});
