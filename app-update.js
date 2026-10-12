@@ -2,6 +2,10 @@
 (()=>{"use strict";
 const button=document.getElementById("lex-update-check"),status=document.getElementById("lex-update-status");
 if(!button||!status)return;
+const VERSION="2026-10-12 · 4";
+const FILES=["index.html","narration.js","firebase-sync.js","dictionary.js","reader-selection.js","kokoro.js","app-update.js","sw.js","manifest.webmanifest"];
+// Show which version is running, so it is clear whether an update arrived.
+status.textContent="Versió instal·lada: "+VERSION+". "+status.textContent;
 button.addEventListener("click",async()=>{
  button.disabled=true;button.textContent="Actualitzant…";status.textContent="Comprovant els fitxers nous…";
  try{
@@ -11,6 +15,8 @@ button.addEventListener("click",async()=>{
   target.searchParams.set("update",String(Date.now()));
   const response=await fetch(target.href,{cache:"no-store"});
   if(!response.ok)throw Error("Servidor HTTP "+response.status);
+  // Refresh the browser's HTTP cache for every app file, not only index.html.
+  await Promise.all(FILES.map(f=>fetch(new URL(f,base).href,{cache:"reload"}).catch(()=>null)));
   if("serviceWorker"in navigator){
    const registration=await navigator.serviceWorker.getRegistration(base.href);
    if(registration){
