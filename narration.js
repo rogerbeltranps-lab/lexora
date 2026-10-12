@@ -118,6 +118,32 @@ body.lex-reader-fullscreen #guide.lex-paginated .lex-book-page p{line-height:1.6
 body.lex-reader-fullscreen #reader{touch-action:pan-y}
 
 body.lex-reader-fullscreen #epub-view{height:100%!important}
+
+/* iPhone dictionary: force radio and full definition into one row. */
+#lex-reader-results #discovery label.lex-sense-option,
+#discovery label.lex-sense-option{
+ display:flex!important;flex-direction:row!important;align-items:flex-start!important;
+ justify-content:flex-start!important;gap:12px!important;
+ padding:12px 4px!important;margin:0!important;min-height:0!important;
+ width:100%!important;height:auto!important;position:static!important;
+ text-align:left!important;line-height:1.5!important;
+}
+#lex-reader-results #discovery label.lex-sense-option input.lex-sense-radio,
+#discovery label.lex-sense-option input.lex-sense-radio{
+ appearance:radio!important;-webkit-appearance:radio!important;
+ flex:0 0 21px!important;width:21px!important;height:21px!important;
+ position:static!important;float:none!important;margin:3px 0 0!important;
+ padding:0!important;align-self:flex-start!important;
+}
+#lex-reader-results #discovery label.lex-sense-option .lex-sense-copy,
+#discovery label.lex-sense-option .lex-sense-copy{
+ flex:1 1 0!important;display:block!important;min-width:0!important;
+ width:auto!important;margin:0!important;padding:0!important;
+ text-align:left!important;line-height:1.55!important;overflow-wrap:break-word!important;
+}
+#lex-reader-results #discovery .sense-entry fieldset{display:block!important}
+#lex-reader-results #discovery .sense-entry legend{margin-bottom:8px}
+body.lex-reader-fullscreen .lex-narr{top:calc(12px + env(safe-area-inset-top,0px))!important}
 `;document.head.appendChild(css);
 const controls=document.createElement("div");controls.className="lex-narr";controls.innerHTML='<button class="btn" type="button" id="lex-read">Read</button><button class="btn" type="button" id="lex-listen">Read &amp; Listen</button><select class="lex-advanced" id="lex-engine" aria-label="Narration voice"><option value="kokoro">Natural voice · Kokoro</option><option value="system">Device voice</option></select><select class="lex-advanced" id="lex-kokoro-voice" aria-label="Kokoro accent and voice"><option value="af_heart">US · Female · Heart (Recommended)</option><option value="am_michael">US · Male · Michael</option><option value="bf_emma">UK · Female · Emma</option><option value="bm_fable">UK · Male · Fable</option></select><button class="btn primary" id="lex-play">▶ Play</button><button class="btn lex-advanced" id="lex-back">← Sentence</button><button class="btn lex-advanced" id="lex-forward">Sentence →</button><span class="lex-narr-status lex-advanced" id="lex-status">Ready</span><button class="btn lex-advanced" id="lex-enter" type="button">⛶ Full screen</button><button class="btn" id="lex-appearance-button" type="button" aria-label="Reader appearance" hidden>Aa</button><button class="btn" id="lex-options" type="button" aria-label="More reading controls">⋯</button><button class="btn lex-reader-exit" id="lex-exit" type="button">✕ Exit</button>';
 document.querySelector(".reader-toolbar").insertAdjacentElement("afterend",controls);
@@ -217,8 +243,8 @@ function attachSwipe(surface,doc){
  surface.dataset.lexSwipeAttached="1";let start=null;
  surface.addEventListener("touchstart",e=>{if(e.touches.length!==1||!document.body.classList.contains("lex-reader-fullscreen"))return;const t=e.touches[0];start={x:t.clientX,y:t.clientY,time:Date.now()}},{passive:true});
  surface.addEventListener("touchend",e=>{if(!start||!document.body.classList.contains("lex-reader-fullscreen"))return;const t=e.changedTouches[0],dx=t.clientX-start.x,dy=t.clientY-start.y;start=null;
- if(Math.abs(dx)<65||Math.abs(dx)<Math.abs(dy)*1.5)return;
- const selection=doc.getSelection?.();if(selection&&!selection.isCollapsed)return;
+ if(Math.abs(dx)<42||Math.abs(dx)<Math.abs(dy)*1.2)return;
+ const selection=doc.getSelection?.();if(selection&&!selection.isCollapsed)selection.removeAllRanges();
  moveReadingPage(dx<0?1:-1)
  },{passive:true});
  surface.addEventListener("touchcancel",()=>{start=null},{passive:true});
