@@ -190,7 +190,7 @@ function playDictionaryAudio(raw){
    button.textContent="🔊 Reproduint…";
    // speak() runs synchronously inside the tap, which Safari on iPhone requires.
    const voiceURI=JSON.parse(localStorage.getItem("lexora-voice-choice")||'""');
-   lexoraSpeech.speak(raw,{rate:0.9,voiceURI,
+   lexoraSpeech.speakBest(raw,{rate:0.9,voiceURI,
      onstart:()=>{started=true;button.textContent="🔊 Reproduint…"},
      onend:()=>{button.textContent="🔊 Escolta"},
      onerror:e=>{button.textContent="🔊 Torna-ho a provar";toast("La veu no s'ha reproduït ("+e+"). Prova la veu del dispositiu.")}});
