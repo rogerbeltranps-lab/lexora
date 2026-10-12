@@ -105,7 +105,7 @@ The app is at [Lexora](https://rogerbeltranps-lab.github.io/lexora/) **once GitH
 
 ### Not connected yet
 
-- Google Sign-In, Firebase authentication, Firestore sync or cross-device EPUB storage.
+- Reliable cross-device sync: Google Sign-In and Firestore sync are implemented (sign-in screen at launch) but not yet verified end-to-end. EPUBs are never synced.
 - Automated AI-generated explanations and ChatGPT-to-Lexora additions.
 - Full offline EPUB engine dependency, student accounts and App Store release.
 
