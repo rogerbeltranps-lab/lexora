@@ -11,6 +11,9 @@ const bridge=window.lexoraSyncBridge;
 const login=document.getElementById("lex-cloud-login"),logout=document.getElementById("lex-cloud-logout"),syncBtn=document.getElementById("lex-cloud-sync"),status=document.getElementById("lex-cloud-status");
 let uid=null,unsubscribe=null,busy=false,queued=false,clock=null,ready=false,loginFailure="";
 const message=t=>{status.textContent=t};
+// Header badge, so it is visible everywhere whether cards are reaching Firestore.
+const badge=document.getElementById("account-label");
+const setBadge=t=>{if(badge)badge.textContent=t};
 const authState=document.getElementById("lex-cloud-auth-state");
 const authMessage=t=>{if(authState)authState.textContent=t};
 // Sign-in screen shown at launch until the person signs in or chooses local-only mode for this session.
@@ -41,7 +44,7 @@ const same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
 async function synchronize(){
  if(!uid||!bridge)return;
  if(busy){queued=true;return}
- busy=true;message("Firestore: sincronitzant...");
+ busy=true;message("Firestore: sincronitzant...");setBadge("☁ Sincronitzant…");
  const currentUid=uid;
  try{
   const reference=doc(db,"users",currentUid,"state","lexora");
@@ -53,8 +56,13 @@ async function synchronize(){
    tx.set(reference,{...merged,updatedAt:new Date().toISOString()});
    return merged;
   });
-  if(uid===currentUid){bridge.apply(result);message("Sincronitzat · "+result.cards.length+" flashcards")}
- }catch(e){console.error("Lexora cloud sync",e);message("No s'ha pogut sincronitzar: "+(e.code||e.message)+". Les dades locals es conserven.")}
+  if(uid===currentUid){bridge.apply(result);message("Desat a Firestore · "+result.cards.length+" flashcards · "+new Date().toLocaleTimeString());setBadge("☁ Desat al núvol")}
+ }catch(e){
+  console.error("Lexora cloud sync",e);
+  const code=e.code||e.message;
+  const hint=code==="permission-denied"?" Revisa a Firebase → Firestore → Rules que la regla de users/{userId} estigui publicada, i que App Check no estigui en mode «Enforce» per a Firestore.":code==="unavailable"?" Sense connexió; es tornarà a provar quan canviïs alguna targeta.":"";
+  message("No s'ha pogut desar a Firestore: "+code+"."+hint+" Les dades locals es conserven.");setBadge("⚠ Sense sincronitzar");
+ }
  finally{busy=false;if(queued){queued=false;queueSync()}}
 }
 function queueSync(){if(!uid||!ready)return;clearTimeout(clock);clock=setTimeout(synchronize,650)}
@@ -94,7 +102,7 @@ onAuthStateChanged(auth,async user=>{
  if(unsubscribe){unsubscribe();unsubscribe=null}
  uid=user?.uid||null;ready=false;showGate(!user&&!skipped());clearTimeout(clock);if(user){loginFailure="";authMessage("Google: connectat · "+(user.email||"usuari autenticat"))}else if(!loginFailure){authMessage("Google: sessió no iniciada")}
  login.hidden=!!user;logout.hidden=!user;syncBtn.hidden=!user;
- if(!user){message("Firestore: sense sincronització; les targetes es desen localment.");return}
+ if(!user){message("Firestore: sense sincronització; les targetes es desen localment.");setBadge("Personal · local mode");return}
  message("Connectat com "+(user.email||"Google")+". Fusionant dades...");
  await synchronize();
  if(!uid||uid!==user.uid)return;
