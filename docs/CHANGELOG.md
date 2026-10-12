@@ -1,6 +1,7 @@
 # Lexora changelog
 
 ## 2026-10-12
+- Navy strip in full screen on the installed iPhone app: iOS keeps the status-bar colour and style captured when the icon was added to the Home Screen (the manifest `theme_color` was navy `#152d42` until today). Added `viewport-fit=cover` with safe-area padding so the page itself paints the status-bar area; **the Home Screen icon must be removed and re-added once** for iOS to pick up the new settings. Version "2026-10-12 · 5".
 - Updates arrive right away: the service worker now revalidates app files with GitHub Pages on every load instead of using the browser's 10-minute cache, and "Comprova i actualitza" refreshes every app file, not just index.html. Settings shows the installed version ("2026-10-12 · 4").
 - Cloud sync is now visible: the header badge shows "☁ Desat al núvol" (or a warning) and Settings shows the time of the last Firestore save, with a hint for `permission-denied`. Sync verified end-to-end against the Firebase emulator with the published rules (two devices, live updates).
 - Immersive reader: page swipes still turn the page when iOS cancels the touch, and the full-screen reader now covers the status-bar area so the navy strip no longer shows. Shell cache bumped to v5.
