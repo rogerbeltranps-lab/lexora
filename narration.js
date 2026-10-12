@@ -83,20 +83,78 @@ body.lex-reader-fullscreen #lex-appearance:not([hidden]){display:flex;position:a
 body.lex-reader-fullscreen #lex-appearance[hidden]{display:none!important}
 #lex-appearance .lex-appearance-label{color:#526c7d;font-size:13px;font-weight:650}
 @media(max-width:650px){body.lex-reader-fullscreen #lex-appearance:not([hidden]){top:64px;right:8px;left:8px;justify-content:center}}
+
+/* Book-like immersive reading: page gestures, running title, and readable fonts. */
+body.lex-reader-fullscreen #read .grid>.panel:first-child>.reader-foot{display:none!important}
+.lex-running-title{display:none}
+body.lex-reader-fullscreen .lex-running-title{display:block;position:absolute;top:calc(18px + env(safe-area-inset-top,0px));left:72px;right:72px;z-index:4;text-align:center;color:#92929a;font:500 13px/1.3 system-ui,-apple-system,sans-serif;pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.lex-reader-fullscreen #read .grid>.panel:first-child>.reader .prose{padding-top:clamp(110px,16vh,155px)}
+body.lex-reader-fullscreen.lex-controls-hidden #read .grid>.panel:first-child>.lex-narr{opacity:0;pointer-events:none}
+body.lex-reader-fullscreen .lex-reader-reveal{top:calc(14px + env(safe-area-inset-top,0px));right:13px;background:transparent;box-shadow:none;color:#92929a;font-size:18px}
+body.lex-reader-fullscreen .lex-reader-reveal:not(:focus-visible){opacity:.45}
+body.lex-reader-fullscreen #read .reader.lex-font-classic .prose{font-family:Georgia,"Times New Roman",serif}
+body.lex-reader-fullscreen #read .reader.lex-font-newyork .prose{font-family:ui-serif,"New York",Iowan Old Style,Palatino,serif}
+body.lex-reader-fullscreen #read .reader.lex-font-modern .prose{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif}
+#lex-appearance .lex-font-choices{display:flex;gap:5px;flex-wrap:wrap;width:100%}
+#lex-appearance .lex-font-choices button{flex:1;min-width:80px}
+body.lex-reader-fullscreen #lex-appearance:not([hidden]){max-width:min(380px,calc(100vw - 20px))}
+@media(max-width:650px){body.lex-reader-fullscreen #read .grid>.panel:first-child>.reader .prose{padding:clamp(108px,16vh,145px) 20px 65px}body.lex-reader-fullscreen .lex-running-title{font-size:12px}}
 `;document.head.appendChild(css);
 const controls=document.createElement("div");controls.className="lex-narr";controls.innerHTML='<button class="btn" type="button" id="lex-read">Read</button><button class="btn" type="button" id="lex-listen">Read &amp; Listen</button><select class="lex-advanced" id="lex-engine" aria-label="Narration voice"><option value="kokoro">Natural voice · Kokoro</option><option value="system">Device voice</option></select><select class="lex-advanced" id="lex-kokoro-voice" aria-label="Kokoro accent and voice"><option value="af_heart">US · Female · Heart (Recommended)</option><option value="am_michael">US · Male · Michael</option><option value="bf_emma">UK · Female · Emma</option><option value="bm_fable">UK · Male · Fable</option></select><button class="btn primary" id="lex-play">▶ Play</button><button class="btn lex-advanced" id="lex-back">← Sentence</button><button class="btn lex-advanced" id="lex-forward">Sentence →</button><span class="lex-narr-status lex-advanced" id="lex-status">Ready</span><button class="btn lex-advanced" id="lex-enter" type="button">⛶ Full screen</button><button class="btn" id="lex-appearance-button" type="button" aria-label="Reader appearance" hidden>Aa</button><button class="btn" id="lex-options" type="button" aria-label="More reading controls">⋯</button><button class="btn lex-reader-exit" id="lex-exit" type="button">✕ Exit</button>';
 document.querySelector(".reader-toolbar").insertAdjacentElement("afterend",controls);
+const runningTitle=document.createElement("div");runningTitle.className="lex-running-title";runningTitle.setAttribute("aria-live","polite");
+document.querySelector("#read .grid>.panel:first-child").appendChild(runningTitle);
+function refreshRunningTitle(){const sel=$("booklist"),name=sel?.selectedOptions?.[0]?.textContent?.trim()||"Lexora";runningTitle.textContent=name}
+$("booklist").addEventListener("change",()=>setTimeout(refreshRunningTitle,0));
+refreshRunningTitle();
+const fontFamilyChoices={classic:'Georgia,"Times New Roman",serif',newyork:'ui-serif,"New York","Iowan Old Style",Palatino,serif',modern:'-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif'};
+let readerFont=localStorage.getItem("lexora-reader-font-family")||"classic";
+function applyReaderFont(){
+ const reader=$("reader");reader.classList.remove("lex-font-classic","lex-font-newyork","lex-font-modern");reader.classList.add("lex-font-"+readerFont);
+ const doc=document.querySelector("#epub-view iframe")?.contentDocument;
+ if(doc?.head){let el=doc.getElementById("lex-reader-font-override");if(!el){el=doc.createElement("style");el.id="lex-reader-font-override";doc.head.appendChild(el)}el.textContent="html body, html body *:not(svg):not(path){font-family:"+fontFamilyChoices[readerFont]+" !important}"}
+ document.querySelectorAll("[data-lex-font]").forEach(b=>{b.classList.toggle("primary",b.dataset.lexFont===readerFont);b.setAttribute("aria-pressed",String(b.dataset.lexFont===readerFont))});
+}
+const epubHost=$("epub-view");new MutationObserver(()=>{applyReaderFont()}).observe(epubHost,{childList:true,subtree:false});
+epubHost.addEventListener("load",applyReaderFont,true);
+applyReaderFont();
+function moveReadingPage(direction){
+ if(!$("lex-reader-results")?.hidden||!document.querySelector(".lex-inspect")?.hidden)return;
+ if($("booklist").value==="guide")$(""+(direction>0?"next":"prev")).click();
+ else if(typeof rendition!=="undefined"&&rendition){direction>0?rendition.next():rendition.prev()}
+}
+function attachSwipe(surface,doc){
+ if(!surface||surface.dataset.lexSwipeAttached)return;
+ surface.dataset.lexSwipeAttached="1";let start=null;
+ surface.addEventListener("touchstart",e=>{if(e.touches.length!==1||!document.body.classList.contains("lex-reader-fullscreen"))return;const t=e.touches[0];start={x:t.clientX,y:t.clientY,time:Date.now()}},{passive:true});
+ surface.addEventListener("touchend",e=>{if(!start||!document.body.classList.contains("lex-reader-fullscreen"))return;const t=e.changedTouches[0],dx=t.clientX-start.x,dy=t.clientY-start.y;start=null;
+ if(Math.abs(dx)<65||Math.abs(dx)<Math.abs(dy)*1.5)return;
+ const selection=doc.getSelection?.();if(selection&&!selection.isCollapsed)return;
+ moveReadingPage(dx<0?1:-1)
+ },{passive:true});
+ surface.addEventListener("touchcancel",()=>{start=null},{passive:true});
+}
+attachSwipe($("reader"),document);
+function attachEpubSwipe(){const frame=epubHost.querySelector("iframe");try{if(frame?.contentDocument?.body)attachSwipe(frame.contentDocument.body,frame.contentDocument)}catch{}}
+new MutationObserver(attachEpubSwipe).observe(epubHost,{childList:true,subtree:true});epubHost.addEventListener("load",attachEpubSwipe,true);
+
 const appearance=document.createElement("div");
 appearance.id="lex-appearance";appearance.hidden=true;
 appearance.innerHTML='<span class="lex-appearance-label">Appearance</span><button class="btn" type="button" id="lex-font-down" aria-label="Smaller text">A−</button><button class="btn" type="button" id="lex-font-up" aria-label="Larger text">A＋</button><button class="btn" type="button" id="lex-theme-sepia">Sèpia</button><button class="btn" type="button" id="lex-theme-white">Blanc</button><button class="btn" type="button" id="lex-theme-black">Negre</button><button class="btn" type="button" id="lex-appearance-close" aria-label="Close appearance settings">✕</button>';
 document.querySelector("#read .grid>.panel:first-child").appendChild(appearance);
+const fontChoices=document.createElement("div");fontChoices.className="lex-font-choices";
+fontChoices.innerHTML='<button class="btn" type="button" data-lex-font="classic">Classic</button><button class="btn" type="button" data-lex-font="newyork">New York</button><button class="btn" type="button" data-lex-font="modern">Modern</button>';
+appearance.insertBefore(fontChoices,$("lex-appearance-close"));
+fontChoices.querySelectorAll("button").forEach(b=>b.onclick=()=>{readerFont=b.dataset.lexFont;localStorage.setItem("lexora-reader-font-family",readerFont);applyReaderFont()});
+applyReaderFont();
+
 $("lex-font-down").onclick=()=>{$("smaller").click()};
 $("lex-font-up").onclick=()=>{$("bigger").click()};
 ["sepia","white","black"].forEach(t=>{$("lex-theme-"+t).onclick=()=>{window.lexoraSetReadingTheme?.(t);updateAppearance()}});
 $("lex-appearance-close").onclick=()=>{appearance.hidden=true;controls.classList.remove("lex-show-advanced")};
 function updateAppearance(){const active=$("reader").classList.contains("black")?"black":$("reader").classList.contains("white")?"white":"sepia";["sepia","white","black"].forEach(t=>{$("lex-theme-"+t).classList.toggle("primary",t===active);$("lex-theme-"+t).setAttribute("aria-pressed",String(t===active))})}
 
-async function enterReader(){document.body.classList.add("lex-reader-fullscreen");document.body.classList.remove("lex-controls-hidden");$("lex-enter").hidden=true;const panel=document.querySelector("#read .grid>.panel:first-child");if(panel.requestFullscreen&&!document.fullscreenElement){try{await panel.requestFullscreen({navigationUI:"hide"})}catch(e){console.info("Using screen-filling reader layout",e)}}requestAnimationFrame(()=>{try{window.rendition?.resize?.()}catch{}})}
+async function enterReader(){document.body.classList.add("lex-reader-fullscreen");document.body.classList.add("lex-controls-hidden");refreshRunningTitle();$("lex-enter").hidden=true;const panel=document.querySelector("#read .grid>.panel:first-child");if(panel.requestFullscreen&&!document.fullscreenElement){try{await panel.requestFullscreen({navigationUI:"hide"})}catch(e){console.info("Using screen-filling reader layout",e)}}requestAnimationFrame(()=>{try{window.rendition?.resize?.()}catch{}})}
 function exitReader(){appearance.hidden=true;closeResults();clearTimeout(fadeTimer);document.body.classList.remove("lex-reader-fullscreen","lex-controls-hidden");$("lex-enter").hidden=false;stop();if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});requestAnimationFrame(()=>{try{window.rendition?.resize?.()}catch{}})}
 $("lex-enter").onclick=enterReader;$("lex-exit").onclick=exitReader;
 document.addEventListener("fullscreenchange",()=>{if(!document.fullscreenElement&&document.body.classList.contains("lex-reader-fullscreen"))exitReader()});
