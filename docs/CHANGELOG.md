@@ -1,6 +1,7 @@
 # Lexora changelog
 
 ## 2026-10-12
+- Lexora now asks for Google sign-in when it opens instead of only offering it in Settings. "Continue without account" keeps local-only mode for the current session. Google always shows the account chooser; the broken cross-site redirect button was removed (redirect is used automatically only when popups are blocked). Shell cache bumped to v4.
 - Fixed EPUB import: the EPUB engine needs JSZip, which was never loaded, so every import failed with "JSZip lib not loaded" (while still showing "EPUB imported"). The success message now only appears when the book actually opens, and the reading percentage is computed instead of staying at 0%.
 - Follow-up iPhone fixes: more forgiving page swipe gestures; dictionary radio/definition alignment; iOS pronunciation activation and explicit error state. Physical iPhone audio playback still requires verification.
 - Added immersive reader improvements: book title at the top, hidden controls, swipe navigation and three font options.

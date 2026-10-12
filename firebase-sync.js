@@ -5,12 +5,21 @@ import {getFirestore,doc,runTransaction,onSnapshot} from "https://www.gstatic.co
 const config={apiKey:"AIzaSyATUuOolgUl0iod1zEIYV1zLbcvbMgrLpc",authDomain:"lexora-2d1f4.firebaseapp.com",projectId:"lexora-2d1f4",appId:"1:38390223406:web:a6f0712a38d7d98a2405bf"};
 const app=initializeApp(config),auth=getAuth(app),db=getFirestore(app);
 const provider=new GoogleAuthProvider();
+// Always show the account chooser instead of silently reusing a previous Google session.
+provider.setCustomParameters({prompt:"select_account"});
 const bridge=window.lexoraSyncBridge;
 const login=document.getElementById("lex-cloud-login"),logout=document.getElementById("lex-cloud-logout"),syncBtn=document.getElementById("lex-cloud-sync"),status=document.getElementById("lex-cloud-status");
 let uid=null,unsubscribe=null,busy=false,queued=false,clock=null,ready=false,loginFailure="";
 const message=t=>{status.textContent=t};
 const authState=document.getElementById("lex-cloud-auth-state");
 const authMessage=t=>{if(authState)authState.textContent=t};
+// Sign-in screen shown at launch until the person signs in or chooses local-only mode for this session.
+const gate=document.getElementById("lex-login-gate"),gateLogin=document.getElementById("lex-gate-login"),gateError=document.getElementById("lex-gate-error"),gateSkip=document.getElementById("lex-gate-skip");
+const SKIP_KEY="lexora-login-skipped";
+const skipped=()=>{try{return sessionStorage.getItem(SKIP_KEY)==="1"}catch{return false}};
+function showGate(show){if(gate)gate.hidden=!show;document.documentElement.style.overflow=show?"hidden":""}
+function gateMessage(t){if(!gateError)return;gateError.textContent=t||"";gateError.hidden=!t}
+if(gateSkip)gateSkip.onclick=()=>{try{sessionStorage.setItem(SKIP_KEY,"1")}catch{}showGate(false)};
 const validCard=c=>c&&typeof c.id==="string"&&typeof c.term==="string"&&typeof c.definition==="string";
 const timestamp=c=>Date.parse(c?.modifiedAt||"")||0;
 function merge(local,remote){
@@ -60,19 +69,22 @@ function authError(e){
   "auth/network-request-failed":"No s'ha pogut contactar amb Google. Revisa la connexió o els bloquejadors."
  };
  loginFailure="Google Sign-In: "+code+". "+(hints[code]||e?.message||"Obre Lexora en una pestanya normal del navegador.");
- authMessage(loginFailure);
+ authMessage(loginFailure);gateMessage(code==="auth/popup-closed-by-user"||code==="auth/cancelled-popup-request"?"":loginFailure);
 }
-login.onclick=async()=>{
- login.disabled=true;loginFailure="";authMessage("Google: obrint la finestra per identificar-te...");
+async function signIn(button){
+ button.disabled=true;loginFailure="";gateMessage("");authMessage("Google: obrint la finestra per identificar-te...");
  try{const result=await signInWithPopup(auth,provider);authMessage("Google: sessió iniciada · "+(result.user.email||"usuari autenticat"))}
- catch(e){authError(e)}
- finally{login.disabled=false}
-};
-const redirect=document.getElementById("lex-cloud-redirect");
-if(redirect)redirect.onclick=async()=>{
- loginFailure="";authMessage("Google: redirigint...");
- try{await signInWithRedirect(auth,provider)}catch(e){authError(e)}
-};
+ catch(e){
+  // Installed iPhone apps and some browsers cannot open popups; fall back to a full-page redirect.
+  if(e?.code==="auth/popup-blocked"||e?.code==="auth/operation-not-supported-in-this-environment"){
+   authMessage("Google: redirigint...");
+   try{await signInWithRedirect(auth,provider);return}catch(r){authError(r)}
+  }else authError(e);
+ }
+ finally{button.disabled=false}
+}
+login.onclick=()=>signIn(login);
+if(gateLogin)gateLogin.onclick=()=>signIn(gateLogin);
 getRedirectResult(auth).then(result=>{if(result?.user)authMessage("Google: sessió iniciada per redirecció · "+(result.user.email||"usuari autenticat"))}).catch(authError);
 
 logout.onclick=async()=>{await signOut(auth);message("Sessió tancada. Les targetes locals es mantenen.")};
@@ -80,7 +92,7 @@ syncBtn.onclick=()=>synchronize();
 window.addEventListener("lexora:changed",queueSync);
 onAuthStateChanged(auth,async user=>{
  if(unsubscribe){unsubscribe();unsubscribe=null}
- uid=user?.uid||null;ready=false;clearTimeout(clock);if(user){loginFailure="";authMessage("Google: connectat · "+(user.email||"usuari autenticat"))}else if(!loginFailure){authMessage("Google: sessió no iniciada")}
+ uid=user?.uid||null;ready=false;showGate(!user&&!skipped());clearTimeout(clock);if(user){loginFailure="";authMessage("Google: connectat · "+(user.email||"usuari autenticat"))}else if(!loginFailure){authMessage("Google: sessió no iniciada")}
  login.hidden=!!user;logout.hidden=!user;syncBtn.hidden=!user;
  if(!user){message("Firestore: sense sincronització; les targetes es desen localment.");return}
  message("Connectat com "+(user.email||"Google")+". Fusionant dades...");
