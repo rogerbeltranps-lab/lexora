@@ -1,6 +1,7 @@
 # Lexora changelog
 
 ## 2026-10-12
+- Follow-up iPhone fixes: more forgiving page swipe gestures; dictionary radio/definition alignment; iOS pronunciation activation and explicit error state. Physical iPhone audio playback still requires verification.
 - Added immersive reader improvements: book title at the top, hidden controls, swipe navigation and three font options.
 - Added initial guide pagination to fit pages within the visible reader area and theme-colored iOS status-bar metadata.
 - Added a **temporary manual update button** under Settings: prefetches latest index, updates service worker registration, clears Lexora's app-shell cache only, and navigates to a fresh URL. It does **not** clear localStorage, IndexedDB or the EPUB collection.
