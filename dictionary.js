@@ -162,31 +162,22 @@ function cleanSenses(senses){
  return result;
 }
 // Keep speech inside the user's tap handler: iOS requires a user gesture.
-let dictionaryUtterance=null;
 function playDictionaryAudio(raw){
  const button=document.getElementById("dictionary-listen");
  if(!raw||!button)return;
- if(!("speechSynthesis" in window)||!("SpeechSynthesisUtterance" in window)){
+ if(!window.lexoraSpeech||!("speechSynthesis" in window)){
    toast("Aquest dispositiu no ofereix síntesi de veu.");return;
  }
  try{
-   const synth=window.speechSynthesis;
-   // Keep speak() synchronous with the user's tap: Safari iOS requires user activation.
-   synth.cancel();
-   const utterance=new SpeechSynthesisUtterance(raw.trim());
-   dictionaryUtterance=utterance;
-   utterance.lang="en-US";utterance.rate=0.9;utterance.volume=1;
-   const voices=synth.getVoices();
-   const american=voices.find(v=>/^en[-_]US$/i.test(v.lang))||voices.find(v=>/^en/i.test(v.lang));
-   if(american)utterance.voice=american;
-   button.textContent="🔊 Reproduint…";
    let started=false;
-   utterance.onstart=()=>{started=true;button.textContent="🔊 Reproduint…"};
-   utterance.onend=()=>{if(dictionaryUtterance===utterance){button.textContent="🔊 Escolta";dictionaryUtterance=null}};
-   utterance.onerror=e=>{if(dictionaryUtterance===utterance){button.textContent="🔊 Torna-ho a provar";dictionaryUtterance=null;toast("La veu no s'ha reproduït ("+(e.error||"error")+"). Prova la veu del dispositiu.")}};
-   synth.speak(utterance);
-   if(synth.paused)synth.resume();
-   setTimeout(()=>{if(dictionaryUtterance===utterance&&!started&&!synth.speaking){button.textContent="🔊 Torna-ho a provar";toast("L'iPhone no ha iniciat l'àudio. Comprova el volum i prova de nou.");}},2200);
+   button.textContent="🔊 Reproduint…";
+   // speak() runs synchronously inside the tap, which Safari on iPhone requires.
+   const voiceURI=JSON.parse(localStorage.getItem("lexora-voice-choice")||'""');
+   lexoraSpeech.speak(raw,{rate:0.9,voiceURI,
+     onstart:()=>{started=true;button.textContent="🔊 Reproduint…"},
+     onend:()=>{button.textContent="🔊 Escolta"},
+     onerror:e=>{button.textContent="🔊 Torna-ho a provar";toast("La veu no s'ha reproduït ("+e+"). Prova la veu del dispositiu.")}});
+   setTimeout(()=>{if(!started&&!speechSynthesis.speaking&&button.isConnected&&button.textContent==="🔊 Reproduint…"){button.textContent="🔊 Torna-ho a provar";toast("L'iPhone no ha iniciat l'àudio. Comprova el volum i prova de nou.");}},4500);
  }catch(error){button.textContent="🔊 Torna-ho a provar";toast("No es pot reproduir l'àudio: "+error.message)}
 }
 function renderCandidates(raw,source,items,warning){
