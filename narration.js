@@ -111,7 +111,12 @@ body.lex-reader-fullscreen #guide.lex-paginated{display:flex!important;gap:0!imp
 body.lex-reader-fullscreen #guide.lex-paginated .lex-book-page{flex:0 0 100%;height:100%;min-height:0;overflow:hidden;box-sizing:border-box;padding:clamp(100px,15vh,145px) clamp(20px,5vw,65px) 50px;margin:0;min-width:0}
 body.lex-reader-fullscreen #guide.lex-paginated .lex-book-page>*{max-width:740px;margin-left:auto;margin-right:auto}
 body.lex-reader-fullscreen #guide.lex-paginated .lex-book-page h2{margin-top:0}
-body.lex-reader-fullscreen #guide.lex-paginated .lex-book-page p{overflow-wrap:break-word}
+body.lex-reader-fullscreen #guide.lex-paginated .lex-book-page p{overflow-wrap:break-word;orphans:3;widows:3}
+body.lex-reader-fullscreen #guide.lex-paginated .lex-book-page{padding-top:clamp(94px,12vh,120px)!important;padding-bottom:calc(35px + env(safe-area-inset-bottom,0px))!important}
+body.lex-reader-fullscreen #guide.lex-paginated .lex-book-page h2{font-size:1.4em;line-height:1.3;margin-bottom:1.4em}
+body.lex-reader-fullscreen #guide.lex-paginated .lex-book-page p{line-height:1.6;margin-bottom:1em}
+body.lex-reader-fullscreen #reader{touch-action:pan-y}
+
 body.lex-reader-fullscreen #epub-view{height:100%!important}
 `;document.head.appendChild(css);
 const controls=document.createElement("div");controls.className="lex-narr";controls.innerHTML='<button class="btn" type="button" id="lex-read">Read</button><button class="btn" type="button" id="lex-listen">Read &amp; Listen</button><select class="lex-advanced" id="lex-engine" aria-label="Narration voice"><option value="kokoro">Natural voice · Kokoro</option><option value="system">Device voice</option></select><select class="lex-advanced" id="lex-kokoro-voice" aria-label="Kokoro accent and voice"><option value="af_heart">US · Female · Heart (Recommended)</option><option value="am_michael">US · Male · Michael</option><option value="bf_emma">UK · Female · Emma</option><option value="bm_fable">UK · Male · Fable</option></select><button class="btn primary" id="lex-play">▶ Play</button><button class="btn lex-advanced" id="lex-back">← Sentence</button><button class="btn lex-advanced" id="lex-forward">Sentence →</button><span class="lex-narr-status lex-advanced" id="lex-status">Ready</span><button class="btn lex-advanced" id="lex-enter" type="button">⛶ Full screen</button><button class="btn" id="lex-appearance-button" type="button" aria-label="Reader appearance" hidden>Aa</button><button class="btn" id="lex-options" type="button" aria-label="More reading controls">⋯</button><button class="btn lex-reader-exit" id="lex-exit" type="button">✕ Exit</button>';
@@ -140,46 +145,50 @@ function syncStatusBar(){if(themeMeta)themeMeta.content=document.body.classList.
 function makeBookPage(){const p=document.createElement("div");p.className="lex-book-page";return p}
 function bookPageOverflow(page){return page.scrollHeight>page.clientHeight+2}
 function paginateGuide(reset=false){
- if(!document.body.classList.contains("lex-reader-fullscreen")||$("booklist").value!=="guide")return;
- if(paginating)return;paginating=true;
+ if(!document.body.classList.contains("lex-reader-fullscreen")||$("booklist").value!=="guide"||paginating)return;
+ paginating=true;
  try{
   if(!guideEl.classList.contains("lex-paginated"))guideSource=guideEl.innerHTML;
   if(reset)guidePageIndex=0;
   const origin=document.createElement("div");origin.innerHTML=guideSource;
-  const content=Array.from(origin.children);
-  guideEl.classList.add("lex-paginated");
-  guideEl.replaceChildren();
-  let page=makeBookPage();guideEl.appendChild(page);
-  for(const source of content){
-   const whole=source.cloneNode(true);
-   page.appendChild(whole);
+  const blocks=Array.from(origin.children);
+  guideEl.classList.add("lex-paginated");guideEl.replaceChildren();
+  let page=makeBookPage();guideEl.append(page);
+  function newPage(){page=makeBookPage();guideEl.append(page)}
+  for(const block of blocks){
+   let clone=block.cloneNode(true);page.append(clone);
    if(!bookPageOverflow(page))continue;
-   whole.remove();
-   if(source.tagName==="P"||source.tagName==="H2"){
-    const words=(source.textContent||"").split(/\s+/).filter(Boolean);
-    let offset=0;
-    while(offset<words.length){
-     const element=source.cloneNode(false);page.appendChild(element);
-     let low=1,high=words.length-offset,best=0;
-     while(low<=high){
-      const mid=(low+high)>>1;element.textContent=words.slice(offset,offset+mid).join(" ");
-      if(!bookPageOverflow(page)){best=mid;low=mid+1}else high=mid-1;
-     }
-     if(best===0){
-      element.remove();
-      if(page.children.length){page=makeBookPage();guideEl.appendChild(page);continue}
-      best=1;element.textContent=words[offset];
-      page.appendChild(element);
-     }else element.textContent=words.slice(offset,offset+best).join(" ");
-     offset+=best;
-     if(offset<words.length){page=makeBookPage();guideEl.appendChild(page)}
+   clone.remove();
+   // Keep whole paragraphs together whenever they fit on an empty page.
+   if(page.childElementCount>0){
+    newPage();clone=block.cloneNode(true);page.append(clone);
+    if(!bookPageOverflow(page))continue;
+    clone.remove();
+   }
+   if(block.tagName!=="P"&&block.tagName!=="H2"){page.append(block.cloneNode(true));newPage();continue}
+   // Only split an oversized paragraph, on word boundaries, after filling a page.
+   const words=(block.textContent||"").trim().split(/\s+/).filter(Boolean);
+   let start=0;
+   while(start<words.length){
+    const fragment=block.cloneNode(false);
+    page.append(fragment);
+    let lo=1,hi=words.length-start,fit=0;
+    while(lo<=hi){
+     const n=(lo+hi)>>1;
+     fragment.textContent=words.slice(start,start+n).join(" ");
+     if(!bookPageOverflow(page)){fit=n;lo=n+1}else hi=n-1;
     }
-   }else{
-    page=makeBookPage();guideEl.appendChild(page);page.appendChild(whole);
+    if(!fit&&page.childElementCount>1){fragment.remove();newPage();continue}
+    fit=Math.max(1,fit);
+    fragment.textContent=words.slice(start,start+fit).join(" ");
+    start+=fit;
+    if(start<words.length)newPage();
    }
   }
+  // Do not show a trailing empty page.
+  if(page.childElementCount===0&&guideEl.children.length>1)page.remove();
   guidePageTotal=guideEl.children.length;
-  guidePageIndex=Math.min(guidePageIndex,guidePageTotal-1);
+  guidePageIndex=Math.max(0,Math.min(guidePageIndex,guidePageTotal-1));
   guideEl.scrollLeft=guidePageIndex*guideEl.clientWidth;
   lastPageMarkup=guideEl.innerHTML;
  }finally{paginating=false}
