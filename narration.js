@@ -329,7 +329,7 @@ function continueReading(){
  const guide=$("booklist").value==="guide",chapter=$("chapter");
  if(guide?!chapter||chapter.selectedIndex>=chapter.options.length-1:typeof rendition==="undefined"||!rendition){stop();$("lex-status").textContent="End of book";return}
  stop();$("next").click();autoContinue=true;$("lex-status").textContent="Next chapter…";
- const resume=()=>{if(!autoContinue)return;autoContinue=false;if(prepare(true))play()};
+ const resume=()=>{if(!autoContinue)return;autoContinue=false;if(prepare(true))play(true)};
  if(guide)setTimeout(resume,900);else{let done=false;const once=()=>{if(done)return;done=true;setTimeout(resume,400)};try{rendition.once?.("relocated",once)}catch{}setTimeout(once,4000)}
 }
 function stop(){autoContinue=false;run++;playing=false;window.lexoraKokoro?.stop();window.lexoraSpeech?.cancel();$("lex-play").textContent="▶ Play"}
@@ -370,7 +370,8 @@ function followPage(el){
  if(el.ownerDocument!==document){try{const frame=document.querySelector("#epub-view iframe"),view=$("epub-view").getBoundingClientRect(),x=frame.getBoundingClientRect().left+el.getBoundingClientRect().left;if(x>=view.right-2&&typeof rendition!=="undefined"&&rendition)rendition.next()}catch{}return}
  el.scrollIntoView?.({block:"nearest",behavior:"smooth"})
 }
-function play(){window.lexoraSpeech?.unlock();if(engine==="kokoro")window.lexoraKokoro?.unlock?.();showControls();if(!items.length&&!prepare(true))return;if(engine==="system"&&!(window.speechSynthesis&&window.lexoraSpeech)){$("lex-status").textContent="Voice unavailable";return}const session=++run;playing=true;inspect.hidden=true;$("lex-play").textContent="Ⅱ Pause";
+// auto: narration moving on by itself (next chapter); leave the toolbar as the reader left it.
+function play(auto=false){window.lexoraSpeech?.unlock();if(engine==="kokoro")window.lexoraKokoro?.unlock?.();if(!auto)showControls();if(!items.length&&!prepare(true))return;if(engine==="system"&&!(window.speechSynthesis&&window.lexoraSpeech)){$("lex-status").textContent="Voice unavailable";return}const session=++run;playing=true;inspect.hidden=true;$("lex-play").textContent="Ⅱ Pause";
  let kokoro=engine==="kokoro"&&!!window.lexoraKokoro,failures=0;
  const speed=()=>Number(JSON.parse(localStorage.getItem("lexora-voice-speed")||"0.9"));
  const advance=()=>{if(session===run&&playing){index++;next()}};
