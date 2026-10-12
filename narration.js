@@ -99,6 +99,20 @@ body.lex-reader-fullscreen #read .reader.lex-font-modern .prose{font-family:-app
 #lex-appearance .lex-font-choices button{flex:1;min-width:80px}
 body.lex-reader-fullscreen #lex-appearance:not([hidden]){max-width:min(380px,calc(100vw - 20px))}
 @media(max-width:650px){body.lex-reader-fullscreen #read .grid>.panel:first-child>.reader .prose{padding:clamp(108px,16vh,145px) 20px 65px}body.lex-reader-fullscreen .lex-running-title{font-size:12px}}
+
+/* An actual paged viewport: no vertical scrolling in immersive reading. */
+body.lex-reader-fullscreen{background:#fffaf1}
+html:has(body.lex-reader-fullscreen){background:#fffaf1}
+html:has(body.lex-reader-fullscreen #reader.white),body.lex-reader-fullscreen:has(#reader.white){background:#fff}
+html:has(body.lex-reader-fullscreen #reader.black),body.lex-reader-fullscreen:has(#reader.black){background:#000}
+body.lex-reader-fullscreen #read .grid>.panel:first-child{inset:env(safe-area-inset-top,0px) 0 0!important}
+body.lex-reader-fullscreen #read .grid>.panel:first-child>.reader{overflow:hidden!important;overscroll-behavior:contain}
+body.lex-reader-fullscreen #guide.lex-paginated{display:flex!important;gap:0!important;overflow:hidden!important;height:100%!important;max-width:none!important;width:100%!important;padding:0!important;scroll-behavior:smooth}
+body.lex-reader-fullscreen #guide.lex-paginated .lex-book-page{flex:0 0 100%;height:100%;min-height:0;overflow:hidden;box-sizing:border-box;padding:clamp(100px,15vh,145px) clamp(20px,5vw,65px) 50px;margin:0;min-width:0}
+body.lex-reader-fullscreen #guide.lex-paginated .lex-book-page>*{max-width:740px;margin-left:auto;margin-right:auto}
+body.lex-reader-fullscreen #guide.lex-paginated .lex-book-page h2{margin-top:0}
+body.lex-reader-fullscreen #guide.lex-paginated .lex-book-page p{overflow-wrap:break-word}
+body.lex-reader-fullscreen #epub-view{height:100%!important}
 `;document.head.appendChild(css);
 const controls=document.createElement("div");controls.className="lex-narr";controls.innerHTML='<button class="btn" type="button" id="lex-read">Read</button><button class="btn" type="button" id="lex-listen">Read &amp; Listen</button><select class="lex-advanced" id="lex-engine" aria-label="Narration voice"><option value="kokoro">Natural voice · Kokoro</option><option value="system">Device voice</option></select><select class="lex-advanced" id="lex-kokoro-voice" aria-label="Kokoro accent and voice"><option value="af_heart">US · Female · Heart (Recommended)</option><option value="am_michael">US · Male · Michael</option><option value="bf_emma">UK · Female · Emma</option><option value="bm_fable">UK · Male · Fable</option></select><button class="btn primary" id="lex-play">▶ Play</button><button class="btn lex-advanced" id="lex-back">← Sentence</button><button class="btn lex-advanced" id="lex-forward">Sentence →</button><span class="lex-narr-status lex-advanced" id="lex-status">Ready</span><button class="btn lex-advanced" id="lex-enter" type="button">⛶ Full screen</button><button class="btn" id="lex-appearance-button" type="button" aria-label="Reader appearance" hidden>Aa</button><button class="btn" id="lex-options" type="button" aria-label="More reading controls">⋯</button><button class="btn lex-reader-exit" id="lex-exit" type="button">✕ Exit</button>';
 document.querySelector(".reader-toolbar").insertAdjacentElement("afterend",controls);
@@ -118,9 +132,74 @@ function applyReaderFont(){
 const epubHost=$("epub-view");new MutationObserver(()=>{applyReaderFont()}).observe(epubHost,{childList:true,subtree:false});
 epubHost.addEventListener("load",applyReaderFont,true);
 applyReaderFont();
+
+const guideEl=$("guide");
+let paginating=false,guideSource="",guidePageIndex=0,guidePageTotal=1;
+const themeMeta=document.querySelector('meta[name="theme-color"]'),originalTheme=themeMeta?.content||"#152d42";
+function syncStatusBar(){if(themeMeta)themeMeta.content=document.body.classList.contains("lex-reader-fullscreen")?($("reader").classList.contains("black")?"#000000":$("reader").classList.contains("white")?"#ffffff":"#fffaf1"):originalTheme}
+function makeBookPage(){const p=document.createElement("div");p.className="lex-book-page";return p}
+function bookPageOverflow(page){return page.scrollHeight>page.clientHeight+2}
+function paginateGuide(reset=false){
+ if(!document.body.classList.contains("lex-reader-fullscreen")||$("booklist").value!=="guide")return;
+ if(paginating)return;paginating=true;
+ try{
+  if(!guideEl.classList.contains("lex-paginated"))guideSource=guideEl.innerHTML;
+  if(reset)guidePageIndex=0;
+  const origin=document.createElement("div");origin.innerHTML=guideSource;
+  const content=Array.from(origin.children);
+  guideEl.classList.add("lex-paginated");
+  guideEl.replaceChildren();
+  let page=makeBookPage();guideEl.appendChild(page);
+  for(const source of content){
+   const whole=source.cloneNode(true);
+   page.appendChild(whole);
+   if(!bookPageOverflow(page))continue;
+   whole.remove();
+   if(source.tagName==="P"||source.tagName==="H2"){
+    const words=(source.textContent||"").split(/\s+/).filter(Boolean);
+    let offset=0;
+    while(offset<words.length){
+     const element=source.cloneNode(false);page.appendChild(element);
+     let low=1,high=words.length-offset,best=0;
+     while(low<=high){
+      const mid=(low+high)>>1;element.textContent=words.slice(offset,offset+mid).join(" ");
+      if(!bookPageOverflow(page)){best=mid;low=mid+1}else high=mid-1;
+     }
+     if(best===0){
+      element.remove();
+      if(page.children.length){page=makeBookPage();guideEl.appendChild(page);continue}
+      best=1;element.textContent=words[offset];
+      page.appendChild(element);
+     }else element.textContent=words.slice(offset,offset+best).join(" ");
+     offset+=best;
+     if(offset<words.length){page=makeBookPage();guideEl.appendChild(page)}
+    }
+   }else{
+    page=makeBookPage();guideEl.appendChild(page);page.appendChild(whole);
+   }
+  }
+  guidePageTotal=guideEl.children.length;
+  guidePageIndex=Math.min(guidePageIndex,guidePageTotal-1);
+  guideEl.scrollLeft=guidePageIndex*guideEl.clientWidth;
+ }finally{paginating=false}
+}
+function clearGuidePagination(){
+ if(!guideEl.classList.contains("lex-paginated"))return;
+ paginating=true;guideEl.classList.remove("lex-paginated");guideEl.innerHTML=guideSource;guideEl.scrollLeft=0;paginating=false;
+}
+new MutationObserver(()=>{if(paginating)return;if(document.body.classList.contains("lex-reader-fullscreen")&&$("booklist").value==="guide"){
+ if(guideEl.classList.contains("lex-paginated")){guideSource=guideEl.innerHTML;guideEl.classList.remove("lex-paginated")}
+ requestAnimationFrame(()=>paginateGuide(true));
+}}).observe(guideEl,{childList:true});
+let bookResizeTimer;window.addEventListener("resize",()=>{clearTimeout(bookResizeTimer);bookResizeTimer=setTimeout(()=>{if(guideEl.classList.contains("lex-paginated")){paginating=true;guideEl.classList.remove("lex-paginated");paginating=false;paginateGuide()}},160)});
 function moveReadingPage(direction){
  if(!$("lex-reader-results")?.hidden||!document.querySelector(".lex-inspect")?.hidden)return;
- if($("booklist").value==="guide")$(""+(direction>0?"next":"prev")).click();
+ if($("booklist").value==="guide"){
+ if(!guideEl.classList.contains("lex-paginated"))paginateGuide();
+ const next=guidePageIndex+(direction>0?1:-1);
+ if(next>=0&&next<guidePageTotal){guidePageIndex=next;guideEl.scrollTo({left:next*guideEl.clientWidth,behavior:"smooth"})}
+ else $(""+(direction>0?"next":"prev")).click();
+ }
  else if(typeof rendition!=="undefined"&&rendition){direction>0?rendition.next():rendition.prev()}
 }
 function attachSwipe(surface,doc){
@@ -145,17 +224,17 @@ document.querySelector("#read .grid>.panel:first-child").appendChild(appearance)
 const fontChoices=document.createElement("div");fontChoices.className="lex-font-choices";
 fontChoices.innerHTML='<button class="btn" type="button" data-lex-font="classic">Classic</button><button class="btn" type="button" data-lex-font="newyork">New York</button><button class="btn" type="button" data-lex-font="modern">Modern</button>';
 appearance.insertBefore(fontChoices,$("lex-appearance-close"));
-fontChoices.querySelectorAll("button").forEach(b=>b.onclick=()=>{readerFont=b.dataset.lexFont;localStorage.setItem("lexora-reader-font-family",readerFont);applyReaderFont()});
+fontChoices.querySelectorAll("button").forEach(b=>b.onclick=()=>{readerFont=b.dataset.lexFont;localStorage.setItem("lexora-reader-font-family",readerFont);applyReaderFont();if(guideEl.classList.contains("lex-paginated")){paginating=true;guideEl.classList.remove("lex-paginated");paginating=false;paginateGuide()}});
 applyReaderFont();
 
 $("lex-font-down").onclick=()=>{$("smaller").click()};
 $("lex-font-up").onclick=()=>{$("bigger").click()};
 ["sepia","white","black"].forEach(t=>{$("lex-theme-"+t).onclick=()=>{window.lexoraSetReadingTheme?.(t);updateAppearance()}});
 $("lex-appearance-close").onclick=()=>{appearance.hidden=true;controls.classList.remove("lex-show-advanced")};
-function updateAppearance(){const active=$("reader").classList.contains("black")?"black":$("reader").classList.contains("white")?"white":"sepia";["sepia","white","black"].forEach(t=>{$("lex-theme-"+t).classList.toggle("primary",t===active);$("lex-theme-"+t).setAttribute("aria-pressed",String(t===active))})}
+function updateAppearance(){syncStatusBar();const active=$("reader").classList.contains("black")?"black":$("reader").classList.contains("white")?"white":"sepia";["sepia","white","black"].forEach(t=>{$("lex-theme-"+t).classList.toggle("primary",t===active);$("lex-theme-"+t).setAttribute("aria-pressed",String(t===active))})}
 
-async function enterReader(){document.body.classList.add("lex-reader-fullscreen");document.body.classList.add("lex-controls-hidden");refreshRunningTitle();$("lex-enter").hidden=true;const panel=document.querySelector("#read .grid>.panel:first-child");if(panel.requestFullscreen&&!document.fullscreenElement){try{await panel.requestFullscreen({navigationUI:"hide"})}catch(e){console.info("Using screen-filling reader layout",e)}}requestAnimationFrame(()=>{try{window.rendition?.resize?.()}catch{}})}
-function exitReader(){appearance.hidden=true;closeResults();clearTimeout(fadeTimer);document.body.classList.remove("lex-reader-fullscreen","lex-controls-hidden");$("lex-enter").hidden=false;stop();if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});requestAnimationFrame(()=>{try{window.rendition?.resize?.()}catch{}})}
+async function enterReader(){document.body.classList.add("lex-reader-fullscreen");document.body.classList.add("lex-controls-hidden");refreshRunningTitle();syncStatusBar();requestAnimationFrame(()=>paginateGuide(true));$("lex-enter").hidden=true;const panel=document.querySelector("#read .grid>.panel:first-child");if(panel.requestFullscreen&&!document.fullscreenElement){try{await panel.requestFullscreen({navigationUI:"hide"})}catch(e){console.info("Using screen-filling reader layout",e)}}requestAnimationFrame(()=>{try{window.rendition?.resize?.()}catch{}})}
+function exitReader(){clearGuidePagination();appearance.hidden=true;closeResults();clearTimeout(fadeTimer);document.body.classList.remove("lex-reader-fullscreen","lex-controls-hidden");syncStatusBar();$("lex-enter").hidden=false;stop();if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});requestAnimationFrame(()=>{try{window.rendition?.resize?.()}catch{}})}
 $("lex-enter").onclick=enterReader;$("lex-exit").onclick=exitReader;
 document.addEventListener("fullscreenchange",()=>{if(!document.fullscreenElement&&document.body.classList.contains("lex-reader-fullscreen"))exitReader()});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&document.body.classList.contains("lex-reader-fullscreen"))exitReader()});
