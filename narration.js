@@ -334,7 +334,9 @@ function continueReading(){
  const resume=()=>{if(!autoContinue)return;autoContinue=false;if(prepare(true))play(true)};
  if(guide)setTimeout(resume,900);else{let done=false;const once=()=>{if(done)return;done=true;setTimeout(resume,400)};try{rendition.once?.("relocated",once)}catch{}setTimeout(once,4000)}
 }
-function stop(){autoContinue=false;run++;playing=false;window.lexoraKokoro?.stop();window.lexoraSpeech?.cancel();$("lex-play").textContent="▶ Play"}
+function stop(){autoContinue=false;run++;playing=false;window.lexoraKokoro?.stop();window.lexoraSpeech?.cancel();$("lex-play").textContent="▶ Play";
+ // Do not leave "Speaking…" on screen after Pause or Exit.
+ $("lex-status").textContent=items.length?"Sentence "+(Math.min(index,items.length-1)+1)+" / "+items.length:""}
 function epubBody(){try{return document.querySelector("#epub-view iframe")?.contentDocument?.body}catch{return null}}
 function prepare(reset){
  clear();if(reset)index=0;
