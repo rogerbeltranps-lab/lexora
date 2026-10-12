@@ -379,8 +379,23 @@ function play(auto=false){window.lexoraSpeech?.unlock();if(engine==="kokoro")win
  let kokoro=engine==="kokoro"&&!!window.lexoraKokoro,failures=0;
  const speed=()=>Number(JSON.parse(localStorage.getItem("lexora-voice-speed")||"0.9"));
  const advance=()=>{if(session===run&&playing){index++;next()}};
+ const voiceOptions=()=>({voice:kokoroVoice,speed:speed(),cancelled:()=>session!==run||!playing,status:message=>{if(session===run)$("lex-status").textContent=message}});
+ // A phone makes Kokoro audio more slowly than it speaks it. Queue the sentences ahead; when the current one is not ready
+ // (at the start, or after synthesis falls behind), wait until enough is ready for the rest of the chapter to be made
+ // while it plays, so it then reads without pauses. The wait is capped so a long chapter does not hold for minutes.
+ const MAX_WAIT=90;
+ function ahead(){const k=window.lexoraKokoro,o=voiceOptions(),texts=items.slice(index).map(x=>x.text),r=k.ratio(),need=Math.min(MAX_WAIT,texts.reduce((t,x)=>t+k.estimate(x,o.speed),0)*Math.max(0,r-1)/r);
+  let planned=0,ready=0,gap=false,i=0;
+  for(;i<texts.length&&(i<3||planned<need+10);i++){k.prepare(texts[i],o).catch(()=>{});const d=k.clip(texts[i],o);planned+=d||k.estimate(texts[i],o.speed);if(d&&!gap)ready+=d;else gap=true}
+  return {need,ready,all:!gap&&i>=texts.length}}
+ async function warm(){let waited=false;const k=window.lexoraKokoro,current=k.prepare(items[index].text,voiceOptions());
+  for(;;){if(session!==run||!playing)return false;const s=ahead();
+   if(k.clip(items[index].text,voiceOptions())&&(!waited||s.ready>=s.need||s.all))return true;
+   waited=true;if(k.ready())$("lex-status").textContent="Preparing natural voice… "+Math.min(99,Math.round(100*s.ready/Math.max(s.need,1)))+"%";
+   // A failed load rejects here and falls back to the device voice below.
+   await Promise.race([current,new Promise(r=>setTimeout(r,400))])}}
  async function next(){if(session!==run||!playing)return;if(index>=items.length){continueReading();return}highlight();
-  if(kokoro){try{await window.lexoraKokoro.speak(items[index].text,{nextText:[items[index+1]?.text,items[index+2]?.text],voice:kokoroVoice,speed:speed(),status:message=>{if(session===run)$("lex-status").textContent=message},cancelled:()=>session!==run||!playing});failures=0;if(session===run&&playing)$("lex-status").textContent="Sentence "+(index+1)+" / "+items.length;advance();return}catch(error){if(session!==run)return;console.warn("Kokoro unavailable",error);
+  if(kokoro){try{if(!await warm())return;await window.lexoraKokoro.speak(items[index].text,voiceOptions());failures=0;if(session===run&&playing)$("lex-status").textContent="Sentence "+(index+1)+" / "+items.length;advance();return}catch(error){if(session!==run)return;console.warn("Kokoro unavailable",error);
    // Use the device voice for the rest of this session only; one failed download should not switch the saved choice for good.
    kokoro=false;$("lex-status").textContent="Natural voice unavailable right now; using device voice"}}
   let started=false;lexoraSpeech.speak(items[index].text,{rate:speed(),voiceURI:JSON.parse(localStorage.getItem("lexora-voice-choice")||'""'),onstart:()=>{started=true;if(session===run)$("lex-status").textContent="Speaking…"},onend:()=>{failures=0;advance()},onerror:e=>{if(session!==run)return;
