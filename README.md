@@ -173,3 +173,10 @@ The app is at [Lexora](https://rogerbeltranps-lab.github.io/lexora/) **once GitH
 **Precaucions:** conservar `lexora-backup.json`; no esborrar localStorage/IndexedDB/cau de Safari fins que les dades estiguin recuperables i s'hagi comprovat la sincronització. No relaxar Firestore a `allow read, write: if true` ni activar Blaze per resoldre aquest problema.
 
 ---
+
+## Development documentation (October 2026)
+
+- [Current feature inventory](docs/FEATURES.md) — implementation and testing status.
+- [Change history](docs/CHANGELOG.md) — shipped changes and manual verification gaps.
+- [Feature documentation agent](.github/agents/lexora-feature-documenter.agent.md) — instructions for compatible coding agents. Invoke it when developing; it is not an always-running daemon.
+- **Temporary update button:** Settings → **Comprova i actualitza**. It refreshes app files and service worker cache, without deleting IndexedDB or locally saved vocabulary. Remove when automatic updates have been validated on installed iPhone PWAs.
