@@ -2,7 +2,7 @@
 
 Lexora's original 36-entry starter glossary is separate from any imported Wiktionary data.
 
-Additional dictionary entries, when imported using `scripts/import_kaikki.py`, come from **Wiktionary**, processed and distributed by **Kaikki / Wiktextract** (Tatu Ylonen).
+Additional dictionary entries in `dictionary/wiktionary/`, `dictionary/words/` and `dictionary/phrases/` (imported with `scripts/import_kaikki.py`, `scripts/import_full_kaikki.py` and `scripts/build_phrase_index.py`) come from **Wiktionary**, processed and distributed by **Kaikki / Wiktextract** (Tatu Ylonen).
 
 - Source: https://kaikki.org/dictionary/
 - Original content: https://en.wiktionary.org/
