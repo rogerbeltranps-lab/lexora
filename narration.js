@@ -179,7 +179,8 @@ function paginateGuide(reset=false){
  if(!document.body.classList.contains("lex-reader-fullscreen")||$("booklist").value!=="guide"||paginating)return;
  paginating=true;
  try{
-  if(!guideEl.classList.contains("lex-paginated"))guideSource=guideEl.innerHTML;
+  // Re-paginating after a resize or font change must start from the original text, not from the pages themselves (that nested pages and broke page turns).
+  if(!guideEl.querySelector(":scope>.lex-book-page"))guideSource=guideEl.innerHTML;
   if(reset)guidePageIndex=0;
   const origin=document.createElement("div");origin.innerHTML=guideSource;
   const blocks=Array.from(origin.children);
@@ -223,7 +224,7 @@ function paginateGuide(reset=false){
   guideEl.scrollLeft=guidePageIndex*guideEl.clientWidth;
   lastPageMarkup=guideEl.innerHTML;
   // The pages are new nodes: point the narration and its tap-to-replay at them.
-  items.forEach((_,i)=>liveEl(i));if(playing&&mode!=="listen")highlight();
+  if(items.length&&!guideEl.querySelector("[data-lex-i]"))prepare(false);else items.forEach((_,i)=>liveEl(i));if(playing&&mode!=="listen")highlight();
  }finally{paginating=false}
 }
 function clearGuidePagination(){
@@ -231,7 +232,8 @@ function clearGuidePagination(){
  paginating=true;guideEl.classList.remove("lex-paginated");guideEl.innerHTML=guideSource;guideEl.scrollLeft=0;paginating=false;
 }
 new MutationObserver(()=>{if(paginating)return;if(document.body.classList.contains("lex-reader-fullscreen")&&$("booklist").value==="guide"){
- if(guideEl.classList.contains("lex-paginated")){if(guideEl.innerHTML===lastPageMarkup)return;guideSource=guideEl.innerHTML;guideEl.classList.remove("lex-paginated")}
+ // Our own page building also lands here (observer callbacks run late); only a freshly rendered chapter has no book pages.
+ if(guideEl.classList.contains("lex-paginated")){if(guideEl.innerHTML===lastPageMarkup||guideEl.querySelector(":scope>.lex-book-page"))return;guideSource=guideEl.innerHTML;guideEl.classList.remove("lex-paginated")}
  requestAnimationFrame(()=>paginateGuide(true));
 }}).observe(guideEl,{childList:true});
 let bookResizeTimer;window.addEventListener("resize",()=>{clearTimeout(bookResizeTimer);bookResizeTimer=setTimeout(()=>{if(guideEl.classList.contains("lex-paginated")){paginating=true;guideEl.classList.remove("lex-paginated");paginating=false;paginateGuide()}},160)});
