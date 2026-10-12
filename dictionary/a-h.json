@@ -273,6 +273,18 @@
           "example": "Read the expression in context."
         }
       ]
+    },
+    {
+      "term": "catch someone's attention",
+      "type": "Idiomatic expression",
+      "ipa": "/kætʃ ˈsʌmwʌnz əˈtɛnʃən/",
+      "senses": [
+        {
+          "definition": "Make someone notice something or become interested in it",
+          "catalan": "cridar l'atenció (a algú)",
+          "example": "A headline in the paper caught my attention."
+        }
+      ]
     }
   ]
 }

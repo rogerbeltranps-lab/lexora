@@ -16,44 +16,76 @@ async function shard(name){
  }).catch(err=>{cache.delete(name);throw err});
  cache.set(name,req);return req;
 }
-const irregular={came:"come",comes:"come",coming:"come",went:"go",gone:"go",gave:"give",given:"give",giving:"give",got:"get",getting:"get",gotten:"get",made:"make",making:"make",took:"take",taken:"take",taking:"take",caught:"catch",catching:"catch",ran:"run",running:"run",brought:"bring",bringing:"bring",thought:"think",held:"hold",holding:"hold",found:"find",looked:"look",looking:"look",figured:"figure",figuring:"figure",turned:"turn",turning:"turn",picked:"pick",picking:"pick",ended:"end",ending:"end",broke:"break",broken:"break",breaking:"break",putting:"put",set:"set",setting:"set",worked:"work",working:"work",carried:"carry",carrying:"carry",pointed:"point",pointing:"point",was:"be",were:"be",is:"be",are:"be",am:"be",been:"be",sank:"sink",sunk:"sink",slipped:"slip"};
-function tokenize(text){return (text.toLowerCase().match(/[a-z]+(?:'[a-z]+)?/g)||[])}
+const irregular={came:"come",comes:"come",coming:"come",went:"go",gone:"go",gave:"give",given:"give",giving:"give",got:"get",getting:"get",gotten:"get",made:"make",making:"make",took:"take",taken:"take",taking:"take",caught:"catch",catching:"catch",ran:"run",running:"run",brought:"bring",bringing:"bring",thought:"think",held:"hold",holding:"hold",found:"find",looked:"look",looking:"look",figured:"figure",figuring:"figure",turned:"turn",turning:"turn",picked:"pick",picking:"pick",ended:"end",ending:"end",broke:"break",broken:"break",breaking:"break",putting:"put",set:"set",setting:"set",worked:"work",working:"work",carried:"carry",carrying:"carry",pointed:"point",pointing:"point",was:"be",were:"be",is:"be",are:"be",am:"be",been:"be",sank:"sink",sunk:"sink",slipped:"slip",left:"leave",leaving:"leave"};
+function normalizeQuotes(text){return String(text||"").toLowerCase().replace(/[‘’ʼ]/g,"'")}
+function tokenize(text){return (normalizeQuotes(text).match(/[a-z]+(?:'[a-z]+)?/g)||[])}
+// Sentence tokens keep clause punctuation as "|" so a phrase cannot jump across it
+// ("catches your attention, then pick up" must not match "catch up").
+function sentenceTokens(text){return (normalizeQuotes(text).match(/[a-z]+(?:'[a-z]+)?|[.,;:!?()“”"—–]/g)||[]).map(t=>/^[a-z]/.test(t)?t:"|")}
 function lemma(s){if(irregular[s])return irregular[s];if(s.endsWith("ies")&&s.length>4)return s.slice(0,-3)+"y";if(s.endsWith("ied")&&s.length>4)return s.slice(0,-3)+"y";if(s.endsWith("ing")&&s.length>5){let x=s.slice(0,-3);if(x.endsWith("nn")||x.endsWith("tt")||x.endsWith("pp"))x=x.slice(0,-1);return x}if(s.endsWith("ed")&&s.length>4)return s.slice(0,-2);if(s.endsWith("es")&&s.length>4)return s.slice(0,-2);if(s.endsWith("s")&&s.length>3)return s.slice(0,-1);return s}
 function equivalence(a,b){return a===b||lemma(a)===lemma(b)||lemma(a)===b||a===lemma(b)}
-function matches(sentence,entry){
- const words=tokenize(sentence),phrase=tokenize(entry.term);if(!phrase.length)return false;
- for(let i=0;i<words.length;i++){
-  if(!equivalence(words[i],phrase[0]))continue;
-  let pos=i,matched=true;
-  for(let j=1;j<phrase.length;j++){
-   let found=false;
-   const maxJump=(j===1&&phrase.length===2&&entry.type==="Phrasal verb")?5:2;
-   for(let k=pos+1;k<=Math.min(words.length-1,pos+maxJump);k++){
-    if(equivalence(words[k],phrase[j])){pos=k;found=true;break}
-   }
-   if(!found){matched=false;break}
-  }
-  if(matched)return true;
+// Dictionary placeholders: "catch someone's eye" should match "caught my eye" or "caught the teacher's eye".
+const possessiveSlots=new Set(["one's","someone's","somebody's","something's"]);
+const possessives=new Set(["my","your","his","her","its","our","their","whose","thy"]);
+const reflexiveSlots=new Set(["oneself","someone's self"]);
+const reflexives=new Set(["myself","yourself","himself","herself","itself","ourselves","yourselves","themselves","oneself"]);
+const objectSlots=new Set(["someone","somebody","something"]);
+// How many sentence tokens a placeholder can consume at position i (0 = no match).
+function slotLengths(words,i,slot){
+ const w=words[i];if(!w||w==="|")return [];
+ if(possessiveSlots.has(slot)){
+  const out=[];if(possessives.has(w)||/'s$|s'$/.test(w))out.push(1);
+  for(let n=2;n<=3;n++){const last=words[i+n-1];if(!last||words.slice(i,i+n).includes("|"))break;if(/'s$|s'$/.test(last))out.push(n)}
+  return out;
  }
+ if(reflexiveSlots.has(slot))return reflexives.has(w)?[1]:[];
+ if(objectSlots.has(slot)){const out=[];for(let n=1;n<=3;n++){if(!words[i+n-1]||words[i+n-1]==="|")break;out.push(n)}return out}
+ return null;
+}
+function isSlot(t){return possessiveSlots.has(t)||reflexiveSlots.has(t)||objectSlots.has(t)}
+function matches(sentence,entry){
+ const words=Array.isArray(sentence)?sentence:sentenceTokens(sentence),phrase=tokenize(entry.term);
+ if(!phrase.length||isSlot(phrase[0]))return false;
+ const crossPunctuation=/[,;:!?.]/.test(entry.term);
+ const maxJump=(phrase.length===2&&entry.type==="Phrasal verb")?4:2;
+ // j: next phrase token; pos: index of the last sentence token used; adjacent: no gap allowed (around placeholders).
+ function rest(j,pos,adjacent){
+  if(j===phrase.length)return true;
+  const slot=phrase[j];
+  if(isSlot(slot)){
+   for(const n of slotLengths(words,pos+1,slot))if(rest(j+1,pos+n,true))return true;
+   return false;
+  }
+  const limit=adjacent?1:(j===1?maxJump:2);
+  for(let k=pos+1;k<=Math.min(words.length-1,pos+limit);k++){
+   if(words[k]==="|"){if(crossPunctuation)continue;return false}
+   if(equivalence(words[k],slot)&&rest(j+1,k,false))return true;
+  }
+  return false;
+ }
+ for(let i=0;i<words.length;i++)if(words[i]!=="|"&&equivalence(words[i],phrase[0])&&rest(1,i,false))return true;
  return false;
 }
-function uniqueByTerm(list){const seen=new Set();return list.filter(e=>{if(seen.has(e.term))return false;seen.add(e.term);return true})}
+function uniqueByTerm(list){const seen=new Set();return list.filter(e=>{const k=e.term.toLowerCase();if(seen.has(k))return false;seen.add(k);return true})}
+async function jsonEntries(url){
+ if(cache.has(url))return cache.get(url);
+ const req=fetch(url,{cache:"force-cache"}).then(r=>r.ok?r.json():{entries:[]}).then(d=>Array.isArray(d.entries)?d.entries:[]).catch(()=>{cache.delete(url);return []});
+ cache.set(url,req);return req;
+}
+function shardKey(word){const w=word.toLowerCase(),letter=c=>c>="a"&&c<="z"?c:"_";return letter(w[0])+letter(w[1]||"_")}
 async function candidates(raw){
- const words=tokenize(raw),sets=new Set();
- for(const w of words)sets.add(bucketOf(lemma(w)));
- const loaded=await Promise.all([...sets].map(async b=>{
-   const starter=await shard(b);
-   try {
-    const response=await fetch("./dictionary/wiktionary/"+b+".json",{cache:"force-cache"});
-    if(!response.ok)return starter;
-    const data=await response.json();
-    const imported=Array.isArray(data.entries)?data.entries:[];
-    return [...starter,...imported];
-   } catch{return starter}
- }));
+ const words=tokenize(raw),sets=new Set(),keys=new Set();
+ for(const w of words){sets.add(bucketOf(lemma(w)));keys.add(shardKey(w));keys.add(shardKey(lemma(w)))}
+ const loaded=await Promise.all([
+  ...[...sets].map(async b=>[...await shard(b),...await jsonEntries("./dictionary/wiktionary/"+b+".json")]),
+  // Multiword idioms, phrasal verbs and collocations from the full Wiktionary import, keyed by first word.
+  ...[...keys].map(k=>jsonEntries("./dictionary/phrases/"+k+".json"))
+ ]);
+ const tokens=sentenceTokens(raw);
  const entries=loaded.flat().filter(x=>x.term&&Array.isArray(x.senses));
- let results=uniqueByTerm(entries.filter(x=>matches(raw,x)));
- results.sort((a,b)=>tokenize(b.term).length-tokenize(a.term).length||a.term.localeCompare(b.term));
+ let results=uniqueByTerm(entries.filter(x=>matches(tokens,x)));
+ // Longest expressions first; the starter glossary (loaded first) wins ties through the stable sort.
+ results.sort((a,b)=>tokenize(b.term).length-tokenize(a.term).length);
  return results.slice(0,15);
 }
 // Free dictionary fallback for individual English words (dictionaryapi.dev).
