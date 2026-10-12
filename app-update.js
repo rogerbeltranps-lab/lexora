@@ -2,7 +2,7 @@
 (()=>{"use strict";
 const button=document.getElementById("lex-update-check"),status=document.getElementById("lex-update-status");
 if(!button||!status)return;
-const VERSION="2026-10-12 · 9";
+const VERSION="2026-10-12 · 11";
 const FILES=["index.html","narration.js","firebase-sync.js","dictionary.js","speech.js","reader-selection.js","kokoro.js","app-update.js","audio-check.js","sw.js","manifest.webmanifest"];
 // Show which version is running, so it is clear whether an update arrived.
 status.textContent="Versió instal·lada: "+VERSION+". "+status.textContent;

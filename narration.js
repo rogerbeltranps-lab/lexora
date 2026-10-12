@@ -222,6 +222,8 @@ function paginateGuide(reset=false){
   guidePageIndex=Math.max(0,Math.min(guidePageIndex,guidePageTotal-1));
   guideEl.scrollLeft=guidePageIndex*guideEl.clientWidth;
   lastPageMarkup=guideEl.innerHTML;
+  // The pages are new nodes: point the narration and its tap-to-replay at them.
+  items.forEach((_,i)=>liveEl(i));if(playing&&mode!=="listen")highlight();
  }finally{paginating=false}
 }
 function clearGuidePagination(){
@@ -313,7 +315,12 @@ if(typeof originalChoose==="function"){
 }
 
 function sentences(s){return (s.match(/[^.!?]+(?:[.!?]+(?=\s|$)|$)/g)||[]).map(v=>v.trim()).filter(v=>/[a-z]/i.test(v))}
-function clear(){if(marker){marker.classList.remove("lex-active");marker=null}}
+function clear(){if(marker){marker.classList.remove("lex-active");marker=null}
+ // Paginating the guide clones its HTML, so a copy of the old highlight can linger on the new page.
+ readingRoot()?.querySelectorAll(".lex-active").forEach(el=>el.classList.remove("lex-active"))}
+function readingRoot(){return $("booklist").value==="guide"?$("guide"):epubBody()}
+// Sentence spans carry data-lex-i so they can be found again after the guide is re-paginated into new nodes.
+function liveEl(i){const item=items[i];if(!item)return null;if(item.el?.isConnected)return item.el;const found=readingRoot()?.querySelector('[data-lex-i="'+i+'"]');if(found){item.el=found;enableTap(item,i)}return found}
 function stop(){run++;playing=false;window.lexoraKokoro?.stop();window.lexoraSpeech?.cancel();$("lex-play").textContent="▶ Play"}
 function epubBody(){try{return document.querySelector("#epub-view iframe")?.contentDocument?.body}catch{return null}}
 function prepare(reset){
@@ -324,23 +331,31 @@ function prepare(reset){
   const txt=p.textContent||"";
   if(guide){
    let parts=sentences(txt);p.replaceChildren(...parts.map((part,i)=>{const sp=document.createElement("span");sp.textContent=part+(i<parts.length-1?" ":"");return sp}));
-   p.querySelectorAll("span").forEach(sp=>items.push({text:sp.textContent.trim(),el:sp}))
+   p.querySelectorAll("span").forEach(sp=>{sp.dataset.lexI=String(items.length);items.push({text:sp.textContent.trim(),el:sp})})
   }else{
-   if(p.children.length===0){const parts=sentences(txt);p.replaceChildren(...parts.map((part,i)=>{const sp=p.ownerDocument.createElement("span");sp.textContent=part+(i<parts.length-1?" ":"");return sp}));p.querySelectorAll("span").forEach(sp=>items.push({text:sp.textContent.trim(),el:sp}))}else{sentences(txt).forEach(t=>items.push({text:t,el:p}))}
+   if(p.children.length===0){const parts=sentences(txt);p.replaceChildren(...parts.map((part,i)=>{const sp=p.ownerDocument.createElement("span");sp.textContent=part+(i<parts.length-1?" ":"");return sp}));p.querySelectorAll("span").forEach(sp=>{sp.dataset.lexI=String(items.length);items.push({text:sp.textContent.trim(),el:sp})})}else{sentences(txt).forEach(t=>items.push({text:t,el:p}))}
   }
  });
  items.forEach(enableTap);index=Math.min(index,Math.max(0,items.length-1));$("lex-status").textContent=items.length?"Sentence "+(index+1)+" / "+items.length:"No text on this page";
  return items.length>0
 }
+// A WeakSet, not a data attribute: paginated clones copy attributes but not listeners.
+const tapReady=new WeakSet();
 function enableTap(item,number){
  const el=item.el;
  if(!el)return;
- if(el.dataset.lexReplay==="1")return;el.dataset.lexReplay="1";el.classList.add("lex-tappable");el.tabIndex=0;el.title="Double-click to replay sentence; click a word for its meaning";
+ if(tapReady.has(el))return;tapReady.add(el);el.classList.add("lex-tappable");el.tabIndex=0;el.title="Double-click to replay sentence; click a word for its meaning";
  function replay(){if(mode!=="both")return;const selection=el.ownerDocument.getSelection?.();if(selection&&!selection.isCollapsed)return;stop();index=number;play()}
  el.addEventListener("dblclick",replay);
  el.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();replay()}});
 }
-function highlight(){clear();const item=items[index];if(!item)return;if(mode!=="listen"){marker=item.el;marker.classList.add("lex-active");marker.scrollIntoView?.({block:"nearest",behavior:"smooth"})}$("lex-status").textContent="Sentence "+(index+1)+" / "+items.length}
+function highlight(){clear();const el=liveEl(index);if(!items[index])return;if(mode!=="listen"&&el){marker=el;marker.classList.add("lex-active");followPage(el)}$("lex-status").textContent="Sentence "+(index+1)+" / "+items.length}
+// Turn the page with the narration instead of leaving the highlight on a page that is not shown.
+function followPage(el){
+ if(guideEl.classList.contains("lex-paginated")){const page=el.closest(".lex-book-page"),i=page?Array.prototype.indexOf.call(guideEl.children,page):-1;if(i>=0&&i!==guidePageIndex){guidePageIndex=i;guideEl.scrollTo({left:i*guideEl.clientWidth,behavior:"smooth"})}return}
+ if(el.ownerDocument!==document){try{const frame=document.querySelector("#epub-view iframe"),view=$("epub-view").getBoundingClientRect(),x=frame.getBoundingClientRect().left+el.getBoundingClientRect().left;if(x>=view.right-2&&typeof rendition!=="undefined"&&rendition)rendition.next()}catch{}return}
+ el.scrollIntoView?.({block:"nearest",behavior:"smooth"})
+}
 function play(){window.lexoraSpeech?.unlock();if(engine==="kokoro")window.lexoraKokoro?.unlock?.();showControls();if(!items.length&&!prepare(true))return;if(engine==="system"&&!(window.speechSynthesis&&window.lexoraSpeech)){$("lex-status").textContent="Voice unavailable";return}const session=++run;playing=true;inspect.hidden=true;$("lex-play").textContent="Ⅱ Pause";
  async function next(){if(session!==run||!playing)return;if(index>=items.length){stop();return}highlight();if(engine==="kokoro"&&window.lexoraKokoro){try{await window.lexoraKokoro.speak(items[index].text,{nextText:items[index+1]?.text||"",voice:kokoroVoice,speed:Number(JSON.parse(localStorage.getItem("lexora-voice-speed")||"0.9")),status:message=>{if(session===run)$("lex-status").textContent=message},cancelled:()=>session!==run||!playing});if(session===run&&playing){index++;next()}return}catch(error){if(session!==run)return;$("lex-status").textContent="Kokoro unavailable; using device voice";console.warn("Kokoro unavailable",error);engine="system";$("lex-engine").value=engine;localStorage.setItem("lexora-narration-engine",engine)}}let started=false;lexoraSpeech.speak(items[index].text,{rate:JSON.parse(localStorage.getItem("lexora-voice-speed")||"0.9"),voiceURI:JSON.parse(localStorage.getItem("lexora-voice-choice")||'""'),onstart:()=>{started=true;if(session===run)$("lex-status").textContent="Speaking…"},onend:()=>{if(session===run&&playing){index++;next()}},onerror:()=>{if(session===run){stop();$("lex-status").textContent="Audio blocked. Tap Play again."}}});setTimeout(()=>{if(session===run&&playing&&!started&&engine==="system"){$("lex-status").textContent="No sound yet? Check the volume, then tap Pause and Play."}},4500)}
  next()
