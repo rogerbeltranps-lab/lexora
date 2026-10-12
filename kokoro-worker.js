@@ -9,7 +9,9 @@ self.onmessage=async e=>{
  try{
   const tts=await load();
   if(!text){self.postMessage({id,ok:true});return}
-  const sound=await tts.generate(text,{voice,speed}),audio=sound.audio;
-  self.postMessage({id,ok:true,audio,rate:sound.sampling_rate||24000},[audio.buffer]);
+  const started=performance.now(),sound=await tts.generate(text,{voice,speed});
+  // With cross-origin isolation the samples can live in shared memory, which cannot be transferred: copy them out first.
+  const audio=sound.audio.buffer instanceof ArrayBuffer?sound.audio:new Float32Array(sound.audio);
+  self.postMessage({id,ok:true,audio,rate:sound.sampling_rate||24000,ms:performance.now()-started,isolated:self.crossOriginIsolated===true},[audio.buffer]);
  }catch(error){self.postMessage({id,ok:false,error:String(error?.message||error)})}
 };

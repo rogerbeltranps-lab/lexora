@@ -1,6 +1,6 @@
 /* Lexora Kokoro: synthesize the next sentence while the current audio plays. */
 (()=>{"use strict";
-let modelPromise=null,model=null,context=null,source=null,serial=Promise.resolve();
+let modelPromise=null,model=null,stats=null,context=null,source=null,serial=Promise.resolve();
 const cache=new Map(),MAX_CACHE=8;
 function ctx(){if(!context)context=new (window.AudioContext||window.webkitAudioContext)();return context}
 function stop(){if(source){const old=source;source=null;try{old.stop()}catch{}old.disconnect()}}
@@ -24,7 +24,7 @@ function workerTTS(progress){
   const call=data=>new Promise((ok,no)=>{const id=++next;pending.set(id,{ok,no});worker.postMessage({id,...data})});
   worker.onmessage=e=>{const m=e.data;if(m.type==="progress"){progress({status:"progress",progress:m.progress,total:2e6});return}const p=pending.get(m.id);if(!p)return;pending.delete(m.id);m.ok?p.ok(m):p.no(Error(m.error))};
   worker.onerror=e=>{const err=Error(e.message||"Kokoro worker failed");pending.forEach(p=>p.no(err));pending.clear();reject(err)};
-  call({}).then(()=>resolve({generate:(text,o)=>call({text,voice:o.voice,speed:o.speed}).then(m=>({audio:m.audio,sampling_rate:m.rate}))}),reject);
+  call({}).then(()=>resolve({generate:(text,o)=>call({text,voice:o.voice,speed:o.speed}).then(m=>{stats={ms:Math.round(m.ms),seconds:+(m.audio.length/m.rate).toFixed(2),isolated:m.isolated};return{audio:m.audio,sampling_rate:m.rate}})}),reject);
  });
 }
 function prepare(text,options={}){
@@ -32,7 +32,7 @@ function prepare(text,options={}){
  const speed=options.speed||1,voice=options.voice||"af_heart",key=voice+"|"+speed+"|"+text;
  if(cache.has(key))return cache.get(key);
  // Serialize inference for compatibility with browsers that cannot run parallel model calls.
- const promise=serial.catch(()=>{}).then(async()=>{const tts=await load(options.status);const sound=await tts.generate(text,{voice,speed});const samples=sound.audio,rate=sound.sampling_rate||24000;if(!samples?.length)throw Error("Kokoro returned no audio");const buffer=ctx().createBuffer(1,samples.length,rate);buffer.copyToChannel(samples,0);return buffer}).catch(error=>{cache.delete(key);throw error});
+ const promise=serial.catch(()=>{}).then(async()=>{const tts=await load(options.status);const sound=await tts.generate(text,{voice,speed});const samples=sound.audio.buffer instanceof ArrayBuffer?sound.audio:new Float32Array(sound.audio),rate=sound.sampling_rate||24000;if(!samples?.length)throw Error("Kokoro returned no audio");const buffer=ctx().createBuffer(1,samples.length,rate);buffer.copyToChannel(samples,0);return buffer}).catch(error=>{cache.delete(key);throw error});
  serial=promise.then(()=>{},()=>{});
  cache.set(key,promise);
  while(cache.size>MAX_CACHE)cache.delete(cache.keys().next().value);
@@ -52,5 +52,5 @@ async function speak(text,options={}){
  const node=audioCtx.createBufferSource();node.buffer=buffer;node.connect(audioCtx.destination);source=node;
  await new Promise((resolve,reject)=>{node.onended=()=>{if(source===node)source=null;node.disconnect();resolve()};try{node.start()}catch(e){reject(e)}})
 }
-window.lexoraKokoro={speak,prepare,stop,unlock,ready:()=>!!model};
+window.lexoraKokoro={speak,prepare,stop,unlock,ready:()=>!!model,stats:()=>stats};
 })();
