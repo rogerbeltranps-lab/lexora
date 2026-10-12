@@ -28,7 +28,8 @@ const ISOLATION_CACHE="lexora-flags",ISOLATION_KEY="./__lexora_isolated__",RETRY
 async function setIsolation(on){
  try{const cache=await caches.open(ISOLATION_CACHE);if(on)await cache.put(ISOLATION_KEY,new Response("1"));else await cache.delete(ISOLATION_KEY);navigator.serviceWorker?.controller?.postMessage({type:"ISOLATION"})}catch{}
 }
-if(gateSkip)gateSkip.onclick=()=>{try{sessionStorage.setItem(SKIP_KEY,"1")}catch{}showGate(false);setIsolation(true)};
+let retrying=false;
+if(gateSkip)gateSkip.onclick=()=>{try{sessionStorage.setItem(SKIP_KEY,"1")}catch{}retrying=false;showGate(false);setIsolation(true)};
 const validCard=c=>c&&typeof c.id==="string"&&typeof c.term==="string"&&typeof c.definition==="string";
 const timestamp=c=>Date.parse(c?.modifiedAt||"")||0;
 function merge(local,remote){
@@ -101,7 +102,8 @@ async function signIn(button){
 }
 login.onclick=()=>signIn(login);
 if(gateLogin)gateLogin.onclick=()=>signIn(gateLogin);
-try{if(sessionStorage.getItem(RETRY_KEY)==="1"){sessionStorage.removeItem(RETRY_KEY);loginFailure="Toca «Inicia sessió amb Google» un altre cop per acabar.";authMessage(loginFailure);gateMessage(loginFailure)}}catch{}
+// After that reload, show the sign-in screen with the message, wherever the first tap was made.
+try{if(sessionStorage.getItem(RETRY_KEY)==="1"){sessionStorage.removeItem(RETRY_KEY);retrying=true;loginFailure="Toca «Inicia sessió amb Google» un altre cop per acabar.";authMessage(loginFailure);gateMessage(loginFailure)}}catch{}
 // A redirect sign-in always returns to a non-isolated page; an isolated one cannot load Google's helper frame.
 if(!window.crossOriginIsolated)getRedirectResult(auth).then(result=>{if(result?.user)authMessage("Google: sessió iniciada per redirecció · "+(result.user.email||"usuari autenticat"))}).catch(authError);
 
@@ -110,7 +112,7 @@ syncBtn.onclick=()=>synchronize();
 window.addEventListener("lexora:changed",queueSync);
 onAuthStateChanged(auth,async user=>{
  if(unsubscribe){unsubscribe();unsubscribe=null}
- uid=user?.uid||null;ready=false;showGate(!user&&!skipped());setIsolation(!!user||skipped());clearTimeout(clock);if(user){loginFailure="";authMessage("Google: connectat · "+(user.email||"usuari autenticat"))}else if(!loginFailure){authMessage("Google: sessió no iniciada")}
+ uid=user?.uid||null;ready=false;showGate(!user&&(retrying||!skipped()));setIsolation(!!user||skipped());clearTimeout(clock);if(user){loginFailure="";authMessage("Google: connectat · "+(user.email||"usuari autenticat"))}else if(!loginFailure){authMessage("Google: sessió no iniciada")}
  login.hidden=!!user;logout.hidden=!user;syncBtn.hidden=!user;
  if(!user){message("Firestore: sense sincronització; les targetes es desen localment.");setBadge("Personal · local mode");return}
  message("Connectat com "+(user.email||"Google")+". Fusionant dades...");
