@@ -135,24 +135,27 @@ function playDictionaryAudio(raw){
  const button=document.getElementById("dictionary-listen");
  if(!raw||!button)return;
  if(!("speechSynthesis" in window)||!("SpeechSynthesisUtterance" in window)){
-   toast("Audio is unavailable in this browser.");return;
+   toast("Aquest dispositiu no ofereix síntesi de veu.");return;
  }
  try{
-   window.speechSynthesis.cancel();
-   const utterance=new SpeechSynthesisUtterance(raw);
+   const synth=window.speechSynthesis;
+   // Keep speak() synchronous with the user's tap: Safari iOS requires user activation.
+   synth.cancel();
+   const utterance=new SpeechSynthesisUtterance(raw.trim());
    dictionaryUtterance=utterance;
-   utterance.lang="en-US";
-   utterance.rate=0.88;
-   const voices=window.speechSynthesis.getVoices();
-   const american=voices.find(v=>v.lang.toLowerCase().replace("_","-")==="en-us");
+   utterance.lang="en-US";utterance.rate=0.9;utterance.volume=1;
+   const voices=synth.getVoices();
+   const american=voices.find(v=>/^en[-_]US$/i.test(v.lang))||voices.find(v=>/^en/i.test(v.lang));
    if(american)utterance.voice=american;
-   button.textContent="🔊 Playing…";
-   utterance.onend=()=>{if(dictionaryUtterance===utterance){button.textContent="🔊 Listen";dictionaryUtterance=null}};
-   utterance.onerror=()=>{if(dictionaryUtterance===utterance){button.textContent="🔊 Retry audio";dictionaryUtterance=null;toast("Audio did not play. Check silent mode, volume, or try Safari.")}};
-   window.speechSynthesis.speak(utterance);
-   // On iOS a paused speech engine sometimes needs a resume after interruption.
-   if(window.speechSynthesis.paused)window.speechSynthesis.resume();
- }catch(error){button.textContent="🔊 Retry audio";toast("Unable to play pronunciation: "+error.message)}
+   button.textContent="🔊 Reproduint…";
+   let started=false;
+   utterance.onstart=()=>{started=true;button.textContent="🔊 Reproduint…"};
+   utterance.onend=()=>{if(dictionaryUtterance===utterance){button.textContent="🔊 Escolta";dictionaryUtterance=null}};
+   utterance.onerror=e=>{if(dictionaryUtterance===utterance){button.textContent="🔊 Torna-ho a provar";dictionaryUtterance=null;toast("La veu no s'ha reproduït ("+(e.error||"error")+"). Prova la veu del dispositiu.")}};
+   synth.speak(utterance);
+   if(synth.paused)synth.resume();
+   setTimeout(()=>{if(dictionaryUtterance===utterance&&!started&&!synth.speaking){button.textContent="🔊 Torna-ho a provar";toast("L'iPhone no ha iniciat l'àudio. Comprova el volum i prova de nou.");}},2200);
+ }catch(error){button.textContent="🔊 Torna-ho a provar";toast("No es pot reproduir l'àudio: "+error.message)}
 }
 function renderCandidates(raw,source,items,warning){
  const root=document.getElementById("discovery");if(!root)return;
