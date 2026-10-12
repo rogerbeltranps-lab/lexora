@@ -5,7 +5,7 @@
 (function(){
 "use strict";
 const cache=new Map(),buckets=["a-h","i-p","q-z"];
-let selectionSequence=0;
+let selectionSequence=0,lastPassage="";
 const escapeHtml=x=>String(x??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
 function bucketOf(s){const x=(s||"").toLowerCase()[0];return x<="h"?"a-h":x<="p"?"i-p":"q-z"}
 async function shard(name){
@@ -138,9 +138,26 @@ function panelTitle(title,context){
  return '<div class="lex-dictionary-heading"><span class="chip">Contextual discovery · offline-style dictionary</span><div class="word lex-selected-word" aria-label="Selected word or phrase">'+escapeHtml(title)+'</div></div>'+
  (context?'<p class="quote">'+escapeHtml(context)+'</p>':'');
 }
-function addSelectedCard(entry,sense,source){
+// The sentence of the passage that holds the selection, exactly as the book wrote it.
+function sourceSentence(raw,entry,passage){
+ const parts=(String(passage||"").replace(/\s+/g," ").match(/[^.!?]+(?:[.!?]+["'”’)\]]*(?=\s|$)|$)/g)||[]).map(v=>v.trim()).filter(v=>/[a-z]/i.test(v));
+ const words=" "+tokenize(raw).join(" ")+" ";
+ return parts.find(p=>words.trim()&&(" "+tokenize(p).join(" ")+" ").includes(words))||parts.find(p=>matches(p,entry))||"";
+}
+// Where a reader selection came from. Optional on cards: older cards have no source.
+function readingSource(sentence){
+ const guide=currentBook==="guide",book=guide?{name:"The Lexora Guide"}:(bookNames.find(b=>b.id===currentBook)||{});
+ let location="";
+ try{location=guide?"chapter "+(chapterIndex+1):(rendition?.currentLocation?.()?.start?.cfi||"")}catch{}
+ return {kind:"book",title:book.name||"",bookId:currentBook,sentence,location,capturedAt:new Date().toISOString()};
+}
+function addSelectedCard(entry,sense,source,raw){
  const fallback=entry.senses[sense]||entry.senses[0];if(!fallback)return;
- const fresh={id:"",term:entry.term,type:(["Phrasal verb","Idiom","Expression","Vocabulary","Pronunciation","Grammar"].includes(entry.type)?entry.type:(["Idiomatic expression","Proverb"].includes(entry.type)?"Idiom":(entry.term.trim().includes(" ")?"Expression":"Vocabulary"))),ipa:entry.ipa||"",definition:fallback.definition,catalan:fallback.catalan||"",structure:entry.structure||"",examples:[fallback.example].filter(Boolean),tip:"",context:source||""};
+ // The shown passage is shortened; look for the sentence in the full paragraph.
+ const passage=source&&lastPassage.startsWith(source)?lastPassage:source;
+ const sentence=sourceSentence(raw||entry.term,entry,passage);
+ const fresh={id:"",term:entry.term,type:(["Phrasal verb","Idiom","Expression","Vocabulary","Pronunciation","Grammar"].includes(entry.type)?entry.type:(["Idiomatic expression","Proverb"].includes(entry.type)?"Idiom":(entry.term.trim().includes(" ")?"Expression":"Vocabulary"))),ipa:entry.ipa||"",definition:fallback.definition,catalan:fallback.catalan||"",structure:entry.structure||"",examples:[sentence,fallback.example].filter((x,i,all)=>x&&all.indexOf(x)===i),tip:"",context:source||""};
+ if(sentence)fresh.source=readingSource(sentence);
  editCard(fresh);
 }
 // Kaikki can repeat one gloss for several citations. Show the meaning once.
@@ -195,7 +212,7 @@ function renderCandidates(raw,source,items,warning){
   const i=Number(button.dataset.saveEntry),selected=root.querySelector('input[name="sense-'+i+'"]:checked');
   if(!selected){toast("Choose a meaning first");return}
   if(selected.value==="unsure"){toast("No problem — try another definition or create a manual card");return}
-  addSelectedCard(items[i],Number(selected.value),source)
+  addSelectedCard(items[i],Number(selected.value),source,raw)
  });
  root.querySelector("#dictionary-listen").onclick=()=>playDictionaryAudio(raw);
 }
@@ -225,7 +242,8 @@ window.lexoraAnalyze=analyze;
 window.lexoraDictionaryInfo={matching:"words, phrases and expressions",sources:["Wiktionary via Kaikki","Lexora starter glossary"],cloudSync:false};
 choose=function(term,source=""){
  selected=term.trim().slice(0,500);
- context=source.trim().slice(0,700);
+ lastPassage=source.trim();
+ context=lastPassage.slice(0,700);
  document.getElementById("lookup").value=selected;
  if(selected)analyze(selected,context);
 };
