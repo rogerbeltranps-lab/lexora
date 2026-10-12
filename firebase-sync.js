@@ -22,7 +22,13 @@ const SKIP_KEY="lexora-login-skipped";
 const skipped=()=>{try{return sessionStorage.getItem(SKIP_KEY)==="1"}catch{return false}};
 function showGate(show){if(gate)gate.hidden=!show;document.documentElement.style.overflow=show?"hidden":""}
 function gateMessage(t){if(!gateError)return;gateError.textContent=t||"";gateError.hidden=!t}
-if(gateSkip)gateSkip.onclick=()=>{try{sessionStorage.setItem(SKIP_KEY,"1")}catch{}showGate(false)};
+// Cross-origin isolation lets the Kokoro voice use several cores, but it breaks the Google sign-in popup. sw.js only isolates
+// the app once the person is signed in or chose local mode; it takes effect the next time Lexora opens.
+const ISOLATION_CACHE="lexora-flags",ISOLATION_KEY="./__lexora_isolated__",RETRY_KEY="lexora-signin-retry";
+async function setIsolation(on){
+ try{const cache=await caches.open(ISOLATION_CACHE);if(on)await cache.put(ISOLATION_KEY,new Response("1"));else await cache.delete(ISOLATION_KEY);navigator.serviceWorker?.controller?.postMessage({type:"ISOLATION"})}catch{}
+}
+if(gateSkip)gateSkip.onclick=()=>{try{sessionStorage.setItem(SKIP_KEY,"1")}catch{}showGate(false);setIsolation(true)};
 const validCard=c=>c&&typeof c.id==="string"&&typeof c.term==="string"&&typeof c.definition==="string";
 const timestamp=c=>Date.parse(c?.modifiedAt||"")||0;
 function merge(local,remote){
@@ -80,6 +86,8 @@ function authError(e){
  authMessage(loginFailure);gateMessage(code==="auth/popup-closed-by-user"||code==="auth/cancelled-popup-request"?"":loginFailure);
 }
 async function signIn(button){
+ // An isolated page cannot talk to the Google popup: reopen Lexora without isolation, then the next tap signs in.
+ if(window.crossOriginIsolated){button.disabled=true;authMessage("Google: preparant l'inici de sessió...");await setIsolation(false);try{sessionStorage.setItem(RETRY_KEY,"1")}catch{}location.reload();return}
  button.disabled=true;loginFailure="";gateMessage("");authMessage("Google: obrint la finestra per identificar-te...");
  try{const result=await signInWithPopup(auth,provider);authMessage("Google: sessió iniciada · "+(result.user.email||"usuari autenticat"))}
  catch(e){
@@ -93,14 +101,16 @@ async function signIn(button){
 }
 login.onclick=()=>signIn(login);
 if(gateLogin)gateLogin.onclick=()=>signIn(gateLogin);
-getRedirectResult(auth).then(result=>{if(result?.user)authMessage("Google: sessió iniciada per redirecció · "+(result.user.email||"usuari autenticat"))}).catch(authError);
+try{if(sessionStorage.getItem(RETRY_KEY)==="1"){sessionStorage.removeItem(RETRY_KEY);loginFailure="Toca «Inicia sessió amb Google» un altre cop per acabar.";authMessage(loginFailure);gateMessage(loginFailure)}}catch{}
+// A redirect sign-in always returns to a non-isolated page; an isolated one cannot load Google's helper frame.
+if(!window.crossOriginIsolated)getRedirectResult(auth).then(result=>{if(result?.user)authMessage("Google: sessió iniciada per redirecció · "+(result.user.email||"usuari autenticat"))}).catch(authError);
 
 logout.onclick=async()=>{await signOut(auth);message("Sessió tancada. Les targetes locals es mantenen.")};
 syncBtn.onclick=()=>synchronize();
 window.addEventListener("lexora:changed",queueSync);
 onAuthStateChanged(auth,async user=>{
  if(unsubscribe){unsubscribe();unsubscribe=null}
- uid=user?.uid||null;ready=false;showGate(!user&&!skipped());clearTimeout(clock);if(user){loginFailure="";authMessage("Google: connectat · "+(user.email||"usuari autenticat"))}else if(!loginFailure){authMessage("Google: sessió no iniciada")}
+ uid=user?.uid||null;ready=false;showGate(!user&&!skipped());setIsolation(!!user||skipped());clearTimeout(clock);if(user){loginFailure="";authMessage("Google: connectat · "+(user.email||"usuari autenticat"))}else if(!loginFailure){authMessage("Google: sessió no iniciada")}
  login.hidden=!!user;logout.hidden=!user;syncBtn.hidden=!user;
  if(!user){message("Firestore: sense sincronització; les targetes es desen localment.");setBadge("Personal · local mode");return}
  message("Connectat com "+(user.email||"Google")+". Fusionant dades...");
