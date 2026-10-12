@@ -105,7 +105,12 @@ body.lex-reader-fullscreen{background:#fffaf1}
 html:has(body.lex-reader-fullscreen){background:#fffaf1}
 html:has(body.lex-reader-fullscreen #reader.white),body.lex-reader-fullscreen:has(#reader.white){background:#fff}
 html:has(body.lex-reader-fullscreen #reader.black),body.lex-reader-fullscreen:has(#reader.black){background:#000}
-body.lex-reader-fullscreen #read .grid>.panel:first-child{inset:env(safe-area-inset-top,0px) 0 0!important}
+/* Cover the iOS status-bar area with the reader colour (no navy strip from the app chrome underneath). */
+body.lex-reader-fullscreen #read .grid>.panel:first-child{inset:0!important;padding-top:calc(12px + env(safe-area-inset-top,0px))!important}
+body.lex-reader-fullscreen .app>aside,body.lex-reader-fullscreen .main>.top{visibility:hidden}
+body.lex-reader-fullscreen #read .grid>.panel:first-child:has(#reader.black){background:#000}
+body.lex-reader-fullscreen #read .grid>.panel:first-child:has(#reader.white){background:#fff}
+body.lex-reader-fullscreen #read .grid>.panel:first-child:has(#reader.sepia){background:#fffaf1}
 body.lex-reader-fullscreen #read .grid>.panel:first-child>.reader{overflow:hidden!important;overscroll-behavior:contain}
 body.lex-reader-fullscreen #guide.lex-paginated{display:flex!important;gap:0!important;overflow:hidden!important;height:100%!important;max-width:none!important;width:100%!important;padding:0!important;scroll-behavior:smooth}
 body.lex-reader-fullscreen #guide.lex-paginated .lex-book-page{flex:0 0 100%;height:100%;min-height:0;overflow:hidden;box-sizing:border-box;padding:clamp(100px,15vh,145px) clamp(20px,5vw,65px) 50px;margin:0;min-width:0}
@@ -240,14 +245,19 @@ function moveReadingPage(direction){
 }
 function attachSwipe(surface,doc){
  if(!surface||surface.dataset.lexSwipeAttached)return;
- surface.dataset.lexSwipeAttached="1";let start=null;
- surface.addEventListener("touchstart",e=>{if(e.touches.length!==1||!document.body.classList.contains("lex-reader-fullscreen"))return;const t=e.touches[0];start={x:t.clientX,y:t.clientY,time:Date.now()}},{passive:true});
- surface.addEventListener("touchend",e=>{if(!start||!document.body.classList.contains("lex-reader-fullscreen"))return;const t=e.changedTouches[0],dx=t.clientX-start.x,dy=t.clientY-start.y;start=null;
- if(Math.abs(dx)<42||Math.abs(dx)<Math.abs(dy)*1.2)return;
- const selection=doc.getSelection?.();if(selection&&!selection.isCollapsed)selection.removeAllRanges();
- moveReadingPage(dx<0?1:-1)
- },{passive:true});
- surface.addEventListener("touchcancel",()=>{start=null},{passive:true});
+ surface.dataset.lexSwipeAttached="1";let start=null,last=null;
+ // Let the reader own horizontal drags; otherwise iOS starts a native pan and cancels the touch.
+ surface.style.touchAction="pan-y pinch-zoom";
+ const finish=()=>{if(!start||!last||!document.body.classList.contains("lex-reader-fullscreen")){start=last=null;return}
+  const dx=last.x-start.x,dy=last.y-start.y;start=last=null;
+  if(Math.abs(dx)<42||Math.abs(dx)<Math.abs(dy)*1.2)return;
+  const selection=doc.getSelection?.();if(selection&&!selection.isCollapsed)selection.removeAllRanges();
+  moveReadingPage(dx<0?1:-1)};
+ surface.addEventListener("touchstart",e=>{if(e.touches.length!==1||!document.body.classList.contains("lex-reader-fullscreen")){start=last=null;return}const t=e.touches[0];start=last={x:t.clientX,y:t.clientY}},{passive:true});
+ surface.addEventListener("touchmove",e=>{if(!start||e.touches.length!==1)return;const t=e.touches[0];last={x:t.clientX,y:t.clientY}},{passive:true});
+ surface.addEventListener("touchend",e=>{if(!start)return;const t=e.changedTouches[0];if(t)last={x:t.clientX,y:t.clientY};finish()},{passive:true});
+ // iOS may cancel a touch it decided to scroll; still honour a clear horizontal drag.
+ surface.addEventListener("touchcancel",finish,{passive:true});
 }
 attachSwipe($("reader"),document);
 function attachEpubSwipe(){const frame=epubHost.querySelector("iframe");try{if(frame?.contentDocument?.body)attachSwipe(frame.contentDocument.body,frame.contentDocument)}catch{}}
