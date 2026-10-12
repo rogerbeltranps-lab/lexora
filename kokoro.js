@@ -1,7 +1,7 @@
 /* Lexora Kokoro: synthesize sentences ahead of the narration and keep them on the device. */
 (()=>{"use strict";
 let modelPromise=null,model=null,stats=null,context=null,source=null,serial=Promise.resolve();
-const cache=new Map(),seconds=new Map(),MAX_CACHE=60,CANCELLED="cancelled";
+const cache=new Map(),MAX_CACHE=60,CANCELLED="cancelled";
 // How much slower than real time synthesis runs, and seconds of speech per character at speed 1. Learned per device,
 // so the narration knows how far ahead to prepare. Defaults are what the iPhone simulator measured.
 const learned=JSON.parse(localStorage.getItem("lexora-kokoro-pace")||"null")||{ratio:1.6,perChar:0.065};
@@ -57,7 +57,7 @@ function learn(ms,audioSeconds,text,speed){
 }
 const keyOf=(text,options)=>(options.voice||"af_heart")+"|"+(options.speed||1)+"|"+text;
 // Seconds of audio already made for this sentence, or 0.
-const clip=(text,options={})=>seconds.get(keyOf(text,options))||0;
+const clip=(text,options={})=>cache.get(keyOf(text,options))?.seconds||0;
 const estimate=(text,speed=1)=>String(text||"").length*learned.perChar/speed;
 function prepare(text,options={}){
  if(!text)return Promise.resolve(null);
@@ -72,10 +72,10 @@ function prepare(text,options={}){
   const tts=await load(options.status),started=performance.now(),sound=await tts.generate(text,{voice,speed});
   const samples=sound.audio.buffer instanceof ArrayBuffer?sound.audio:new Float32Array(sound.audio),rate=sound.sampling_rate||24000;if(!samples?.length)throw Error("Kokoro returned no audio");
   learn(performance.now()-started,samples.length/rate,text,speed);save(key,samples,rate);return toBuffer(samples,rate)
- }).then(buffer=>{if(cache.get(key)===entry)seconds.set(key,buffer.duration);return buffer},error=>{if(cache.get(key)===entry)cache.delete(key);throw error});
+ }).then(buffer=>{entry.seconds=buffer.duration;return buffer},error=>{if(cache.get(key)===entry)cache.delete(key);throw error});
  serial=entry.promise.then(()=>{},()=>{});
  cache.set(key,entry);
- while(cache.size>MAX_CACHE){const oldest=cache.keys().next().value;cache.delete(oldest);seconds.delete(oldest)}
+ while(cache.size>MAX_CACHE)cache.delete(cache.keys().next().value);
  return entry.promise
 }
 function unlock(){const audioCtx=ctx();if(audioCtx.state!=="running"){audioCtx.resume().catch(()=>{})}return audioCtx}
@@ -93,5 +93,11 @@ async function speak(text,options={}){
  const node=audioCtx.createBufferSource();node.buffer=buffer;node.connect(audioCtx.destination);source=node;
  await new Promise((resolve,reject)=>{node.onended=()=>{if(source===node)source=null;node.disconnect();resolve()};try{node.start()}catch(e){reject(e)}})
 }
-window.lexoraKokoro={speak,prepare,stop,unlock,clip,estimate,ratio:()=>learned.ratio,ready:()=>!!model,stats:()=>stats};
+// Multi-core synthesis needs cross-origin isolation, which has not been tried on every iPhone. If Kokoro fails on an
+// isolated page, open Lexora without isolation from now on (sw.js reads the same flag).
+function giveUpIsolation(){
+ if(!window.crossOriginIsolated)return;try{localStorage.setItem("lexora-isolation-off","1")}catch{}
+ caches.open("lexora-flags").then(c=>c.delete("./__lexora_isolated__")).then(()=>navigator.serviceWorker?.controller?.postMessage({type:"ISOLATION"})).catch(()=>{});
+}
+window.lexoraKokoro={speak,prepare,stop,unlock,clip,estimate,giveUpIsolation,ratio:()=>learned.ratio,ready:()=>!!model,stats:()=>stats};
 })();
