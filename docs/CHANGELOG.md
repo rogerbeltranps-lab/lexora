@@ -1,6 +1,7 @@
 # Lexora changelog
 
 ## 2026-10-12
+- Updates arrive right away: the service worker now revalidates app files with GitHub Pages on every load instead of using the browser's 10-minute cache, and "Comprova i actualitza" refreshes every app file, not just index.html. Settings shows the installed version ("2026-10-12 · 4").
 - Cloud sync is now visible: the header badge shows "☁ Desat al núvol" (or a warning) and Settings shows the time of the last Firestore save, with a hint for `permission-denied`. Sync verified end-to-end against the Firebase emulator with the published rules (two devices, live updates).
 - Immersive reader: page swipes still turn the page when iOS cancels the touch, and the full-screen reader now covers the status-bar area so the navy strip no longer shows. Shell cache bumped to v5.
 - Lexora now asks for Google sign-in when it opens instead of only offering it in Settings. "Continue without account" keeps local-only mode for the current session. Google always shows the account chooser; the broken cross-site redirect button was removed (redirect is used automatically only when popups are blocked). Shell cache bumped to v4.
