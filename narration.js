@@ -240,7 +240,9 @@ function moveReadingPage(direction){
  if($("booklist").value==="guide"){
  if(!guideEl.classList.contains("lex-paginated"))paginateGuide();
  const next=guidePageIndex+(direction>0?1:-1);
- if(next>=0&&next<guidePageTotal){guidePageIndex=next;guideEl.scrollTo({left:next*guideEl.clientWidth,behavior:"smooth"})}
+ if(next>=0&&next<guidePageTotal){guidePageIndex=next;guideEl.scrollTo({left:next*guideEl.clientWidth,behavior:"smooth"});
+  // Play then starts from the page the reader turned to.
+  const first=guideEl.children[next]?.querySelector("[data-lex-i]");if(first&&!playing)index=Number(first.dataset.lexI)}
  else $(""+(direction>0?"next":"prev")).click();
  }
  else if(typeof rendition!=="undefined"&&rendition){direction>0?rendition.next():rendition.prev()}
@@ -321,7 +323,16 @@ function clear(){if(marker){marker.classList.remove("lex-active");marker=null}
 function readingRoot(){return $("booklist").value==="guide"?$("guide"):epubBody()}
 // Sentence spans carry data-lex-i so they can be found again after the guide is re-paginated into new nodes.
 function liveEl(i){const item=items[i];if(!item)return null;if(item.el?.isConnected)return item.el;const found=readingRoot()?.querySelector('[data-lex-i="'+i+'"]');if(found){item.el=found;enableTap(item,i)}return found}
-function stop(){run++;playing=false;window.lexoraKokoro?.stop();window.lexoraSpeech?.cancel();$("lex-play").textContent="▶ Play"}
+let autoContinue=false;
+// At the end of a chapter keep reading into the next one, as an audiobook would.
+function continueReading(){
+ const guide=$("booklist").value==="guide",chapter=$("chapter");
+ if(guide?!chapter||chapter.selectedIndex>=chapter.options.length-1:typeof rendition==="undefined"||!rendition){stop();$("lex-status").textContent="End of book";return}
+ stop();$("next").click();autoContinue=true;$("lex-status").textContent="Next chapter…";
+ const resume=()=>{if(!autoContinue)return;autoContinue=false;if(prepare(true))play()};
+ if(guide)setTimeout(resume,900);else{let done=false;const once=()=>{if(done)return;done=true;setTimeout(resume,400)};try{rendition.once?.("relocated",once)}catch{}setTimeout(once,4000)}
+}
+function stop(){autoContinue=false;run++;playing=false;window.lexoraKokoro?.stop();window.lexoraSpeech?.cancel();$("lex-play").textContent="▶ Play"}
 function epubBody(){try{return document.querySelector("#epub-view iframe")?.contentDocument?.body}catch{return null}}
 function prepare(reset){
  clear();if(reset)index=0;
@@ -336,7 +347,10 @@ function prepare(reset){
    if(p.children.length===0){const parts=sentences(txt);p.replaceChildren(...parts.map((part,i)=>{const sp=p.ownerDocument.createElement("span");sp.textContent=part+(i<parts.length-1?" ":"");return sp}));p.querySelectorAll("span").forEach(sp=>{sp.dataset.lexI=String(items.length);items.push({text:sp.textContent.trim(),el:sp})})}else{sentences(txt).forEach(t=>items.push({text:t,el:p}))}
   }
  });
- items.forEach(enableTap);index=Math.min(index,Math.max(0,items.length-1));$("lex-status").textContent=items.length?"Sentence "+(index+1)+" / "+items.length:"No text on this page";
+ items.forEach(enableTap);
+ // An EPUB chapter is one long page strip: start from the page on screen, not the top of the chapter.
+ if(reset&&!guide){const view=$("epub-view").getBoundingClientRect(),frame=document.querySelector("#epub-view iframe")?.getBoundingClientRect();if(frame){const i=items.findIndex(it=>{const x=frame.left+it.el.getBoundingClientRect().left;return x>=view.left-2&&x<view.right-2});if(i>0)index=i}}
+ index=Math.min(index,Math.max(0,items.length-1));$("lex-status").textContent=items.length?"Sentence "+(index+1)+" / "+items.length:"No text on this page";
  return items.length>0
 }
 // A WeakSet, not a data attribute: paginated clones copy attributes but not listeners.
@@ -357,7 +371,16 @@ function followPage(el){
  el.scrollIntoView?.({block:"nearest",behavior:"smooth"})
 }
 function play(){window.lexoraSpeech?.unlock();if(engine==="kokoro")window.lexoraKokoro?.unlock?.();showControls();if(!items.length&&!prepare(true))return;if(engine==="system"&&!(window.speechSynthesis&&window.lexoraSpeech)){$("lex-status").textContent="Voice unavailable";return}const session=++run;playing=true;inspect.hidden=true;$("lex-play").textContent="Ⅱ Pause";
- async function next(){if(session!==run||!playing)return;if(index>=items.length){stop();return}highlight();if(engine==="kokoro"&&window.lexoraKokoro){try{await window.lexoraKokoro.speak(items[index].text,{nextText:items[index+1]?.text||"",voice:kokoroVoice,speed:Number(JSON.parse(localStorage.getItem("lexora-voice-speed")||"0.9")),status:message=>{if(session===run)$("lex-status").textContent=message},cancelled:()=>session!==run||!playing});if(session===run&&playing){index++;next()}return}catch(error){if(session!==run)return;$("lex-status").textContent="Kokoro unavailable; using device voice";console.warn("Kokoro unavailable",error);engine="system";$("lex-engine").value=engine;localStorage.setItem("lexora-narration-engine",engine)}}let started=false;lexoraSpeech.speak(items[index].text,{rate:JSON.parse(localStorage.getItem("lexora-voice-speed")||"0.9"),voiceURI:JSON.parse(localStorage.getItem("lexora-voice-choice")||'""'),onstart:()=>{started=true;if(session===run)$("lex-status").textContent="Speaking…"},onend:()=>{if(session===run&&playing){index++;next()}},onerror:()=>{if(session===run){stop();$("lex-status").textContent="Audio blocked. Tap Play again."}}});setTimeout(()=>{if(session===run&&playing&&!started&&engine==="system"){$("lex-status").textContent="No sound yet? Check the volume, then tap Pause and Play."}},4500)}
+ let kokoro=engine==="kokoro"&&!!window.lexoraKokoro,failures=0;
+ const speed=()=>Number(JSON.parse(localStorage.getItem("lexora-voice-speed")||"0.9"));
+ const advance=()=>{if(session===run&&playing){index++;next()}};
+ async function next(){if(session!==run||!playing)return;if(index>=items.length){continueReading();return}highlight();
+  if(kokoro){try{await window.lexoraKokoro.speak(items[index].text,{nextText:[items[index+1]?.text,items[index+2]?.text],voice:kokoroVoice,speed:speed(),status:message=>{if(session===run)$("lex-status").textContent=message},cancelled:()=>session!==run||!playing});failures=0;if(session===run&&playing)$("lex-status").textContent="Sentence "+(index+1)+" / "+items.length;advance();return}catch(error){if(session!==run)return;console.warn("Kokoro unavailable",error);
+   // Use the device voice for the rest of this session only; one failed download should not switch the saved choice for good.
+   kokoro=false;$("lex-status").textContent="Natural voice unavailable right now; using device voice"}}
+  let started=false;lexoraSpeech.speak(items[index].text,{rate:speed(),voiceURI:JSON.parse(localStorage.getItem("lexora-voice-choice")||'""'),onstart:()=>{started=true;if(session===run)$("lex-status").textContent="Speaking…"},onend:()=>{failures=0;advance()},onerror:e=>{if(session!==run)return;
+   // Skip a sentence the voice cannot say instead of ending the whole narration.
+   if(++failures<3){advance();return}stop();$("lex-status").textContent="Device voice failed ("+e+"). Tap Play again."}});setTimeout(()=>{if(session===run&&playing&&!started&&!kokoro){$("lex-status").textContent="No sound yet? Check the volume, then tap Pause and Play."}},4500)}
  next()
 }
 inspect.addEventListener("click",e=>{if(e.target.closest(".lex-sheet-close"))inspect.hidden=true});

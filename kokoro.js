@@ -1,10 +1,13 @@
 /* Lexora Kokoro: synthesize the next sentence while the current audio plays. */
 (()=>{"use strict";
-let modelPromise=null,context=null,source=null,serial=Promise.resolve();
+let modelPromise=null,model=null,context=null,source=null,serial=Promise.resolve();
 const cache=new Map(),MAX_CACHE=8;
 function ctx(){if(!context)context=new (window.AudioContext||window.webkitAudioContext)();return context}
 function stop(){if(source){const old=source;source=null;try{old.stop()}catch{}old.disconnect()}}
-async function load(status=()=>{}){if(!modelPromise){modelPromise=(async()=>{status("Downloading Kokoro voice model (first use may take a while)…");const mod=await import("https://esm.sh/kokoro-js@1.2.1?bundle");const device=navigator.gpu?"webgpu":"wasm";try{return await mod.KokoroTTS.from_pretrained("onnx-community/Kokoro-82M-v1.0-ONNX",{dtype:device==="webgpu"?"fp32":"q8",device})}catch(e){if(device!=="webgpu")throw e;status("Trying Kokoro compatibility mode…");return mod.KokoroTTS.from_pretrained("onnx-community/Kokoro-82M-v1.0-ONNX",{dtype:"q8",device:"wasm"})}})().catch(e=>{modelPromise=null;throw e})}return modelPromise}
+async function load(status=()=>{}){if(!modelPromise){modelPromise=(async()=>{status("Downloading Kokoro voice model (first use may take a while)…");const mod=await import("https://esm.sh/kokoro-js@1.2.1?bundle");const device=navigator.gpu?"webgpu":"wasm";
+ // Show download progress so a slow first load does not look like a hang.
+ const progress=e=>{if(e?.status==="progress"&&e.total>1e6)status("Downloading natural voice… "+Math.round(e.progress||0)+"%")};
+ try{return await mod.KokoroTTS.from_pretrained("onnx-community/Kokoro-82M-v1.0-ONNX",{dtype:device==="webgpu"?"fp32":"q8",device,progress_callback:progress})}catch(e){if(device!=="webgpu")throw e;status("Trying Kokoro compatibility mode…");return mod.KokoroTTS.from_pretrained("onnx-community/Kokoro-82M-v1.0-ONNX",{dtype:"q8",device:"wasm",progress_callback:progress})}})().then(m=>{model=m;return m},e=>{modelPromise=null;throw e})}return modelPromise}
 function prepare(text,options={}){
  if(!text)return Promise.resolve(null);
  const speed=options.speed||1,voice=options.voice||"af_heart",key=voice+"|"+speed+"|"+text;
@@ -22,12 +25,13 @@ async function speak(text,options={}){
  options.status?.("Preparing natural voice…");
  // Queue upcoming audio before awaiting this sentence. It will be ready during playback.
  const current=prepare(text,options);
- if(options.nextText)prepare(options.nextText,{speed:options.speed,voice:options.voice,status:()=>{}}).catch(()=>{});
+ // Two sentences ahead: on phones synthesis can be slower than playback, which left gaps between sentences.
+ [].concat(options.nextText||[]).filter(Boolean).slice(0,2).forEach(t=>prepare(t,{speed:options.speed,voice:options.voice,status:()=>{}}).catch(()=>{}));
  const buffer=await current;
  if(options.cancelled?.())return;
  stop();
  const node=audioCtx.createBufferSource();node.buffer=buffer;node.connect(audioCtx.destination);source=node;
  await new Promise((resolve,reject)=>{node.onended=()=>{if(source===node)source=null;node.disconnect();resolve()};try{node.start()}catch(e){reject(e)}})
 }
-window.lexoraKokoro={speak,prepare,stop,unlock};
+window.lexoraKokoro={speak,prepare,stop,unlock,ready:()=>!!model};
 })();

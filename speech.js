@@ -28,6 +28,8 @@ function speak(text,options={}){
   u.onend=()=>{if(current===u){current=null;options.onend?.()}};
   u.onerror=e=>{if(current!==u||e.error==="interrupted"||e.error==="canceled")return;current=null;options.onerror?.(e.error||"error")};
   synth.speak(u);if(synth.paused)synth.resume();
+  // Chrome and Safari sometimes never fire onend (long text, remote voices); finish the sentence ourselves once speech has gone quiet.
+  let quiet=0;const watch=setInterval(()=>{if(current!==u){clearInterval(watch);return}if(started&&!synth.speaking&&!synth.pending){if(++quiet>=3){clearInterval(watch);current=null;options.onend?.()}}else quiet=0},500);
   // A downloaded-then-removed or enhanced voice can stay silent on iPhone: fall back once to the default voice.
   if(chosen&&retry)setTimeout(()=>{if(current===u&&!started&&!synth.speaking){current=null;synth.cancel();setTimeout(()=>say("",false),80)}},2000);
  };
@@ -37,8 +39,17 @@ function speak(text,options={}){
  return true;
 }
 // Only cancel real speech: a needless cancel() before the first speak() is what can leave an iPhone silent.
-function cancel(){generation++;current=null;if(synth&&(synth.speaking||synth.pending)){synth.cancel();cancelledAt=Date.now()}}
+function cancel(){generation++;current=null;window.lexoraKokoro?.stop();if(synth&&(synth.speaking||synth.pending)){synth.cancel();cancelledAt=Date.now()}}
 // iOS fills the voice list lazily; asking once at load makes it ready by the first tap.
 if(synth)synth.getVoices();
-window.lexoraSpeech={speak,cancel,unlock,voices};
+// Single words and cards: use the natural Kokoro voice when it is the chosen narrator and already loaded, else the device voice.
+function speakBest(text,options={}){
+ const kokoro=window.lexoraKokoro;
+ if(localStorage.getItem("lexora-narration-engine")!=="kokoro"||!kokoro?.ready?.())return speak(text,options);
+ unlock();kokoro.unlock();cancel();const mine=generation;
+ kokoro.speak(String(text||"").trim(),{voice:localStorage.getItem("lexora-kokoro-voice")||"af_heart",speed:Number(options.rate)||0.9,cancelled:()=>mine!==generation})
+  .then(()=>{if(mine===generation)options.onend?.()},()=>{if(mine===generation)speak(text,options)});
+ options.onstart?.();return true;
+}
+window.lexoraSpeech={speak,speakBest,cancel,unlock,voices};
 })();
