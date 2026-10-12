@@ -4,10 +4,19 @@ let modelPromise=null,model=null,context=null,source=null,serial=Promise.resolve
 const cache=new Map(),MAX_CACHE=8;
 function ctx(){if(!context)context=new (window.AudioContext||window.webkitAudioContext)();return context}
 function stop(){if(source){const old=source;source=null;try{old.stop()}catch{}old.disconnect()}}
-async function load(status=()=>{}){if(!modelPromise){modelPromise=(async()=>{status("Downloading Kokoro voice model (first use may take a while)…");const mod=await import("https://esm.sh/kokoro-js@1.2.1?bundle");const device=navigator.gpu?"webgpu":"wasm";
+async function load(status=()=>{}){if(!modelPromise){modelPromise=(async()=>{status("Downloading Kokoro voice model (first use may take a while)…");const mod=await import("https://esm.sh/kokoro-js@1.2.1?bundle");
  // Show download progress so a slow first load does not look like a hang.
  const progress=e=>{if(e?.status==="progress"&&e.total>1e6)status("Downloading natural voice… "+Math.round(e.progress||0)+"%")};
- try{return await mod.KokoroTTS.from_pretrained("onnx-community/Kokoro-82M-v1.0-ONNX",{dtype:device==="webgpu"?"fp32":"q8",device,progress_callback:progress})}catch(e){if(device!=="webgpu")throw e;status("Trying Kokoro compatibility mode…");return mod.KokoroTTS.from_pretrained("onnx-community/Kokoro-82M-v1.0-ONNX",{dtype:"q8",device:"wasm",progress_callback:progress})}})().then(m=>{model=m;return m},e=>{modelPromise=null;throw e})}return modelPromise}
+ const wasm=()=>mod.KokoroTTS.from_pretrained("onnx-community/Kokoro-82M-v1.0-ONNX",{dtype:"q8",device:"wasm",progress_callback:progress});
+ // A failed WebGPU attempt leaves the ONNX runtime unusable for the rest of the page, so the wasm retry in the same page
+ // also failed (iPhone simulator: navigator.gpu exists but has no adapter). Only try WebGPU with a real adapter, never on
+ // iPhone/iPad (the fp32 model is too heavy there), and remember a failure so the next load goes straight to wasm.
+ const ios=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+ let gpu=false;if(!ios&&navigator.gpu&&localStorage.getItem("lexora-kokoro-wasm")!=="1"){try{gpu=!!(await navigator.gpu.requestAdapter())}catch{}}
+ if(!gpu)return wasm();
+ try{return await mod.KokoroTTS.from_pretrained("onnx-community/Kokoro-82M-v1.0-ONNX",{dtype:"fp32",device:"webgpu",progress_callback:progress})}
+ catch(e){localStorage.setItem("lexora-kokoro-wasm","1");throw e}
+})().then(m=>{model=m;return m},e=>{modelPromise=null;throw e})}return modelPromise}
 function prepare(text,options={}){
  if(!text)return Promise.resolve(null);
  const speed=options.speed||1,voice=options.voice||"af_heart",key=voice+"|"+speed+"|"+text;
