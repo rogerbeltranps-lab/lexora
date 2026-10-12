@@ -13,10 +13,20 @@ async function load(status=()=>{}){if(!modelPromise){modelPromise=(async()=>{sta
  // iPhone/iPad (the fp32 model is too heavy there), and remember a failure so the next load goes straight to wasm.
  const ios=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
  let gpu=false;if(!ios&&navigator.gpu&&localStorage.getItem("lexora-kokoro-wasm")!=="1"){try{gpu=!!(await navigator.gpu.requestAdapter())}catch{}}
- if(!gpu)return wasm();
+ if(!gpu){try{return await workerTTS(progress)}catch(e){console.warn("Kokoro worker unavailable; synthesizing on the page",e);return wasm()}}
  try{return await mod.KokoroTTS.from_pretrained("onnx-community/Kokoro-82M-v1.0-ONNX",{dtype:"fp32",device:"webgpu",progress_callback:progress})}
  catch(e){localStorage.setItem("lexora-kokoro-wasm","1");throw e}
 })().then(m=>{model=m;return m},e=>{modelPromise=null;throw e})}return modelPromise}
+// The wasm model is slow (single-threaded); in a worker it no longer freezes the page for seconds while it synthesizes.
+function workerTTS(progress){
+ return new Promise((resolve,reject)=>{
+  const worker=new Worker(new URL("kokoro-worker.js",document.baseURI),{type:"module"}),pending=new Map();let next=0;
+  const call=data=>new Promise((ok,no)=>{const id=++next;pending.set(id,{ok,no});worker.postMessage({id,...data})});
+  worker.onmessage=e=>{const m=e.data;if(m.type==="progress"){progress({status:"progress",progress:m.progress,total:2e6});return}const p=pending.get(m.id);if(!p)return;pending.delete(m.id);m.ok?p.ok(m):p.no(Error(m.error))};
+  worker.onerror=e=>{const err=Error(e.message||"Kokoro worker failed");pending.forEach(p=>p.no(err));pending.clear();reject(err)};
+  call({}).then(()=>resolve({generate:(text,o)=>call({text,voice:o.voice,speed:o.speed}).then(m=>({audio:m.audio,sampling_rate:m.rate}))}),reject);
+ });
+}
 function prepare(text,options={}){
  if(!text)return Promise.resolve(null);
  const speed=options.speed||1,voice=options.voice||"af_heart",key=voice+"|"+speed+"|"+text;
