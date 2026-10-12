@@ -1,6 +1,7 @@
 # Lexora changelog
 
 ## 2026-10-12
+- Kokoro on iPhone: it never played in the iOS Simulator because `navigator.gpu` exists without a GPU adapter; the WebGPU attempt failed and left the ONNX runtime broken, so the wasm retry in the same page failed too ("no available backend found"). Kokoro now uses wasm (q8) on iPhone/iPad, tries WebGPU elsewhere only when `requestAdapter()` returns an adapter, and remembers a WebGPU failure so the next load goes straight to wasm. Note: wasm synthesis is slower than real time, so expect a few seconds before the first sentence and short pauses between sentences on a phone. Version "2026-10-12 · 16", shell cache v15.
 - Verified in the iOS Simulator (installed web app, version 14): device voice narration advances, the highlight follows and pages and chapters turn. Fixed the status line still saying "Speaking…" after Pause or Exit. Version "2026-10-12 · 15", shell cache v14.
 - Read & Listen turns the page again. The guide's page observer fired late for Lexora's own page building and, once narration had marked sentences, took the paginated pages as the new source text, nesting pages inside pages; the narration then could not tell which page a sentence was on. Re-pagination now always starts from the chapter text, and sentences are re-marked if a re-pagination drops them. Version "2026-10-12 · 14", shell cache v13.
 - Read & Listen no longer brings the reader toolbar back each time the narration moves on to the next chapter; it only appears when you tap. Version "2026-10-12 · 13", shell cache v12.
