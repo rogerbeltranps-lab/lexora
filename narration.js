@@ -375,7 +375,7 @@ function followPage(el){
  el.scrollIntoView?.({block:"nearest",behavior:"smooth"})
 }
 // auto: narration moving on by itself (next chapter); leave the toolbar as the reader left it.
-function play(auto=false){window.lexoraSpeech?.unlock();if(engine==="kokoro")window.lexoraKokoro?.unlock?.();if(!auto)showControls();if(!items.length&&!prepare(true))return;if(engine==="system"&&!(window.speechSynthesis&&window.lexoraSpeech)){$("lex-status").textContent="Voice unavailable";return}const session=++run;playing=true;inspect.hidden=true;$("lex-play").textContent="Ⅱ Pause";
+function play(auto=false){window.lexoraSpeech?.unlock();if(engine==="kokoro"){window.lexoraKokoro?.unlock?.();window.lexoraSpeech?.prime?.()}if(!auto)showControls();if(!items.length&&!prepare(true))return;if(engine==="system"&&!(window.speechSynthesis&&window.lexoraSpeech)){$("lex-status").textContent="Voice unavailable";return}const session=++run;playing=true;inspect.hidden=true;$("lex-play").textContent="Ⅱ Pause";
  let kokoro=engine==="kokoro"&&!!window.lexoraKokoro,failures=0;
  const speed=()=>Number(JSON.parse(localStorage.getItem("lexora-voice-speed")||"0.9"));
  const advance=()=>{if(session===run&&playing){index++;next()}};
@@ -394,8 +394,8 @@ function play(auto=false){window.lexoraSpeech?.unlock();if(engine==="kokoro")win
   k.prepare(items[index].text,voiceOptions()).then(()=>{ready=true},e=>{failed=e});ready=!!k.clip(items[index].text,voiceOptions());
   heard=Date.now();
   for(;;){if(session!==run||!playing)return false;if(failed)throw failed;const s=ahead();
-   // Never stay silent: if the model download stalls or one sentence takes far too long, use the device voice instead.
-   if(!ready&&Date.now()-heard>(k.ready()?40000:45000))throw Error("Kokoro stalled");
+   // Never stay silent: if Kokoro shows no progress for 30 s, use the device voice instead.
+   if(!ready&&Date.now()-heard>30000)throw Error("Kokoro stalled");
    if(ready&&(!waited||s.ready>=s.need||s.all))return true;
    waited=true;if(k.ready())$("lex-status").textContent="Preparing natural voice… "+Math.min(99,Math.round(100*s.ready/Math.max(s.need,1)))+"%";
    await new Promise(r=>setTimeout(r,ready?400:150))}}
