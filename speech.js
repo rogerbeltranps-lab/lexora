@@ -12,6 +12,10 @@ function unlock(){
  // Older iOS has no audioSession API; starting an <audio> element during a tap moves the page to the playback session.
  try{if(!primer){primer=new Audio(silentWav());primer.setAttribute("playsinline","");primer.preload="auto"}primer.currentTime=0;primer.play()?.catch?.(()=>{})}catch{}
 }
+// iOS only lets speechSynthesis talk after a first speak() inside a tap. When Kokoro narrates, the device voice may be
+// needed later as a fallback (outside any tap), so say a silent utterance during the Play tap to keep that door open.
+let primed=false;
+function prime(){if(primed||!synth||!("SpeechSynthesisUtterance"in window)||synth.speaking||synth.pending)return;primed=true;try{const u=new SpeechSynthesisUtterance(" ");u.volume=0;u.lang="en-US";synth.speak(u)}catch{}}
 function voices(){return synth?synth.getVoices().filter(v=>/^en[-_]us$/i.test(v.lang)&&!NOVELTY.test(v.name)):[]}
 function speak(text,options={}){
  text=String(text||"").trim();if(!text)return false;
@@ -51,5 +55,5 @@ function speakBest(text,options={}){
   .then(()=>{if(mine===generation)options.onend?.()},()=>{if(mine===generation)speak(text,options)});
  options.onstart?.();return true;
 }
-window.lexoraSpeech={speak,speakBest,cancel,unlock,voices};
+window.lexoraSpeech={speak,speakBest,cancel,unlock,prime,voices};
 })();
