@@ -97,7 +97,7 @@ The app is at [Lexora](https://rogerbeltranps-lab.github.io/lexora/) **once GitH
 ### Available now
 
 - Seven-chapter **in-app** Lexora guide (the original EPUB can be imported separately).
-- Import EPUB books into browser IndexedDB, navigate pages, and restore reading location on the same device.
+- Import EPUB books, navigate pages, and restore reading location on the same device. Signed in with Google, books are saved to your Firestore library and available on every device.
 - Select words or expressions in the guide or an EPUB and see built-in glossary entries.
 - Add/edit one unified collection of flashcards with AmE IPA, Catalan translations, examples, structures and source context.
 - Text-to-speech via your browser, spaced-repetition review, and JSON backup/import.
@@ -105,11 +105,11 @@ The app is at [Lexora](https://rogerbeltranps-lab.github.io/lexora/) **once GitH
 
 ### Not connected yet
 
-- Reliable cross-device sync: Google Sign-In and Firestore sync are implemented (sign-in screen at launch) but not yet verified end-to-end. EPUBs are never synced.
+- Reliable cross-device sync: Google Sign-In and Firestore sync are implemented (sign-in screen at launch) but not yet verified end-to-end. EPUBs sync through Firestore when signed in.
 - Automated AI-generated explanations and ChatGPT-to-Lexora additions.
 - Full offline EPUB engine dependency, student accounts and App Store release.
 
-**Privacy note:** This version saves content locally in the current browser. Browser data removal may delete your flashcards and books; export backups regularly. EPUBs must be reimported on another device. The built-in glossary is limited; unfamiliar selections open a manual card editor, not a live AI explanation.
+**Privacy note:** This version saves content locally in the current browser. Browser data removal may delete your flashcards and books; export backups regularly. Signed out, EPUBs stay on this device until the next sign-in. The built-in glossary is limited; unfamiliar selections open a manual card editor, not a live AI explanation.
 
 
 ## Informe d'incidència: Google Sign-In i sincronització Firebase — 11/10/2026
