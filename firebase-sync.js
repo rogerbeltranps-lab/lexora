@@ -29,7 +29,8 @@ function gateMessage(t){if(!gateError)return;gateError.textContent=t||"";gateErr
 // the app once the person is signed in or chose local mode; it takes effect the next time Lexora opens.
 const ISOLATION_CACHE="lexora-flags",ISOLATION_KEY="./__lexora_isolated__",RETRY_KEY="lexora-signin-retry";
 async function setIsolation(on){
- try{if(localStorage.getItem("lexora-isolation-off")==="1")on=false;const cache=await caches.open(ISOLATION_CACHE);if(on)await cache.put(ISOLATION_KEY,new Response("1"));else await cache.delete(ISOLATION_KEY);navigator.serviceWorker?.controller?.postMessage({type:"ISOLATION"})}catch{}
+ try{// Only phones, where Kokoro runs on the slow wasm path, gain from several cores; computers use the GPU and need no isolation.
+ if(localStorage.getItem("lexora-isolation-off")==="1"||!/iPad|iPhone|iPod|Android/.test(navigator.userAgent))on=false;const cache=await caches.open(ISOLATION_CACHE);if(on)await cache.put(ISOLATION_KEY,new Response("1"));else await cache.delete(ISOLATION_KEY);navigator.serviceWorker?.controller?.postMessage({type:"ISOLATION"})}catch{}
 }
 let retrying=false;
 if(gateSkip)gateSkip.onclick=()=>{try{sessionStorage.setItem(SKIP_KEY,"1")}catch{}retrying=false;showGate(false);setIsolation(true)};

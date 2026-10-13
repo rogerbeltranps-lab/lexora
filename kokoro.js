@@ -4,7 +4,9 @@ let modelPromise=null,model=null,stats=null,context=null,source=null,serial=Prom
 const cache=new Map(),MAX_CACHE=60,CANCELLED="cancelled";
 // How much slower than real time synthesis runs, and seconds of speech per character at speed 1. Learned per device,
 // so the narration knows how far ahead to prepare. Defaults are what the iPhone simulator measured.
-const learned=JSON.parse(localStorage.getItem("lexora-kokoro-pace")||"null")||{ratio:1.6,perChar:0.065};
+// Computers synthesize on the GPU, far faster than real time; only phones start from the pessimistic guess.
+const phone=/iPad|iPhone|iPod|Android/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+const learned=JSON.parse(localStorage.getItem("lexora-kokoro-pace")||"null")||{ratio:phone?1.6:0.6,perChar:0.065};
 function ctx(){if(!context)context=new (window.AudioContext||window.webkitAudioContext)();return context}
 function stop(){if(source){const old=source;source=null;try{old.stop()}catch{}old.disconnect()}}
 async function load(status=()=>{}){if(!modelPromise){modelPromise=(async()=>{status("Downloading Kokoro voice model (first use may take a while)…");const mod=await import("https://esm.sh/kokoro-js@1.2.1?bundle");
@@ -80,7 +82,10 @@ function prepare(text,options={}){
 }
 function unlock(){const audioCtx=ctx();if(audioCtx.state!=="running"){audioCtx.resume().catch(()=>{})}return audioCtx}
 async function speak(text,options={}){
- const audioCtx=ctx();await audioCtx.resume();
+ const audioCtx=ctx();
+ // A context the browser keeps suspended never resolves resume(), which left the narration silent; give up so the device voice reads.
+ await Promise.race([audioCtx.resume(),new Promise(r=>setTimeout(r,2500))]);
+ if(audioCtx.state!=="running")throw Error("Audio output is blocked");
  options.status?.("Preparing natural voice…");
  // Queue upcoming audio before awaiting this sentence. It will be ready during playback.
  const current=prepare(text,options);
