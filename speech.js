@@ -12,7 +12,14 @@ function unlock(){
  // Older iOS has no audioSession API; starting an <audio> element during a tap moves the page to the playback session.
  try{if(!primer){primer=new Audio(silentWav());primer.setAttribute("playsinline","");primer.preload="auto"}primer.currentTime=0;primer.play()?.catch?.(()=>{})}catch{}
 }
-function voices(){return synth?synth.getVoices().filter(v=>/^en[-_]us$/i.test(v.lang)&&!NOVELTY.test(v.name)):[]}
+// iOS only lets speechSynthesis talk after a first speak() inside a tap. When Kokoro narrates, the device voice may be
+// needed later as a fallback (outside any tap), so say a silent utterance during the Play tap to keep that door open.
+let primed=false;
+function prime(){if(primed||!synth||!("SpeechSynthesisUtterance"in window)||synth.speaking||synth.pending)return;primed=true;try{const u=new SpeechSynthesisUtterance(" ");u.volume=0;u.lang="en-US";synth.speak(u)}catch{}}
+// Apple puts the quality in the voice id (com.apple.voice.premium.en-US.Ava); the name alone is the same for every quality.
+function quality(v){const id=String(v?.voiceURI||"");return /premium/i.test(id)?"Premium":/enhanced/i.test(id)?"Enhanced":/compact/i.test(id)?"Basic":""}
+const rank=v=>({Premium:0,Enhanced:1}[quality(v)]??2);
+function voices(){return synth?synth.getVoices().filter(v=>/^en[-_]us$/i.test(v.lang)&&!NOVELTY.test(v.name)).sort((a,b)=>rank(a)-rank(b)):[]}
 function speak(text,options={}){
  text=String(text||"").trim();if(!text)return false;
  if(!synth||!("SpeechSynthesisUtterance"in window)){options.onerror?.("unsupported");return false}
@@ -51,5 +58,5 @@ function speakBest(text,options={}){
   .then(()=>{if(mine===generation)options.onend?.()},()=>{if(mine===generation)speak(text,options)});
  options.onstart?.();return true;
 }
-window.lexoraSpeech={speak,speakBest,cancel,unlock,voices};
+window.lexoraSpeech={speak,speakBest,cancel,unlock,prime,voices,quality};
 })();
