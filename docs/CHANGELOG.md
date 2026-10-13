@@ -1,6 +1,7 @@
 # Lexora changelog
 
 ## 2026-10-13
+- Computer browsers: the full-screen reader shows ‹ and › page buttons at its left and right edges (only with a mouse or trackpad, so iPhone keeps the clean page and its swipes), and the left and right arrow keys turn the page, also after clicking into an EPUB page. Outside full screen the arrows move like the Previous / Next buttons. Keys are ignored while typing in a field or with the flashcard editor open. New file `reader-keys.js`; narration.js only exposes its page turn as `window.lexoraTurnPage`. Verified in Chromium (guide chapters, EPUB pages, buttons and keys). Version "2026-10-13 · 23", shell cache v22.
 - Settings › American English voice now shows each voice's quality (Premium, Enhanced, Basic, read from Apple's voice id) and lists Premium and Enhanced voices first. On iPhone the same name (e.g. Samantha) appeared twice with no way to tell the downloaded better voice from the basic one. Version "2026-10-13 · 22", shell cache v21.
 - Read & Listen with Kokoro on Roger's iPhone 13 Pro still highlighted the sentence in blue and stayed silent. Likely cause: when Kokoro stalls, the narration falls back to the device voice outside any tap, and iOS only lets `speechSynthesis` speak after a first `speak()` inside a tap, so the fallback was silent too. Play now says a silent utterance during the tap when Kokoro is the narrator (`lexoraSpeech.prime()`), and the Kokoro stall watchdog fires after 30 s without progress (was 40 to 45 s). Version "2026-10-13 · 21", shell cache v20.
 
