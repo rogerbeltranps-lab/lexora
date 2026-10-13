@@ -5,7 +5,7 @@ Last reviewed: 2026-10-12. Status descriptions are based on repository code, not
 | Feature | Status | Notes |
 | --- | --- | --- |
 | Built-in seven-chapter guide | Implemented | Includes interactive vocabulary selection. |
-| Local EPUB import | Implemented | IndexedDB storage on current device; portability requires re-import. Remove a book with 🗑 next to the book list. |
+| EPUB library | Implemented; test on iPhone | Signed in with Google, imported EPUBs are saved to the person's Firestore library (`users/{uid}/books`, split into 900 KB chunks) and appear on every signed-in device; a book downloads the first time it is opened there and stays in IndexedDB for offline reading. Books imported while signed out stay on the device and upload at the next sign-in. 🗑 removes a cloud book from all devices. Reading position is still per device. |
 | Word and phrase lookup | Implemented | Built-in glossary and discovery panel; coverage varies. |
 | Unified flashcards and spaced repetition | Implemented locally; cloud sync blocked | Local flashcards and review work, but Google/Firebase login is currently **NOT WORKING**, so cross-device synchronization cannot be relied upon. |
 | Google/Firebase login | Sign-in screen at launch; **still to verify on devices** | Lexora now opens on a Google sign-in screen (with a "continue without account" option that only lasts for the current browser session). The account chooser is always shown, and the popup falls back to a redirect only when popups are blocked. The separate redirect button was removed because browsers block cross-site redirect sign-in between github.io and firebaseapp.com. Earlier reports: blank popup and `permission-denied`; confirm end-to-end on iPhone and desktop before calling sync operational. |

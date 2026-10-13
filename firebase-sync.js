@@ -1,7 +1,8 @@
-/* Lexora private, local-first cloud sync. No EPUB contents are uploaded. */
+/* Lexora private, local-first cloud sync: flashcards and reviews here, EPUB books in book-sync.js. */
 import {initializeApp} from "https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js";
 import {getAuth,GoogleAuthProvider,signInWithPopup,signInWithRedirect,getRedirectResult,signOut,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/13.0.0/firebase-auth.js";
 import {getFirestore,doc,runTransaction,onSnapshot} from "https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js";
+import {startBookSync} from "./book-sync.js";
 const config={apiKey:"AIzaSyATUuOolgUl0iod1zEIYV1zLbcvbMgrLpc",authDomain:"lexora-2d1f4.firebaseapp.com",projectId:"lexora-2d1f4",appId:"1:38390223406:web:a6f0712a38d7d98a2405bf"};
 const app=initializeApp(config),auth=getAuth(app),db=getFirestore(app);
 const provider=new GoogleAuthProvider();
@@ -9,8 +10,10 @@ const provider=new GoogleAuthProvider();
 provider.setCustomParameters({prompt:"select_account"});
 const bridge=window.lexoraSyncBridge;
 const login=document.getElementById("lex-cloud-login"),logout=document.getElementById("lex-cloud-logout"),syncBtn=document.getElementById("lex-cloud-sync"),status=document.getElementById("lex-cloud-status");
-let uid=null,unsubscribe=null,busy=false,queued=false,clock=null,ready=false,loginFailure="";
+let uid=null,unsubscribe=null,stopBooks=null,busy=false,queued=false,clock=null,ready=false,loginFailure="";
 const message=t=>{status.textContent=t};
+const booksStatus=document.getElementById("lex-cloud-books");
+const booksMessage=t=>{if(booksStatus)booksStatus.textContent=t};
 // Header badge, so it is visible everywhere whether cards are reaching Firestore.
 const badge=document.getElementById("account-label");
 const setBadge=t=>{if(badge)badge.textContent=t};
@@ -112,7 +115,12 @@ syncBtn.onclick=()=>synchronize();
 window.addEventListener("lexora:changed",queueSync);
 onAuthStateChanged(auth,async user=>{
  if(unsubscribe){unsubscribe();unsubscribe=null}
- uid=user?.uid||null;ready=false;showGate(!user&&(retrying||!skipped()));setIsolation(!!user||skipped());clearTimeout(clock);if(user){loginFailure="";authMessage("Google: connectat · "+(user.email||"usuari autenticat"))}else if(!loginFailure){authMessage("Google: sessió no iniciada")}
+ if(stopBooks){stopBooks();stopBooks=null}
+ uid=user?.uid||null;
+ // The reader waits for this before deciding whether a cloud book can be downloaded.
+ window.lexoraAuthKnown=true;
+ if(user)stopBooks=startBookSync(db,user.uid,booksMessage);else{booksMessage("");dispatchEvent(new Event("lexora:book-cloud"))}
+ready=false;showGate(!user&&(retrying||!skipped()));setIsolation(!!user||skipped());clearTimeout(clock);if(user){loginFailure="";authMessage("Google: connectat · "+(user.email||"usuari autenticat"))}else if(!loginFailure){authMessage("Google: sessió no iniciada")}
  login.hidden=!!user;logout.hidden=!user;syncBtn.hidden=!user;
  if(!user){message("Firestore: sense sincronització; les targetes es desen localment.");setBadge("Personal · local mode");return}
  message("Connectat com "+(user.email||"Google")+". Fusionant dades...");
