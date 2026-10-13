@@ -1,4 +1,4 @@
-const CACHE="lexora-shell-v22",FLAGS="lexora-flags",COI="./__lexora_isolated__";const SHELL=["./","./index.html","./manifest.webmanifest"];
+const CACHE="lexora-shell-v23",FLAGS="lexora-flags",COI="./__lexora_isolated__";const SHELL=["./","./index.html","./manifest.webmanifest"];
 self.addEventListener("install",e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)));self.skipWaiting()});
 self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE&&k!==FLAGS).map(k=>caches.delete(k)))));self.clients.claim()});
 // Cross-origin isolation lets the Kokoro voice synthesize on several cores (SharedArrayBuffer). GitHub Pages cannot send

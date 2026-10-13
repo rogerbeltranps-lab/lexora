@@ -249,6 +249,8 @@ function moveReadingPage(direction){
  }
  else if(typeof rendition!=="undefined"&&rendition){direction>0?rendition.next():rendition.prev()}
 }
+// Page buttons and arrow keys (reader-keys.js) turn pages the same way as a swipe.
+window.lexoraTurnPage=moveReadingPage;
 function attachSwipe(surface,doc){
  if(!surface||surface.dataset.lexSwipeAttached)return;
  surface.dataset.lexSwipeAttached="1";let start=null,last=null;
