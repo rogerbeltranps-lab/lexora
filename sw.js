@@ -1,10 +1,12 @@
-const CACHE="lexora-shell-v23",FLAGS="lexora-flags",COI="./__lexora_isolated__";const SHELL=["./","./index.html","./manifest.webmanifest"];
+const CACHE="lexora-shell-v24",FLAGS="lexora-flags",COI="./__lexora_isolated__";const SHELL=["./","./index.html","./manifest.webmanifest"];
 self.addEventListener("install",e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)));self.skipWaiting()});
 self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE&&k!==FLAGS).map(k=>caches.delete(k)))));self.clients.claim()});
 // Cross-origin isolation lets the Kokoro voice synthesize on several cores (SharedArrayBuffer). GitHub Pages cannot send
 // the headers, so the worker adds them, but only once the page has said so: Google sign-in popups need a non-isolated page.
 let isolated=null;
-const isolation=()=>isolated??=caches.open(FLAGS).then(c=>c.match(COI)).then(r=>!!r,()=>false);
+// Only phones need it (computers synthesize on the GPU), and a computer that kept the flag from an earlier version drops it here.
+const phone=/iPad|iPhone|iPod|Android/.test(self.navigator.userAgent);
+const isolation=()=>phone?(isolated??=caches.open(FLAGS).then(c=>c.match(COI)).then(r=>!!r,()=>false)):Promise.resolve(false);
 self.addEventListener("message",e=>{if(e.data?.type==="SKIP_WAITING")self.skipWaiting();if(e.data?.type==="ISOLATION")isolated=null});
 function isolate(r){
  if(!r||r.type!=="basic")return r;
