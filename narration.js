@@ -1,7 +1,7 @@
 (()=>{"use strict";
 const $=id=>document.getElementById(id);
 let mode="read",playing=false,items=[],index=0,run=0,marker=null;
-const css=document.createElement("style");css.textContent=".lex-narr{display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:#eaf4f7;padding:10px;border-radius:12px;margin-bottom:12px}.lex-narr select{padding:9px;border:1px solid #cbd8df;border-radius:8px}.lex-narr-status{font-size:12px;color:#617589}.lex-tappable{cursor:pointer;border-radius:3px}.lex-tappable:focus-visible{outline:2px solid #297eaa}.lex-active{background:#b8e6f1!important;color:#153b49!important}.reader.lex-audio-only .prose,.reader.lex-audio-only #epub-view{visibility:hidden}.lex-inspect{background:#edf6f9;padding:15px;border-radius:12px;margin:0 0 12px;border:1px solid #cbdfe6}.lex-inspect p{line-height:1.6}";
+const css=document.createElement("style");css.textContent=".lex-narr{display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:#eaf4f7;padding:10px;border-radius:12px;margin-bottom:12px}.lex-narr select{padding:9px;border:1px solid #cbd8df;border-radius:8px}.lex-narr-status{font-size:12px;color:#617589}.lex-tappable{cursor:pointer;border-radius:3px;-webkit-user-select:text;user-select:text}.lex-tappable:focus-visible{outline:2px solid #297eaa}.lex-active{background:#b8e6f1!important;color:#153b49!important}.reader.lex-audio-only .prose,.reader.lex-audio-only #epub-view{visibility:hidden}.lex-inspect{background:#edf6f9;padding:15px;border-radius:12px;margin:0 0 12px;border:1px solid #cbdfe6}.lex-inspect p{line-height:1.6}";
 css.textContent+=`
 body.lex-reader-fullscreen{overflow:hidden}
 body.lex-reader-fullscreen #read .grid>.panel:first-child, #read .grid>.panel:first-child:fullscreen{position:fixed;inset:0;z-index:1000;background:#fff;display:flex;flex-direction:column;min-height:0;padding:12px clamp(10px,3vw,32px);border-radius:0;border:0;box-shadow:none}
@@ -120,7 +120,7 @@ body.lex-reader-fullscreen #guide.lex-paginated .lex-book-page p{overflow-wrap:b
 body.lex-reader-fullscreen #guide.lex-paginated .lex-book-page{padding-top:clamp(94px,12vh,120px)!important;padding-bottom:calc(35px + env(safe-area-inset-bottom,0px))!important}
 body.lex-reader-fullscreen #guide.lex-paginated .lex-book-page h2{font-size:1.4em;line-height:1.3;margin-bottom:1.4em}
 body.lex-reader-fullscreen #guide.lex-paginated .lex-book-page p{line-height:1.6;margin-bottom:1em}
-body.lex-reader-fullscreen #reader{touch-action:pan-y}
+body.lex-reader-fullscreen #reader{touch-action:auto}
 
 body.lex-reader-fullscreen #epub-view{height:100%!important}
 
@@ -253,18 +253,34 @@ function moveReadingPage(direction){
 window.lexoraTurnPage=moveReadingPage;
 function attachSwipe(surface,doc){
  if(!surface||surface.dataset.lexSwipeAttached)return;
- surface.dataset.lexSwipeAttached="1";let start=null,last=null;
- // Let the reader own horizontal drags; otherwise iOS starts a native pan and cancels the touch.
- surface.style.touchAction="pan-y pinch-zoom";
- const finish=()=>{if(!start||!last||!document.body.classList.contains("lex-reader-fullscreen")){start=last=null;return}
-  const dx=last.x-start.x,dy=last.y-start.y;start=last=null;
-  if(Math.abs(dx)<42||Math.abs(dx)<Math.abs(dy)*1.2)return;
-  const selection=doc.getSelection?.();if(selection&&!selection.isCollapsed)selection.removeAllRanges();
-  moveReadingPage(dx<0?1:-1)};
- surface.addEventListener("touchstart",e=>{if(e.touches.length!==1||!document.body.classList.contains("lex-reader-fullscreen")){start=last=null;return}const t=e.touches[0];start=last={x:t.clientX,y:t.clientY}},{passive:true});
- surface.addEventListener("touchmove",e=>{if(!start||e.touches.length!==1)return;const t=e.touches[0];last={x:t.clientX,y:t.clientY}},{passive:true});
- surface.addEventListener("touchend",e=>{if(!start)return;const t=e.changedTouches[0];if(t)last={x:t.clientX,y:t.clientY};finish()},{passive:true});
- // iOS may cancel a touch it decided to scroll; still honour a clear horizontal drag.
+ surface.dataset.lexSwipeAttached="1";
+ // Keep native iOS selection handles available. Touch listeners are passive and never cancel selection.
+ surface.style.touchAction="auto";
+ let start=null,last=null;
+ const hasSelection=()=>{const selected=doc.getSelection?.();return !!selected&&!selected.isCollapsed&&!!selected.toString().trim()};
+ function finish(){
+  if(!start||!last){start=last=null;return}
+  const dx=last.x-start.x,dy=last.y-start.y;
+  const duration=Date.now()-start.at,wasSelecting=start.selecting;
+  start=last=null;
+  if(!document.body.classList.contains("lex-reader-fullscreen"))return;
+  if(wasSelecting||hasSelection()||duration>650)return; // Long-press or a selected phrase is never a page turn.
+  if(Math.abs(dx)<60||Math.abs(dx)<Math.abs(dy)*1.35)return;
+  moveReadingPage(dx<0?1:-1);
+ }
+ surface.addEventListener("touchstart",e=>{
+  if(e.touches.length!==1||!document.body.classList.contains("lex-reader-fullscreen")){start=last=null;return}
+  const t=e.touches[0];start={x:t.clientX,y:t.clientY,at:Date.now(),selecting:hasSelection()};last={x:t.clientX,y:t.clientY};
+ },{passive:true});
+ surface.addEventListener("touchmove",e=>{
+  if(!start||e.touches.length!==1)return;
+  const t=e.touches[0];last={x:t.clientX,y:t.clientY};
+ },{passive:true});
+ surface.addEventListener("touchend",e=>{
+  if(!start)return;
+  const t=e.changedTouches[0];if(t)last={x:t.clientX,y:t.clientY};finish();
+ },{passive:true});
+ // iOS can cancel a quick horizontal touch. The same selection/long-press guards still apply.
  surface.addEventListener("touchcancel",finish,{passive:true});
 }
 attachSwipe($("reader"),document);
@@ -364,7 +380,7 @@ const tapReady=new WeakSet();
 function enableTap(item,number){
  const el=item.el;
  if(!el)return;
- if(tapReady.has(el))return;tapReady.add(el);el.classList.add("lex-tappable");el.tabIndex=0;el.title="Double-click to replay sentence; click a word for its meaning";
+ if(tapReady.has(el))return;tapReady.add(el);el.classList.add("lex-tappable");if(matchMedia("(hover:hover) and (pointer:fine)").matches){el.tabIndex=0;el.title="Double-click to replay sentence; click a word for its meaning"}
  function replay(){if(mode!=="both")return;const selection=el.ownerDocument.getSelection?.();if(selection&&!selection.isCollapsed)return;stop();index=number;play()}
  el.addEventListener("dblclick",replay);
  el.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();replay()}});
