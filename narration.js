@@ -433,7 +433,11 @@ function prepare(reset){
    let parts=sentences(txt);p.replaceChildren(...parts.map((part,i)=>{const sp=document.createElement("span");sp.textContent=part+(i<parts.length-1?" ":"");return sp}));
    p.querySelectorAll("span").forEach(sp=>{sp.dataset.lexI=String(items.length);items.push({text:sp.textContent.trim(),el:sp})})
   }else{
-   if(p.children.length===0){
+   const prior=Array.from(p.children);
+   if(prior.length&&p.childNodes.length===prior.length&&prior.every(sp=>sp.matches("span[data-lex-i]"))){
+    // A previous preparation already segmented plain paragraphs: reuse the sentence spans.
+    prior.forEach(sp=>{sp.dataset.lexI=String(items.length);items.push({text:sp.textContent.trim(),el:sp})})
+   }else if(p.children.length===0){
     const parts=sentences(txt);
     p.replaceChildren(...parts.map((part,i)=>{const sp=p.ownerDocument.createElement("span");sp.textContent=part+(i<parts.length-1?" ":"");return sp}));
     p.querySelectorAll("span").forEach(sp=>{sp.dataset.lexI=String(items.length);items.push({text:sp.textContent.trim(),el:sp})})
@@ -540,7 +544,7 @@ $("lex-return").onclick=()=>{
    const x=frame.getBoundingClientRect().left+target.getBoundingClientRect().left;
    if(x>=view.left-2&&x<view.right-2)break;
    if(typeof rendition==="undefined"||!rendition)break;
-   try{if(x<view.left-2)await rendition.prev();else await rendition.next()}catch{break}
+   try{if(x<view.left-2)await rendition.prev();else await rendition.next();await new Promise(resolve=>setTimeout(resolve,120))}catch{break}
   }
  }
  locate();
