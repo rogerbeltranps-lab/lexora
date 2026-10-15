@@ -1,5 +1,13 @@
 # Lexora changelog
 
+## 2026-10-15 · 36 — System dark mode throughout Lexora and player icons
+- **Entire Lexora UI follows the device appearance automatically**, not only the EPUB: app background, navigation, library, vocabulary lookup, flashcards, practice, settings, controls, inputs, login gate and flashcard editor now receive coordinated dark colors.
+- Dark reader overlays and menus (appearance, narration toolbar, exploration/dictionary sheet) use readable dark surfaces; immersive EPUB text keeps its existing device-following black/white presentation. OS changes switch CSS in real time, with the iPhone theme-color refreshed when the app is visible.
+- Playback icons now match the supplied reference: thick, mirrored circular skip arrows with **15 on both sides**, and clear Play/rounded Pause symbols. Skip durations remain approximate ±15 seconds; no audio logic changes.
+- Retains Modern as the initial font, existing typeface choices and app data. JavaScript syntax and code-level assertions passed; physical-device visual and accessibility testing remains outstanding.
+- Version 36; PWA shell cache v35.
+
+
 ## 2026-10-15 · 35 — iPhone highlighting and auto-hide follow-up
 - User screenshot confirms v34 still lacked visible sentence highlighting in a real imported EPUB and that the top playback menu remained on screen.
 - Moved the translucent exact-sentence overlay inside the EPUB iframe, directly above the text, while keeping it non-interactive. Redraw when epub.js relocates pages. No EPUB text wrapping/rewriting or data deletion.

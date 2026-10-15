@@ -160,32 +160,55 @@ body.lex-reader-fullscreen.lex-audio-mode .lex-audio-player:not([hidden]){
 }
 .lex-player-btn{font:650 14px/1 system-ui,-apple-system,sans-serif;border:0;border-radius:13px;min-width:58px;min-height:46px;padding:8px;color:#344955;background:transparent;cursor:pointer}
 .lex-player-btn:focus-visible,.lex-player-return:focus-visible{outline:3px solid #b58947;outline-offset:2px}
-.lex-player-seek{display:inline-flex;align-items:center;justify-content:center;flex:0 0 54px!important;width:54px;height:54px;min-width:54px!important;min-height:54px!important;border:1px solid #d8d4cd!important;border-radius:50%!important;background:#ffffffa8!important;padding:7px!important;line-height:1}
-.lex-player-seek svg{display:block;width:40px;height:40px;overflow:visible}
+.lex-player-seek{display:inline-flex;align-items:center;justify-content:center;flex:0 0 58px!important;width:58px;height:58px;min-width:58px!important;min-height:58px!important;border:0!important;border-radius:14px!important;background:transparent!important;padding:3px!important;line-height:1}
+.lex-player-seek svg{display:block;width:51px;height:51px;overflow:visible}
 .lex-player-seek:active{transform:scale(.96)}
-.lex-player-seek:hover{background:#ece7de!important}
-.lex-player-play{background:#263d4c;color:#fff;font-size:21px;border-radius:50%;min-width:54px;width:54px;height:54px}
+.lex-player-seek:hover{background:#e6e0d733!important}
+.lex-player-play{background:transparent;color:#273a48;font-size:21px;border-radius:12px;min-width:62px;width:62px;height:58px;display:inline-flex;align-items:center;justify-content:center}.lex-player-play svg{width:44px;height:44px;display:block}
 .lex-player-return{border:0;background:#e7e7db;color:#354951;padding:9px;border-radius:11px;font-size:12px;font-weight:650}
 .reader.white .lex-active{background:#fff0cd!important}
 .reader.black .lex-active{background:rgba(138,166,191,.30)!important;color:inherit!important}
 body.lex-reader-fullscreen:has(#reader.black) .lex-audio-player{background:#1f252bf5!important;border-color:#3f4951!important}
 body.lex-reader-fullscreen:has(#reader.black) .lex-player-btn{color:#d5e0e6}
-body.lex-reader-fullscreen:has(#reader.black) .lex-player-play{background:#a1b6c7;color:#17242e}
-body.lex-reader-fullscreen:has(#reader.black) .lex-player-seek{background:#333e46!important;border-color:#53606b!important;color:#d5e0e6}
-body.lex-reader-fullscreen:has(#reader.black) .lex-player-seek:hover{background:#475662!important}
+body.lex-reader-fullscreen:has(#reader.black) .lex-player-play{background:transparent;color:#edf0f3}
+body.lex-reader-fullscreen:has(#reader.black) .lex-player-seek{background:transparent!important;border-color:transparent!important;color:#edf0f3}
+body.lex-reader-fullscreen:has(#reader.black) .lex-player-seek:hover{background:#c4d8e51c!important}
 body.lex-reader-fullscreen:has(#reader.black) .lex-player-return{background:#39454d;color:#e3ecf1}
 @media(max-width:400px){.lex-audio-player{gap:4px!important;padding:6px 8px!important}.lex-player-seek{flex-basis:48px!important;width:48px;height:48px;min-width:48px!important;min-height:48px!important}.lex-player-play{min-width:50px!important;width:50px;height:50px}}
+
+/* Dark system appearance includes popovers and discovery sheets, not only the EPUB. */
+@media (prefers-color-scheme: dark) {
+ .lex-narr,.lex-inspect{background:#233542;color:#e7edf2;border-color:#3f5360}
+ body.lex-reader-fullscreen #read .grid>.panel:first-child>.lex-narr{background:#202d38ed!important;border-color:#435463!important;box-shadow:0 8px 22px #0008}
+ body.lex-reader-fullscreen #read .grid>.panel:first-child>.lex-inspect:not([hidden]){background:#1d2b35;color:#e4ecf1;border-color:#425767;box-shadow:0 10px 30px #0009}
+ body.lex-reader-fullscreen #lex-appearance:not([hidden]){background:#1d2b35;color:#ecf0f3;border-color:#485967;box-shadow:0 10px 35px #0009}
+ #lex-appearance .lex-appearance-label{color:#cad5df}
+ #lex-reader-results{background:#1c2934!important;color:#e5edf2;border-color:#465866!important;box-shadow:0 15px 40px #000b}
+ #lex-reader-results .lex-results-top,.lex-results-top,#lex-reader-results .lex-dictionary-heading{background:#1c2934!important;color:#edf2f5;border-color:#465866!important}
+ #lex-reader-results .lex-selected-word{color:#eef2f5!important}
+ #lex-reader-results .word,#lex-reader-results .detail,#lex-reader-results .detail h4{color:#edf2f5!important}
+ #lex-reader-results .chip{background:#304a5b!important;color:#d5edf8!important}
+ #discovery .lex-sense-copy,#lex-reader-results #discovery .lex-sense-copy{color:#e2eaf0!important}
+ #discovery .sense-entry{border-color:#445463!important}
+ #lex-reader-results .quote{color:#b9cad7!important;border-color:#769aaa!important}
+ #lex-reader-results .muted{color:#b5c7d2!important}
+ body.lex-reader-fullscreen .lex-reader-reveal{color:#bccbd7!important}
+ body.lex-reader-fullscreen:has(#reader.black) .lex-audio-player{background:#1c242bdf!important;border-color:#35414a!important}
+ body.lex-reader-fullscreen .lex-player-return{background:#344a57;color:#e8f1f5}
+}
 `;document.head.appendChild(css);
 const controls=document.createElement("div");controls.className="lex-narr";controls.innerHTML='<button class="btn" type="button" id="lex-read">Read</button><button class="btn" type="button" id="lex-listen">Read &amp; Listen</button><button class="btn primary" id="lex-play">▶ Play</button><button class="btn lex-advanced" id="lex-back">← Sentence</button><button class="btn lex-advanced" id="lex-forward">Sentence →</button><span class="lex-narr-status lex-advanced" id="lex-status">Ready</span><button class="btn lex-advanced" id="lex-enter" type="button">⛶ Full screen</button><button class="btn" id="lex-appearance-button" type="button" aria-label="Reader appearance" hidden>Aa</button><button class="btn" id="lex-options" type="button" aria-label="More reading controls">⋯</button><button class="btn lex-reader-exit" id="lex-exit" type="button">✕ Exit</button>';
 document.querySelector(".reader-toolbar").insertAdjacentElement("afterend",controls);
 const audioPlayer=document.createElement("div");audioPlayer.id="lex-audio-player";audioPlayer.className="lex-audio-player";audioPlayer.hidden=true;
 audioPlayer.setAttribute("role","group");audioPlayer.setAttribute("aria-label","Narration playback");
-const roundedSeekIcon=direction=>'<svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path d="'+(direction==="back"?"M8 30 A16 16 0 1 0 11 16":"M37 16 A16 16 0 1 0 40 30")+'" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/><path d="'+(direction==="back"?"M18 9 L10 16 L18 23":"M43 16 H35 V24")+'" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/><text x="24" y="29" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="700" fill="currentColor">15</text></svg>';
-audioPlayer.innerHTML='<button class="lex-player-btn lex-player-seek" id="lex-seek-back" type="button" aria-label="Back approximately 15 seconds" title="Back 15 seconds">'+roundedSeekIcon("back")+'</button><button class="lex-player-btn lex-player-play" id="lex-player-play" type="button" aria-label="Play narration">▶</button><button class="lex-player-btn lex-player-seek" id="lex-seek-forward" type="button" aria-label="Forward approximately 15 seconds" title="Forward 15 seconds">'+roundedSeekIcon("forward")+'</button><button class="lex-player-return" id="lex-return" type="button" hidden>↗ Narration</button>';
+// Mirrored circular arrows with the same 15 in each icon, matching the reference.
+const roundedSeekIcon=direction=>'<svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><g'+(direction==="forward"?' transform="translate(48 0) scale(-1 1)"':'')+'><path d="M15 11 A17 17 0 1 1 8 27" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><path d="M16 4 L9 11 L16 18" fill="none" stroke="currentColor" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round"/></g><text x="24" y="30" text-anchor="middle" font-family="system-ui,sans-serif" font-size="16" font-weight="750" fill="currentColor">15</text></svg>';
+const playerGlyph=paused=>paused?'<svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path d="M15 10 L38 23 Q40 24 38 26 L15 39 Q12 40 12 36 L12 13 Q12 9 15 10 Z" fill="currentColor"/></svg>':'<svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><rect x="11" y="6" width="10" height="36" rx="3.5" fill="currentColor"/><rect x="27" y="6" width="10" height="36" rx="3.5" fill="currentColor"/></svg>';
+audioPlayer.innerHTML='<button class="lex-player-btn lex-player-seek" id="lex-seek-back" type="button" aria-label="Back approximately 15 seconds" title="Back 15 seconds">'+roundedSeekIcon("back")+'</button><button class="lex-player-btn lex-player-play" id="lex-player-play" type="button" aria-label="Play narration">'+playerGlyph(true)+'</button><button class="lex-player-btn lex-player-seek" id="lex-seek-forward" type="button" aria-label="Forward approximately 15 seconds" title="Forward 15 seconds">'+roundedSeekIcon("forward")+'</button><button class="lex-player-return" id="lex-return" type="button" hidden>↗ Narration</button>';
 document.querySelector("#read .grid>.panel:first-child").appendChild(audioPlayer);
 function syncPlaybackButtons(){
  $("lex-play").textContent=playing?"Ⅱ Pause":"▶ Play";
- $("lex-player-play").textContent=playing?"Ⅱ":"▶";
+ $("lex-player-play").innerHTML=playerGlyph(!playing);
  $("lex-player-play").setAttribute("aria-label",playing?"Pause narration":"Play narration");
  audioPlayer.hidden=mode!=="both";
  $("lex-return").hidden=followingAudio;
@@ -212,7 +235,7 @@ applyReaderFont();
 const guideEl=$("guide");
 let paginating=false,guideSource="",lastPageMarkup="",guidePageIndex=0,guidePageTotal=1;
 const themeMeta=document.querySelector('meta[name="theme-color"]'),originalTheme=themeMeta?.content||"#152d42";
-function syncStatusBar(){if(themeMeta)themeMeta.content=document.body.classList.contains("lex-reader-fullscreen")?($("reader").classList.contains("black")?"#000000":$("reader").classList.contains("white")?"#ffffff":"#fffaf1"):originalTheme}
+function syncStatusBar(){if(themeMeta)themeMeta.content=document.body.classList.contains("lex-reader-fullscreen")?($("reader").classList.contains("black")?"#000000":$("reader").classList.contains("white")?"#ffffff":"#fffaf1"):(matchMedia("(prefers-color-scheme: dark)").matches?"#10171e":"#f4f6f8")}
 function makeBookPage(){const p=document.createElement("div");p.className="lex-book-page";return p}
 function bookPageOverflow(page){return page.scrollHeight>page.clientHeight+2}
 function paginateGuide(reset=false){

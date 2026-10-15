@@ -21,7 +21,7 @@ The learner owns **one unified flashcard deck**; vocabulary, phrasal verbs, idio
 | Area | Status | Important limitation or next check |
 | --- | --- | --- |
 | In-app guide and EPUB reader | Implemented | Imported EPUB behavior, pagination, and reading position still need broader real-device testing. |
-| Immersive reader, themes, font sizes, swipe navigation | Implemented; **physical iPhone QA pending** | Fixes for viewport overflow, tap/swipe conflicts and text-selection drag handles were committed on Oct 15. Do not call them verified on an actual iPhone yet. |
+| Immersive reader, themes, font sizes, swipe navigation | Implemented; **physical iPhone QA pending** | Device light/dark theme now extends to the entire app, including settings, flashcards, login and dictionary overlays. Swipe and selection behavior still needs device QA. |
 | Dictionary, contextual lookup and phrase matching | Initial implementation | Coverage is incomplete. The starter lexicon and Kaikki-derived indexes exist; verify matches and sense selection in diverse EPUBs. |
 | Unified flashcards, local review, JSON import/export | Implemented locally | Preserve local data. Source sentences and optional source metadata exist on newly captured cards. |
 | Google sign-in and Firestore sync | Implemented in code; **real-device reliability unresolved** | Earlier blank OAuth popups and `permission-denied` reports; emulator tests are not proof the browser sign-in flow works for the user. |
@@ -147,3 +147,9 @@ The old standalone `ROADMAP.md` and `docs/FEATURES.md` were consolidated into th
 - **v35 code changes to test:** place the noninteractive exact-sentence highlight layer inside the EPUB's own iframe (rather than over the parent container), redraw after EPUB page relocation, and restart the top toolbar's 3.2-second inactivity auto-hide timer when playback starts. Bottom ±15s/Play controls remain visible.
 - [ ] **Verify on the user's iPhone:** select Read & Listen → Play. The spoken sentence should be visibly but softly shaded, including italic and justified sentences in a real book; the top control bar should disappear after ~3 seconds with no interaction, while the lower audio controls remain accessible. Tap the menu button to reveal the top controls again.
 - Preserve EPUB data/CFI positions, selection gestures, device voice, reader theme, and existing favicon. Do not mark either bug resolved until confirmed on the real device.
+
+## Whole-app appearance and audio controls (October 15, 2026)
+
+- The operating system controls light/dark mode across **all Lexora screens**, not only EPUB content. This includes navigation, flashcards, practice, Settings, forms, sign-in and dictionary/reader overlays. No manual theme toggle is introduced.
+- The reader audio controls use bold, mirrored circular-arrow icons for **back 15s** and **forward 15s**, with a matching Play/Pause symbol, based on the supplied reference. These remain estimated 15-second jumps with native speech.
+- App version 36, PWA shell v35. Code has been checked, but iPhone Safari/PWA and desktop visual inspection are still pending. No reading data or saved typeface preferences have been modified.
