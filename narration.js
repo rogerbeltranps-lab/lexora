@@ -352,13 +352,29 @@ $("lex-appearance-close").onclick=()=>{appearance.hidden=true;controls.classList
 function updateAppearance(){syncStatusBar();applyEpubHighlightStyle()}
 window.addEventListener("lexora:reader-theme-changed",updateAppearance);
 
-async function enterReader(){if(document.body.classList.contains("lex-reader-fullscreen"))return;document.body.classList.add("lex-reader-fullscreen");document.body.classList.add("lex-controls-hidden");refreshRunningTitle();syncStatusBar();requestAnimationFrame(()=>paginateGuide(false));$("lex-enter").hidden=true;const panel=document.querySelector("#read .grid>.panel:first-child");if(panel.requestFullscreen&&!document.fullscreenElement){try{await panel.requestFullscreen({navigationUI:"hide"})}catch(e){console.info("Using screen-filling reader layout",e)}}requestAnimationFrame(()=>{try{window.rendition?.resize?.()}catch{}})}
+async function enterReader(){if(document.body.classList.contains("lex-reader-fullscreen"))return;document.body.classList.add("lex-reader-fullscreen");document.body.classList.remove("lex-controls-hidden");refreshRunningTitle();syncStatusBar();requestAnimationFrame(()=>paginateGuide(false));showControls();$("lex-enter").hidden=true;const panel=document.querySelector("#read .grid>.panel:first-child");if(panel.requestFullscreen&&!document.fullscreenElement){try{await panel.requestFullscreen({navigationUI:"hide"})}catch(e){console.info("Using screen-filling reader layout",e)}}requestAnimationFrame(()=>{try{window.rendition?.resize?.()}catch{}})}
 function exitReader(){clearGuidePagination();appearance.hidden=true;closeResults();clearTimeout(fadeTimer);document.body.classList.remove("lex-reader-fullscreen","lex-controls-hidden");syncStatusBar();$("lex-enter").hidden=false;stop();if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});requestAnimationFrame(()=>{try{window.rendition?.resize?.()}catch{}})}
 $("lex-enter").onclick=enterReader;$("lex-exit").onclick=exitReader;
 document.addEventListener("fullscreenchange",()=>{if(!document.fullscreenElement&&document.body.classList.contains("lex-reader-fullscreen"))exitReader()});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&document.body.classList.contains("lex-reader-fullscreen"))exitReader()});
 const reveal=document.createElement("button");reveal.className="btn lex-reader-reveal";reveal.type="button";reveal.textContent="☰";reveal.setAttribute("aria-label","Show reader controls");document.querySelector("#read .grid>.panel:first-child").appendChild(reveal);reveal.onclick=()=>showControls();
-let fadeTimer=null;function showControls(){document.body.classList.remove("lex-controls-hidden");clearTimeout(fadeTimer);if(playing)fadeTimer=setTimeout(()=>{if(playing&&inspect.hidden&&appearance.hidden&&!controls.classList.contains("lex-show-advanced"))document.body.classList.add("lex-controls-hidden")},4500)}
+let fadeTimer=null;
+function showControls(){
+ document.body.classList.remove("lex-controls-hidden");
+ clearTimeout(fadeTimer);
+ // Hide automatically even if Play was just tapped (the old timer only
+ // started if playing was already true before the tap).
+ fadeTimer=setTimeout(()=>{
+  if(!document.body.classList.contains("lex-reader-fullscreen"))return;
+  if(!inspect.hidden||!appearance.hidden||!results.hidden||!document.querySelector("#lex-explore-selection")?.hidden)return;
+  const g=window.getSelection?.();
+  let bookSelection=false;
+  try{bookSelection=!!epubBody()?.ownerDocument?.getSelection?.()?.toString()?.trim()}catch{}
+  if(g?.toString()?.trim()||bookSelection)return;
+  if(controls.classList.contains("lex-show-advanced"))return;
+  document.body.classList.add("lex-controls-hidden");
+ },3200);
+}
 $("lex-appearance-button").onclick=()=>{appearance.hidden=!appearance.hidden;updateAppearance();showControls()};
 $("lex-options").onclick=()=>{const opening=appearance.hidden;appearance.hidden=!opening;controls.classList.toggle("lex-show-advanced",opening&&mode==="both");updateAppearance();showControls()};
 const inspect=document.createElement("div");inspect.className="lex-inspect";inspect.hidden=true;controls.insertAdjacentElement("afterend",inspect);
@@ -424,39 +440,42 @@ function applyEpubHighlightStyle(){
    inside an epub.js iframe. The layer never intercepts touch/selection gestures. */
 function drawEpubSentence(range){
  if(!range?.startContainer?.isConnected)return false;
- const frame=epubHost.querySelector("iframe");
- if(!frame||frame.contentDocument!==range.startContainer.ownerDocument)return false;
- const hostRect=epubHost.getBoundingClientRect(),frameRect=frame.getBoundingClientRect();
- if(!hostRect.width||!hostRect.height||!frameRect.width)return false;
- if(!epubSentenceLayer||!epubSentenceLayer.isConnected){
-  epubHost.style.position="relative";
-  epubSentenceLayer=document.createElement("div");
+ const doc=range.startContainer.ownerDocument;
+ // The highlight must live INSIDE the same EPUB frame as its text. A sibling
+ // overlay outside the iframe can be hidden beneath epub.js view layers on iOS.
+ const frame=[...epubHost.querySelectorAll("iframe")].find(f=>{
+  try{return f.contentDocument===doc}catch{return false}
+ });
+ if(!frame)return false;
+ if(!epubSentenceLayer||epubSentenceLayer.ownerDocument!==doc||!epubSentenceLayer.isConnected){
+  epubSentenceLayer?.remove();
+  epubSentenceLayer=doc.createElement("div");
   epubSentenceLayer.className="lex-sentence-overlay";
   epubSentenceLayer.setAttribute("aria-hidden","true");
-  epubSentenceLayer.style.cssText="position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:8";
-  epubHost.append(epubSentenceLayer);
+  // Fixed positioning prevents the highlight layer from affecting EPUB
+  // columns, pagination, CFIs, or the reader's native text selection.
+  epubSentenceLayer.style.cssText="position:fixed;inset:0;z-index:2147483647;pointer-events:none;overflow:hidden;width:100vw;height:100vh;contain:layout style paint";
+  doc.documentElement.appendChild(epubSentenceLayer);
  }
  epubSentenceLayer.replaceChildren();
+ const viewportWidth=doc.defaultView?.innerWidth||frame.clientWidth;
+ const viewportHeight=doc.defaultView?.innerHeight||frame.clientHeight;
+ if(!viewportWidth||!viewportHeight)return false;
  const dark=$("reader").classList.contains("black");
- const fill=dark?"rgba(140,181,213,.26)":"rgba(233,194,111,.28)";
- // iframe coordinates are different from the EPUB host's, particularly with
- // status-bar padding on iPhones and when epub.js shifts columns horizontally.
- const sx=frameRect.width/(frame.clientWidth||frameRect.width);
- const sy=frameRect.height/(frame.clientHeight||frameRect.height);
- const fragment=document.createDocumentFragment();
+ const fill=dark?"rgba(140,181,213,.33)":"rgba(233,194,111,.32)";
+ const fragment=doc.createDocumentFragment();
  let drawn=0;
+ // EPUB text may be justified, broken into multiple lines, or contain italics.
  for(const rect of range.getClientRects()){
-  const left=frameRect.left-hostRect.left+rect.left*sx;
-  const top=frameRect.top-hostRect.top+rect.top*sy;
-  const right=Math.min(hostRect.width,left+rect.width*sx),bottom=Math.min(hostRect.height,top+rect.height*sy);
-  const x=Math.max(0,left),y=Math.max(0,top);
-  if(right-x<2||bottom-y<2)continue;
-  const mark=document.createElement("span");
-  mark.style.cssText="position:absolute;pointer-events:none;border-radius:3px;box-decoration-break:clone";
-  mark.style.left=x+"px";mark.style.top=y+"px";
-  mark.style.width=(right-x)+"px";mark.style.height=(bottom-y)+"px";
-  mark.style.background=fill;
-  fragment.append(mark);
+  const left=Math.max(0,rect.left),top=Math.max(0,rect.top);
+  const right=Math.min(viewportWidth,rect.right),bottom=Math.min(viewportHeight,rect.bottom);
+  if(right-left<2||bottom-top<2)continue;
+  const mark=doc.createElement("span");
+  mark.style.cssText="position:absolute;display:block;pointer-events:none;border-radius:3px";
+  mark.style.left=left+"px";mark.style.top=top+"px";
+  mark.style.width=(right-left)+"px";mark.style.height=(bottom-top)+"px";
+  mark.style.backgroundColor=fill;
+  fragment.appendChild(mark);
   if(++drawn>=120)break;
  }
  epubSentenceLayer.append(fragment);
@@ -467,7 +486,8 @@ function watchEpubHighlightPosition(){
  highlightRendition=rendition;
  rendition.on("relocated",()=>{
   if(!playing||!followingAudio||mode!=="both")return;
-  requestAnimationFrame(()=>drawEpubSentence(items[index]?.range));
+  // epub.js positions its columns asynchronously after the location event.
+  requestAnimationFrame(()=>requestAnimationFrame(()=>drawEpubSentence(items[index]?.range)));
  });
 }
 /* Text ranges highlight exactly one sentence in EPUB paragraphs with inline formatting,
@@ -538,12 +558,11 @@ function enableTap(item,number){
 function highlight(){
  clear();const item=items[index],el=liveEl(index);if(!item)return;
  if(mode==="both"&&el){
+  if(playing&&followingAudio)followPage(el,item.range);
   if(item.range){
-   // Range rects highlight only this sentence, even across inline formatting.
-   // On WebKit there is no paragraph-wide fallback to hide the exact position.
+   // Inside-frame overlay: exact sentence only, without modifying book markup.
    drawEpubSentence(item.range);
   }else{marker=el;marker.classList.add("lex-active")}
-  if(playing&&followingAudio)followPage(el,item.range)
  }
  $("lex-status").textContent="Sentence "+(index+1)+" / "+items.length
 }
@@ -563,11 +582,12 @@ function followPage(el,range){
 }
 // The system voice is the narrator. Begin in the user's gesture on iOS.
 function play(auto=false){
- if(!auto)showControls();
  window.lexoraSpeech?.unlock();
  if(!items.length&&!prepare(true))return;
  if(!window.speechSynthesis||!window.lexoraSpeech){$("lex-status").textContent="Device voice unavailable. Try Settings → Audio check.";return}
  const session=++run;playing=true;inspect.hidden=true;syncPlaybackButtons();
+ // Start the hide timer after playback state changes. Keep bottom controls visible.
+ if(!auto)showControls();
  const speed=()=>Math.max(.5,Math.min(2,Number(JSON.parse(localStorage.getItem("lexora-voice-speed")||"0.9"))||0.9));
  function next(){
   if(session!==run||!playing)return;
