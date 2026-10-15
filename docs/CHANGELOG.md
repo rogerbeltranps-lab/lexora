@@ -1,5 +1,14 @@
 # Lexora changelog
 
+## 2026-10-15 · 29 — Read & Listen controls
+- Reader audio **starts paused** when switching to Read & Listen, and only plays after a deliberate Play tap.
+- A small persistent, safe-area-aware audio control in the immersive reader adds Play/Pause and backward/forward **approximately 15 seconds**. Native device TTS has no accurate audio timestamp seeking, so skips are estimated from sentence lengths and chosen speed.
+- Manually swiping or turning pages while narration plays disengages automatic page following without stopping the audio. A **Narration** button returns to the currently spoken position. Resuming Play does not reset the reading page, and Pause no longer opens a blocking sentence popup.
+- Soft sentence tracking: warm, low-contrast cream in light/sepia and muted blue-gray in dark mode. In EPUB paragraphs with inline formatting, CSS Highlight API ranges track individual sentences without rewriting the book DOM; browsers lacking this API fall back to paragraph highlighting for such paragraphs.
+- Static JavaScript syntax validation passed; physical iPhone PWA, iOS Safari, desktop voice playback, complex EPUBs, and visual contrast/selection require real-device testing. PWA shell cache v28.
+
+
+
 ## 2026-10-15 · 28
 - Mobile reader default font size increased from 19 to 26 on narrow screens (up to 650px); desktop default remains 19.
 - Legacy 19px mobile defaults are upgraded automatically. Any new A−/A+ choice is kept, including choosing smaller text; EPUB and guide still share the same setting.
