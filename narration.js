@@ -1,6 +1,6 @@
 (()=>{"use strict";
 const $=id=>document.getElementById(id);
-const ios=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);let engine=localStorage.getItem("lexora-narration-engine")||"kokoro";if(ios&&!localStorage.getItem("lexora-ios-voice-choice-v2")){engine="system";localStorage.setItem("lexora-narration-engine",engine);localStorage.setItem("lexora-ios-voice-choice-v2","1")}let kokoroVoice=localStorage.getItem("lexora-kokoro-voice")||"af_heart";if(kokoroVoice==="am_adam"||kokoroVoice==="bm_george"){kokoroVoice=kokoroVoice==="am_adam"?"am_michael":"bm_fable";localStorage.setItem("lexora-kokoro-voice",kokoroVoice)}let mode="read",playing=false,items=[],index=0,run=0,marker=null;
+let mode="read",playing=false,items=[],index=0,run=0,marker=null;
 const css=document.createElement("style");css.textContent=".lex-narr{display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:#eaf4f7;padding:10px;border-radius:12px;margin-bottom:12px}.lex-narr select{padding:9px;border:1px solid #cbd8df;border-radius:8px}.lex-narr-status{font-size:12px;color:#617589}.lex-tappable{cursor:pointer;border-radius:3px}.lex-tappable:focus-visible{outline:2px solid #297eaa}.lex-active{background:#b8e6f1!important;color:#153b49!important}.reader.lex-audio-only .prose,.reader.lex-audio-only #epub-view{visibility:hidden}.lex-inspect{background:#edf6f9;padding:15px;border-radius:12px;margin:0 0 12px;border:1px solid #cbdfe6}.lex-inspect p{line-height:1.6}";
 css.textContent+=`
 body.lex-reader-fullscreen{overflow:hidden}
@@ -150,7 +150,7 @@ body.lex-reader-fullscreen #epub-view{height:100%!important}
 #lex-reader-results #discovery .sense-entry legend{margin-bottom:8px}
 body.lex-reader-fullscreen .lex-narr{top:calc(12px + env(safe-area-inset-top,0px))!important}
 `;document.head.appendChild(css);
-const controls=document.createElement("div");controls.className="lex-narr";controls.innerHTML='<button class="btn" type="button" id="lex-read">Read</button><button class="btn" type="button" id="lex-listen">Read &amp; Listen</button><select class="lex-advanced" id="lex-engine" aria-label="Narration voice"><option value="kokoro">Natural voice · Kokoro</option><option value="system">Device voice</option></select><select class="lex-advanced" id="lex-kokoro-voice" aria-label="Kokoro accent and voice"><option value="af_heart">US · Female · Heart (Recommended)</option><option value="am_michael">US · Male · Michael</option><option value="bf_emma">UK · Female · Emma</option><option value="bm_fable">UK · Male · Fable</option></select><button class="btn primary" id="lex-play">▶ Play</button><button class="btn lex-advanced" id="lex-back">← Sentence</button><button class="btn lex-advanced" id="lex-forward">Sentence →</button><span class="lex-narr-status lex-advanced" id="lex-status">Ready</span><button class="btn lex-advanced" id="lex-enter" type="button">⛶ Full screen</button><button class="btn" id="lex-appearance-button" type="button" aria-label="Reader appearance" hidden>Aa</button><button class="btn" id="lex-options" type="button" aria-label="More reading controls">⋯</button><button class="btn lex-reader-exit" id="lex-exit" type="button">✕ Exit</button>';
+const controls=document.createElement("div");controls.className="lex-narr";controls.innerHTML='<button class="btn" type="button" id="lex-read">Read</button><button class="btn" type="button" id="lex-listen">Read &amp; Listen</button><button class="btn primary" id="lex-play">▶ Play</button><button class="btn lex-advanced" id="lex-back">← Sentence</button><button class="btn lex-advanced" id="lex-forward">Sentence →</button><span class="lex-narr-status lex-advanced" id="lex-status">Ready</span><button class="btn lex-advanced" id="lex-enter" type="button">⛶ Full screen</button><button class="btn" id="lex-appearance-button" type="button" aria-label="Reader appearance" hidden>Aa</button><button class="btn" id="lex-options" type="button" aria-label="More reading controls">⋯</button><button class="btn lex-reader-exit" id="lex-exit" type="button">✕ Exit</button>';
 document.querySelector(".reader-toolbar").insertAdjacentElement("afterend",controls);
 const runningTitle=document.createElement("div");runningTitle.className="lex-running-title";runningTitle.setAttribute("aria-live","polite");
 document.querySelector("#read .grid>.panel:first-child").appendChild(runningTitle);
@@ -292,7 +292,7 @@ function exitReader(){clearGuidePagination();appearance.hidden=true;closeResults
 $("lex-enter").onclick=enterReader;$("lex-exit").onclick=exitReader;
 document.addEventListener("fullscreenchange",()=>{if(!document.fullscreenElement&&document.body.classList.contains("lex-reader-fullscreen"))exitReader()});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&document.body.classList.contains("lex-reader-fullscreen"))exitReader()});
-$("lex-engine").value=engine;$("lex-kokoro-voice").value=kokoroVoice;$("lex-kokoro-voice").hidden=engine!=="kokoro";const reveal=document.createElement("button");reveal.className="btn lex-reader-reveal";reveal.type="button";reveal.textContent="☰";reveal.setAttribute("aria-label","Show reader controls");document.querySelector("#read .grid>.panel:first-child").appendChild(reveal);reveal.onclick=()=>showControls();
+const reveal=document.createElement("button");reveal.className="btn lex-reader-reveal";reveal.type="button";reveal.textContent="☰";reveal.setAttribute("aria-label","Show reader controls");document.querySelector("#read .grid>.panel:first-child").appendChild(reveal);reveal.onclick=()=>showControls();
 let fadeTimer=null;function showControls(){document.body.classList.remove("lex-controls-hidden");clearTimeout(fadeTimer);if(playing)fadeTimer=setTimeout(()=>{if(playing&&inspect.hidden&&appearance.hidden&&!controls.classList.contains("lex-show-advanced"))document.body.classList.add("lex-controls-hidden")},4500)}
 $("lex-appearance-button").onclick=()=>{appearance.hidden=!appearance.hidden;updateAppearance();showControls()};
 $("lex-options").onclick=()=>{const opening=appearance.hidden;appearance.hidden=!opening;controls.classList.toggle("lex-show-advanced",opening&&mode==="both");updateAppearance();showControls()};
@@ -336,7 +336,7 @@ function continueReading(){
  const resume=()=>{if(!autoContinue)return;autoContinue=false;if(prepare(true))play(true)};
  if(guide)setTimeout(resume,900);else{let done=false;const once=()=>{if(done)return;done=true;setTimeout(resume,400)};try{rendition.once?.("relocated",once)}catch{}setTimeout(once,4000)}
 }
-function stop(){autoContinue=false;run++;playing=false;window.lexoraKokoro?.stop();window.lexoraSpeech?.cancel();$("lex-play").textContent="▶ Play";
+function stop(){autoContinue=false;run++;playing=false;window.lexoraSpeech?.cancel();$("lex-play").textContent="▶ Play";
  // Do not leave "Speaking…" on screen after Pause or Exit.
  $("lex-status").textContent=items.length?"Sentence "+(Math.min(index,items.length-1)+1)+" / "+items.length:""}
 function epubBody(){try{return document.querySelector("#epub-view iframe")?.contentDocument?.body}catch{return null}}
@@ -376,39 +376,29 @@ function followPage(el){
  if(el.ownerDocument!==document){try{const frame=document.querySelector("#epub-view iframe"),view=$("epub-view").getBoundingClientRect(),x=frame.getBoundingClientRect().left+el.getBoundingClientRect().left;if(x>=view.right-2&&typeof rendition!=="undefined"&&rendition)rendition.next()}catch{}return}
  el.scrollIntoView?.({block:"nearest",behavior:"smooth"})
 }
-// auto: narration moving on by itself (next chapter); leave the toolbar as the reader left it.
-function play(auto=false){window.lexoraSpeech?.unlock();if(engine==="kokoro"){window.lexoraKokoro?.unlock?.();window.lexoraSpeech?.prime?.()}if(!auto)showControls();if(!items.length&&!prepare(true))return;if(engine==="system"&&!(window.speechSynthesis&&window.lexoraSpeech)){$("lex-status").textContent="Voice unavailable";return}const session=++run;playing=true;inspect.hidden=true;$("lex-play").textContent="Ⅱ Pause";
- let kokoro=engine==="kokoro"&&!!window.lexoraKokoro,failures=0;
+// The system voice is the sole narrator. Begin inside the user's tap on iOS.
+function play(auto=false){
+ if(!auto)showControls();
+ window.lexoraSpeech?.unlock();
+ if(!items.length&&!prepare(true))return;
+ if(!window.speechSynthesis||!window.lexoraSpeech){$("lex-status").textContent="Device voice unavailable. Try Settings → Audio check.";return}
+ const session=++run;playing=true;inspect.hidden=true;$("lex-play").textContent="Ⅱ Pause";
  const speed=()=>Number(JSON.parse(localStorage.getItem("lexora-voice-speed")||"0.9"));
- const advance=()=>{if(session===run&&playing){index++;next()}};
- let heard=Date.now();
- const voiceOptions=()=>({voice:kokoroVoice,speed:speed(),cancelled:()=>session!==run||!playing,status:message=>{heard=Date.now();if(session===run)$("lex-status").textContent=message}});
- // A phone makes Kokoro audio more slowly than it speaks it. Queue the sentences ahead; when the current one is not ready
- // (at the start, or after synthesis falls behind), wait until enough is ready for the rest of the chapter to be made
- // while it plays, so it then reads without pauses. The wait is capped so a long chapter does not hold for minutes.
- const MAX_WAIT=90;
- function ahead(){const k=window.lexoraKokoro,o=voiceOptions(),texts=items.slice(index).map(x=>x.text),r=k.ratio(),need=Math.min(MAX_WAIT,texts.reduce((t,x)=>t+k.estimate(x,o.speed),0)*Math.max(0,r-1)/r*1.15);
-  let planned=0,ready=0,gap=false,i=0;
-  for(;i<texts.length&&(i<3||planned<need+10);i++){k.prepare(texts[i],o).catch(()=>{});const d=k.clip(texts[i],o);planned+=d||k.estimate(texts[i],o.speed);if(d&&!gap)ready+=d;else gap=true}
-  return {need,ready,all:!gap&&i>=texts.length}}
- async function warm(){let waited=false,ready=false,failed=null;const k=window.lexoraKokoro;
-  // A failed load rejects here and falls back to the device voice below.
-  k.prepare(items[index].text,voiceOptions()).then(()=>{ready=true},e=>{failed=e});ready=!!k.clip(items[index].text,voiceOptions());
-  heard=Date.now();
-  for(;;){if(session!==run||!playing)return false;if(failed)throw failed;const s=ahead();
-   // Never stay silent: if Kokoro shows no progress for 30 s, use the device voice instead.
-   if(!ready&&Date.now()-heard>30000)throw Error("Kokoro stalled");
-   if(ready&&(!waited||s.ready>=s.need||s.all))return true;
-   waited=true;if(k.ready())$("lex-status").textContent="Preparing natural voice… "+Math.min(99,Math.round(100*s.ready/Math.max(s.need,1)))+"%";
-   await new Promise(r=>setTimeout(r,ready?400:150))}}
- async function next(){if(session!==run||!playing)return;if(index>=items.length){continueReading();return}highlight();
-  if(kokoro){try{if(!await warm())return;await window.lexoraKokoro.speak(items[index].text,voiceOptions());failures=0;if(session===run&&playing)$("lex-status").textContent="Sentence "+(index+1)+" / "+items.length;advance();return}catch(error){if(session!==run)return;console.warn("Kokoro unavailable",error);
-   // Use the device voice for the rest of this session only; one failed download should not switch the saved choice for good.
-   kokoro=false;window.lexoraKokoro.giveUpIsolation?.();$("lex-status").textContent="Natural voice unavailable right now; using device voice"}}
-  let started=false;lexoraSpeech.speak(items[index].text,{rate:speed(),voiceURI:JSON.parse(localStorage.getItem("lexora-voice-choice")||'""'),onstart:()=>{started=true;if(session===run)$("lex-status").textContent="Speaking…"},onend:()=>{failures=0;advance()},onerror:e=>{if(session!==run)return;
-   // Skip a sentence the voice cannot say instead of ending the whole narration.
-   if(++failures<3){advance();return}stop();$("lex-status").textContent="Device voice failed ("+e+"). Tap Play again."}});setTimeout(()=>{if(session===run&&playing&&!started&&!kokoro){$("lex-status").textContent="No sound yet? Check the volume, then tap Pause and Play."}},4500)}
- next()
+ function next(){
+  if(session!==run||!playing)return;
+  if(index>=items.length){continueReading();return}
+  highlight();let started=false,finished=false;
+  const ok=lexoraSpeech.speak(items[index].text,{
+   rate:speed(),
+   voiceURI:JSON.parse(localStorage.getItem("lexora-voice-choice")||'""'),
+   onstart:()=>{started=true;if(session===run)$("lex-status").textContent="Speaking…"},
+   onend:()=>{finished=true;if(session===run&&playing){index++;next()}},
+   onerror:error=>{finished=true;if(session!==run)return;stop();$("lex-status").textContent="Device voice failed ("+error+"). Try Settings → Audio check."}
+  });
+  if(ok===false){finished=true;return}
+  setTimeout(()=>{if(session===run&&playing&&!started&&!finished&&!window.speechSynthesis.speaking)$("lex-status").textContent="Speech did not start. Try Settings → Audio check."},4500);
+ }
+ next();
 }
 inspect.addEventListener("click",e=>{if(e.target.closest(".lex-sheet-close"))inspect.hidden=true});
 function examine(i){const item=items[i];if(!item)return;inspect.hidden=false;showControls();inspect.innerHTML='<button type="button" class="btn lex-sheet-close" aria-label="Close">✕</button><p><b>Selected sentence</b></p><p id="lex-sentence"></p><button class="btn primary" id="lex-analyze">Find expressions</button><p class="small muted">You can also select a shorter phrase above.</p>';$("lex-sentence").textContent=item.text;
@@ -416,18 +406,16 @@ function examine(i){const item=items[i];if(!item)return;inspect.hidden=false;sho
  $("lex-analyze").onclick=()=>{window.getSelection()?.removeAllRanges();send()};$("lex-sentence").addEventListener("mouseup",()=>{if(window.getSelection()?.toString().trim())send()})
 }
 function pause(){showControls();stop();clear();inspect.hidden=false;inspect.innerHTML='<button type="button" class="btn lex-sheet-close" aria-label="Close">✕</button><b>Explore a sentence</b><div class="buttonrow" style="margin-top:10px"><button class="btn" id="lex-current">Current sentence</button><button class="btn" id="lex-previous">Previous sentence</button></div>';$("lex-current").onclick=()=>examine(Math.min(index,items.length-1));$("lex-previous").onclick=()=>examine(Math.max(0,index-1))}
-function chooseMode(next){appearance.hidden=true;closeResults();showControls();controls.classList.remove("lex-show-advanced");mode=next;stop();inspect.hidden=true;clear();$("lex-read").classList.toggle("primary",mode==="read");$("lex-listen").classList.toggle("primary",mode==="both");$("lex-play").hidden=mode==="read";$("lex-back").hidden=mode==="read";$("lex-forward").hidden=mode==="read";$("lex-engine").hidden=mode==="read";$("lex-kokoro-voice").hidden=mode==="read"||engine!=="kokoro";$("lex-status").hidden=mode==="read";if(mode==="both")play();enterReader()}
+function chooseMode(next){appearance.hidden=true;closeResults();showControls();controls.classList.remove("lex-show-advanced");mode=next;stop();inspect.hidden=true;clear();$("lex-read").classList.toggle("primary",mode==="read");$("lex-listen").classList.toggle("primary",mode==="both");$("lex-play").hidden=mode==="read";$("lex-back").hidden=mode==="read";$("lex-forward").hidden=mode==="read";$("lex-status").hidden=mode==="read";if(mode==="both")play();enterReader()}
 $("lex-read").onclick=()=>chooseMode("read");$("lex-listen").onclick=()=>chooseMode("both");
 $("lex-play").onclick=()=>{if(playing)pause();else{if(mode==="read")chooseMode("both");else{play();enterReader()}}};
-$("lex-engine").onchange=e=>{stop();engine=e.target.value;localStorage.setItem("lexora-narration-engine",engine);$("lex-kokoro-voice").hidden=engine!=="kokoro";$("lex-status").textContent=engine==="kokoro"?"Kokoro can be slow or unavailable on iPhone; press Play to test":"Device voice selected — press Play"};
-$("lex-kokoro-voice").onchange=e=>{stop();kokoroVoice=e.target.value;localStorage.setItem("lexora-kokoro-voice",kokoroVoice);$("lex-status").textContent=({"af_heart":"American female voice selected","am_michael":"American male voice selected","bf_emma":"British female voice selected","bm_fable":"British male voice selected"}[kokoroVoice]||"Voice selected")};
 $("lex-back").onclick=()=>{stop();if(!items.length)prepare(true);index=Math.max(0,index-1);highlight()};
 $("lex-forward").onclick=()=>{stop();if(!items.length)prepare(true);index=Math.min(items.length-1,index+1);highlight()};
 ["chapter","booklist","prev","next","load-guide","upload-book"].forEach(id=>$(id)?.addEventListener("click",()=>{stop();setTimeout(()=>prepare(true),350)}));
 $("chapter").addEventListener("change",()=>{stop();setTimeout(()=>prepare(true),100)});
 $("booklist").addEventListener("change",()=>{stop();setTimeout(()=>prepare(true),900)});
 const observer=new MutationObserver(()=>{if($("booklist").value!=="guide"&&!playing){setTimeout(()=>prepare(true),250)}});observer.observe($("epub-view"),{childList:true});
-$("lex-read").classList.add("primary");$("lex-play").hidden=$("lex-back").hidden=$("lex-forward").hidden=$("lex-engine").hidden=$("lex-kokoro-voice").hidden=$("lex-status").hidden=true;
+$("lex-read").classList.add("primary");$("lex-play").hidden=$("lex-back").hidden=$("lex-forward").hidden=$("lex-status").hidden=true;
 $("reader").addEventListener("click",e=>{if(!document.body.classList.contains("lex-reader-fullscreen"))return;if(window.getSelection()?.toString().trim())return;if(e.target.closest(".lex-tappable"))return;showControls()});
 prepare(true);
 })();

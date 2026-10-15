@@ -1,5 +1,11 @@
 # Lexora changelog
 
+## 2026-10-15
+- Native device voice only in Read & Listen, dictionary pronunciation, and flashcards. Removed Kokoro voice selector, model downloads, Web Worker, long prebuffer waits, and the delayed fallback. Narration invokes the built-in voice in the user's Play tap and displays failures.
+- Removed Kokoro-only cross-origin isolation and its Google Sign-In extra reload; obsolete isolation caches are retired, preserving IndexedDB, personal EPUBs, flashcards and saved settings.
+- Updated Audio check, Settings and app update; version `2026-10-15 · 26`, shell cache v25. The physical iPhone speech output still needs verification with all three diagnostic tests.
+
+
 ## 2026-10-13
 - No audio in the computer browser. Likely causes, all fixed: cross-origin isolation (added for phones in version 18) was also switched on for computers, where it only risks breaking Kokoro's GPU path and gains nothing, so it is now phones only (service worker and sign-in code); the chapter pre-buffer wait started from the phone-speed guess on computers (now a GPU-speed guess); and a browser-suspended audio context left Kokoro silent forever (it now gives up after 2.5 s so the device voice reads). Version "2026-10-13 · 25", shell cache v24.
 - Computer browsers: the full-screen reader shows ‹ and › page buttons at its left and right edges (only with a mouse or trackpad, so iPhone keeps the clean page and its swipes), and the left and right arrow keys turn the page, also after clicking into an EPUB page. Outside full screen the arrows move like the Previous / Next buttons. Keys are ignored while typing in a field or with the flashcard editor open. New file `reader-keys.js`; narration.js only exposes its page turn as `window.lexoraTurnPage`. Verified in Chromium (guide chapters, EPUB pages, buttons and keys). Version "2026-10-13 · 24", shell cache v23.

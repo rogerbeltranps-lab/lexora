@@ -15,10 +15,8 @@ function info(){
  log("audioSession: "+(navigator.audioSession?navigator.audioSession.type:"none"));
  log("speechSynthesis: "+!!synth+", voices: "+vs.length+", en-US: "+us.length+(us.length?" ("+us.slice(0,6).map(v=>v.name+(v.default?"*":"")).join(", ")+")":""));
  log("saved voice: "+(localStorage.getItem("lexora-voice-choice")||"none"));
- log("multi-core (crossOriginIsolated): "+(window.crossOriginIsolated===true)+", cores: "+(navigator.hardwareConcurrency||"?"));
- const k=window.lexoraKokoro?.stats?.();log("kokoro last sentence: "+(k?k.ms+" ms for "+k.seconds+" s of audio, worker isolated="+k.isolated:"none yet"));
 }
-info();if(synth)synth.addEventListener?.("voiceschanged",()=>log("voiceschanged: "+synth.getVoices().length+" voices"));
+info();if(synth)synth.addEventListener?.("voiceschanged",()=>log("voiceschanged: "+synth.getVoices().length+" voices, en-US: "+synth.getVoices().filter(v=>/^en[-_]us$/i.test(v.lang)).length));
 const watch=label=>[300,1500,4000].forEach(ms=>setTimeout(()=>log(label+" after "+ms+"ms: "+state()),ms));
 box.querySelector("#ac-beep").onclick=()=>{
  try{const C=window.AudioContext||window.webkitAudioContext,ctx=new C();log("beep: context "+ctx.state);ctx.resume().then(()=>log("beep: resumed, "+ctx.state)).catch(e=>log("beep: resume failed "+e));const o=ctx.createOscillator(),g=ctx.createGain();o.frequency.value=660;g.gain.value=0.25;o.connect(g).connect(ctx.destination);o.start();o.stop(ctx.currentTime+0.5);o.onended=()=>{log("beep: ended (did you hear it?)");ctx.close?.()}}catch(e){log("beep error: "+e)}

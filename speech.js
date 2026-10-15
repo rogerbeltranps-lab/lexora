@@ -12,10 +12,6 @@ function unlock(){
  // Older iOS has no audioSession API; starting an <audio> element during a tap moves the page to the playback session.
  try{if(!primer){primer=new Audio(silentWav());primer.setAttribute("playsinline","");primer.preload="auto"}primer.currentTime=0;primer.play()?.catch?.(()=>{})}catch{}
 }
-// iOS only lets speechSynthesis talk after a first speak() inside a tap. When Kokoro narrates, the device voice may be
-// needed later as a fallback (outside any tap), so say a silent utterance during the Play tap to keep that door open.
-let primed=false;
-function prime(){if(primed||!synth||!("SpeechSynthesisUtterance"in window)||synth.speaking||synth.pending)return;primed=true;try{const u=new SpeechSynthesisUtterance(" ");u.volume=0;u.lang="en-US";synth.speak(u)}catch{}}
 // Apple puts the quality in the voice id (com.apple.voice.premium.en-US.Ava); the name alone is the same for every quality.
 function quality(v){const id=String(v?.voiceURI||"");return /premium/i.test(id)?"Premium":/enhanced/i.test(id)?"Enhanced":/compact/i.test(id)?"Basic":""}
 const rank=v=>({Premium:0,Enhanced:1}[quality(v)]??2);
@@ -46,17 +42,10 @@ function speak(text,options={}){
  return true;
 }
 // Only cancel real speech: a needless cancel() before the first speak() is what can leave an iPhone silent.
-function cancel(){generation++;current=null;window.lexoraKokoro?.stop();if(synth&&(synth.speaking||synth.pending)){synth.cancel();cancelledAt=Date.now()}}
+function cancel(){generation++;current=null;if(synth&&(synth.speaking||synth.pending)){synth.cancel();cancelledAt=Date.now()}}
 // iOS fills the voice list lazily; asking once at load makes it ready by the first tap.
 if(synth)synth.getVoices();
-// Single words and cards: use the natural Kokoro voice when it is the chosen narrator and already loaded, else the device voice.
-function speakBest(text,options={}){
- const kokoro=window.lexoraKokoro;
- if(localStorage.getItem("lexora-narration-engine")!=="kokoro"||!kokoro?.ready?.())return speak(text,options);
- unlock();kokoro.unlock();cancel();const mine=generation;
- kokoro.speak(String(text||"").trim(),{voice:localStorage.getItem("lexora-kokoro-voice")||"af_heart",speed:Number(options.rate)||0.9,cancelled:()=>mine!==generation})
-  .then(()=>{if(mine===generation)options.onend?.()},()=>{if(mine===generation)speak(text,options)});
- options.onstart?.();return true;
-}
-window.lexoraSpeech={speak,speakBest,cancel,unlock,prime,voices,quality};
+// Words and flashcards use the same built-in voice as book narration.
+function speakBest(text,options={}){return speak(text,options)}
+window.lexoraSpeech={speak,speakBest,cancel,unlock,voices,quality};
 })();
