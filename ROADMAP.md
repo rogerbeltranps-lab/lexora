@@ -184,6 +184,13 @@ This is an **initial implementation**, not a complete dictionary. Cloud login an
 
 **Important:** The first importer uses Kaikki's English *phrase* export only. That is a practical initial batch, not a complete English dictionary and not a full phrasal-verb database. To run it, open GitHub → Actions → **Import Kaikki phrase dictionary** → **Run workflow**; the repository's Actions permissions must allow workflow commits.
 
+## Mobile reader stability — 2026-10-15
+
+- [x] Constrain the reader toolbar, book dropdown and EPUB view to narrow phone screens; preserve EPUB typographic ligatures in readable text (2026-10-15).
+- [x] Keep iPhone text selection editable by dragging handles; explicitly open Explore selection only after the user chooses to do so (2026-10-15).
+- [x] Distinguish intentional page swipes from selection-handle drags and long presses (2026-10-15).
+- [ ] Verify native narration and both selection/swipe gestures on a physical iPhone 13 Pro and desktop browser; the code checks are not a replacement for device testing.
+
 ## Read & Listen preview — 2026-10-11
 
 - [x] Add Read only, Read & Listen, and Listen only controls to the shared reader.

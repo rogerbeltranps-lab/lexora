@@ -1,6 +1,7 @@
 /* Lexora speech: every Listen / Play button goes through here so iPhone quirks are handled in one place. */
 (()=>{"use strict";
 const synth=window.speechSynthesis;
+const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
 // iOS 17+ lists Apple's novelty voices as en-US. Some of them speak nothing in Safari, and one of them was often voices[0].
 const NOVELTY=/^(Albert|Bad News|Bahh|Bells|Boing|Bubbles|Cellos|Deranged|Fred|Good News|Hysterical|Jester|Junior|Kathy|Organ|Pipe Organ|Princess|Ralph|Superstar|Trinoids|Whisper|Wobble|Zarvox)\b/i;
 let primer=null,current=null,cancelledAt=0,generation=0;
@@ -10,7 +11,7 @@ function silentWav(){const n=800,d=new DataView(new ArrayBuffer(44+n)),s=(o,t)=>
 function unlock(){
  try{if(navigator.audioSession&&navigator.audioSession.type!=="playback")navigator.audioSession.type="playback"}catch{}
  // Older iOS has no audioSession API; starting an <audio> element during a tap moves the page to the playback session.
- try{if(!primer){primer=new Audio(silentWav());primer.setAttribute("playsinline","");primer.preload="auto"}primer.currentTime=0;primer.play()?.catch?.(()=>{})}catch{}
+ if(isIOS)try{if(!primer){primer=new Audio(silentWav());primer.setAttribute("playsinline","");primer.preload="auto"}primer.currentTime=0;primer.play()?.catch?.(()=>{})}catch{}
 }
 // Apple puts the quality in the voice id (com.apple.voice.premium.en-US.Ava); the name alone is the same for every quality.
 function quality(v){const id=String(v?.voiceURI||"");return /premium/i.test(id)?"Premium":/enhanced/i.test(id)?"Enhanced":/compact/i.test(id)?"Basic":""}
@@ -29,12 +30,23 @@ function speak(text,options={}){
   let started=false;current=u;
   u.onstart=()=>{started=true;if(current===u)options.onstart?.()};
   u.onend=()=>{if(current===u){current=null;options.onend?.()}};
-  u.onerror=e=>{if(current!==u||e.error==="interrupted"||e.error==="canceled")return;current=null;options.onerror?.(e.error||"error")};
+  u.onerror=e=>{if(current!==u)return;current=null;options.onerror?.(e.error||"error")};
   synth.speak(u);if(synth.paused)synth.resume();
   // Chrome and Safari sometimes never fire onend (long text, remote voices); finish the sentence ourselves once speech has gone quiet.
   let quiet=0;const watch=setInterval(()=>{if(current!==u){clearInterval(watch);return}if(started&&!synth.speaking&&!synth.pending){if(++quiet>=3){clearInterval(watch);current=null;options.onend?.()}}else quiet=0},500);
   // A downloaded-then-removed or enhanced voice can stay silent on iPhone: fall back once to the default voice.
-  if(chosen&&retry)setTimeout(()=>{if(current===u&&!started&&!synth.speaking){current=null;synth.cancel();setTimeout(()=>say("",false),80)}},2000);
+  if(chosen&&retry)setTimeout(()=>{
+   if(current===u&&!started&&!synth.speaking){
+    current=null;synth.cancel();cancelledAt=Date.now();
+    setTimeout(()=>say("",false),120);
+   }
+  },2500);
+  // Some WebKit/Chromium versions never emit start or error: return an actionable failure.
+  setTimeout(()=>{
+   if(current===u&&!started&&!synth.speaking&&!synth.pending){
+    current=null;options.onerror?.("speech-not-started");
+   }
+  },6500);
  };
  // Safari on iPhone drops a speak() issued straight after cancel(). Speech is already unlocked by the utterance
  // that was playing, so a short delay is safe; with nothing playing, speak synchronously to keep the user's tap.
@@ -42,7 +54,13 @@ function speak(text,options={}){
  return true;
 }
 // Only cancel real speech: a needless cancel() before the first speak() is what can leave an iPhone silent.
-function cancel(){generation++;current=null;if(synth&&(synth.speaking||synth.pending)){synth.cancel();cancelledAt=Date.now()}}
+function cancel(){
+ // onend has already cleared current, even if WebKit briefly still reports speaking.
+ // Cancelling that completed sentence used to delay every new sentence outside the initial tap.
+ const active=!!current;
+ generation++;current=null;
+ if(active&&synth&&(synth.speaking||synth.pending)){synth.cancel();cancelledAt=Date.now()}
+}
 // iOS fills the voice list lazily; asking once at load makes it ready by the first tap.
 if(synth)synth.getVoices();
 // Words and flashcards use the same built-in voice as book narration.
