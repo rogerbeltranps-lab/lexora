@@ -26,7 +26,7 @@ The learner owns **one unified flashcard deck**; vocabulary, phrasal verbs, idio
 | Unified flashcards, local review, JSON import/export | Implemented locally | Preserve local data. Source sentences and optional source metadata exist on newly captured cards. |
 | Google sign-in and Firestore sync | Implemented in code; **real-device reliability unresolved** | Earlier blank OAuth popups and `permission-denied` reports; emulator tests are not proof the browser sign-in flow works for the user. |
 | Cloud EPUB library | Implemented in code; emulator tested | Firestore book chunking / multi-device exchange were tested in emulator; verify end to end after real Google sign-in succeeds. Reading position remains per-device. |
-| Read & Listen, dictionary and flashcard pronunciation | **Native device voice only** (Oct 15) | Read & Listen starts paused; Play/Pause and approximate ±15-second skipping, non-disruptive page browsing, and soft sentence tracking are implemented. Browser/physical iPhone playback, seeking accuracy and text selection still need verification. |
+| Read & Listen, dictionary and flashcard pronunciation | **Native device voice only** (Oct 15) | Read & Listen starts paused. Version 32 groups up to three sentences per utterance to reduce sentence-gap delays; rounded ±15s controls and soft highlighting remain. On-device playback/selection verification pending. |
 | PWA install, service worker, temporary manual update button | Implemented; device QA pending | Settings → **Comprova i actualitza** updates app assets without deleting user books/cards. Remove button only when automatic PWA updates are proven reliable. |
 
 **Verification rule:** “Implemented” means present in code, not necessarily functioning on every device. Do not report a bug as fixed until the relevant user flow is tested.
@@ -127,3 +127,10 @@ The old standalone `ROADMAP.md` and `docs/FEATURES.md` were consolidated into th
 - Swiping to browse pages while audio is playing keeps speech going and suspends automatic page following. Choose **↗ Narration** to return to the spoken position. Paused page browsing changes the sentence where the next Play starts.
 - Highlight the spoken sentence with eye-friendly warm cream (light/sepia) or muted blue-gray (dark). In formatted EPUB paragraphs, CSS Highlights ranges avoid altering the book text, but a browser without this API may highlight a whole paragraph.
 - **Verification still needed:** actual iPhone PWA and Safari playback, desktop Chrome/Safari, book pages with nested markup, selection-and-drag gestures, ±15s jump feel, and transitions between chapters. No claim of live device verification.
+
+## iPhone reading refinements (October 15, 2026)
+
+- **Select an expression:** long-press words in the guide or EPUB, drag across the phrase/sentence, then choose **Explore selection**. The action appears above the audio bar. Native selection handles remain available; a fallback builds a selection range during deliberate long-press drags if WebKit does not produce one.
+- **Narration rhythm:** native device speech now speaks several consecutive sentences per utterance (up to three, within one paragraph and ~320 characters) to avoid restarting the TTS engine after every full stop. Sentence highlighting follows speech word boundaries where supported; when the browser omits them, progress highlighting is approximate.
+- **15-second controls:** buttons now have round outlines and curved arrows; seeking time is still estimated from words rather than audio timestamps.
+- **Validation:** static JavaScript and mock logic tests passed. Physical iPhone PWA/Safari behavior and audio rhythm must be tested before marking these problems as resolved on-device.
