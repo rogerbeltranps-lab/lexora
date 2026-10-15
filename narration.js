@@ -1,6 +1,6 @@
 (()=>{"use strict";
 const $=id=>document.getElementById(id);
-let mode="read",playing=false,items=[],index=0,run=0,marker=null,followingAudio=true,activeHighlightDoc=null,lastAutoTurn=0;
+let mode="read",playing=false,items=[],index=0,run=0,marker=null,followingAudio=true,activeHighlightDoc=null,lastAutoTurn=0,segmentTimers=[];
 const css=document.createElement("style");css.textContent=".lex-narr{display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:#eaf4f7;padding:10px;border-radius:12px;margin-bottom:12px}.lex-narr select{padding:9px;border:1px solid #cbd8df;border-radius:8px}.lex-narr-status{font-size:12px;color:#617589}.lex-tappable{cursor:pointer;border-radius:3px;-webkit-user-select:text;user-select:text}.lex-tappable:focus-visible{outline:2px solid #297eaa}.lex-active{background:rgba(229,195,123,.28)!important;color:inherit!important;border-radius:3px;-webkit-box-decoration-break:clone;box-decoration-break:clone}.reader.lex-audio-only .prose,.reader.lex-audio-only #epub-view{visibility:hidden}.lex-inspect{background:#edf6f9;padding:15px;border-radius:12px;margin:0 0 12px;border:1px solid #cbdfe6}.lex-inspect p{line-height:1.6}";
 css.textContent+=`
 body.lex-reader-fullscreen{overflow:hidden}
@@ -160,7 +160,10 @@ body.lex-reader-fullscreen.lex-audio-mode .lex-audio-player:not([hidden]){
 }
 .lex-player-btn{font:650 14px/1 system-ui,-apple-system,sans-serif;border:0;border-radius:13px;min-width:58px;min-height:46px;padding:8px;color:#344955;background:transparent;cursor:pointer}
 .lex-player-btn:focus-visible,.lex-player-return:focus-visible{outline:3px solid #b58947;outline-offset:2px}
-.lex-player-btn small{display:block;font-size:11px;font-weight:500;margin-top:4px}
+.lex-player-seek{display:inline-flex;align-items:center;justify-content:center;flex:0 0 54px!important;width:54px;height:54px;min-width:54px!important;min-height:54px!important;border:1px solid #d8d4cd!important;border-radius:50%!important;background:#ffffffa8!important;padding:7px!important;line-height:1}
+.lex-player-seek svg{display:block;width:40px;height:40px;overflow:visible}
+.lex-player-seek:active{transform:scale(.96)}
+.lex-player-seek:hover{background:#ece7de!important}
 .lex-player-play{background:#263d4c;color:#fff;font-size:21px;border-radius:50%;min-width:54px;width:54px;height:54px}
 .lex-player-return{border:0;background:#e7e7db;color:#354951;padding:9px;border-radius:11px;font-size:12px;font-weight:650}
 .reader.white .lex-active{background:#fff0cd!important}
@@ -168,14 +171,17 @@ body.lex-reader-fullscreen.lex-audio-mode .lex-audio-player:not([hidden]){
 body.lex-reader-fullscreen:has(#reader.black) .lex-audio-player{background:#1f252bf5!important;border-color:#3f4951!important}
 body.lex-reader-fullscreen:has(#reader.black) .lex-player-btn{color:#d5e0e6}
 body.lex-reader-fullscreen:has(#reader.black) .lex-player-play{background:#a1b6c7;color:#17242e}
+body.lex-reader-fullscreen:has(#reader.black) .lex-player-seek{background:#333e46!important;border-color:#53606b!important;color:#d5e0e6}
+body.lex-reader-fullscreen:has(#reader.black) .lex-player-seek:hover{background:#475662!important}
 body.lex-reader-fullscreen:has(#reader.black) .lex-player-return{background:#39454d;color:#e3ecf1}
-@media(max-width:400px){.lex-audio-player{gap:4px!important;padding:6px 8px!important}.lex-player-btn{min-width:49px}}
+@media(max-width:400px){.lex-audio-player{gap:4px!important;padding:6px 8px!important}.lex-player-seek{flex-basis:48px!important;width:48px;height:48px;min-width:48px!important;min-height:48px!important}.lex-player-play{min-width:50px!important;width:50px;height:50px}}
 `;document.head.appendChild(css);
 const controls=document.createElement("div");controls.className="lex-narr";controls.innerHTML='<button class="btn" type="button" id="lex-read">Read</button><button class="btn" type="button" id="lex-listen">Read &amp; Listen</button><button class="btn primary" id="lex-play">▶ Play</button><button class="btn lex-advanced" id="lex-back">← Sentence</button><button class="btn lex-advanced" id="lex-forward">Sentence →</button><span class="lex-narr-status lex-advanced" id="lex-status">Ready</span><button class="btn lex-advanced" id="lex-enter" type="button">⛶ Full screen</button><button class="btn" id="lex-appearance-button" type="button" aria-label="Reader appearance" hidden>Aa</button><button class="btn" id="lex-options" type="button" aria-label="More reading controls">⋯</button><button class="btn lex-reader-exit" id="lex-exit" type="button">✕ Exit</button>';
 document.querySelector(".reader-toolbar").insertAdjacentElement("afterend",controls);
 const audioPlayer=document.createElement("div");audioPlayer.id="lex-audio-player";audioPlayer.className="lex-audio-player";audioPlayer.hidden=true;
 audioPlayer.setAttribute("role","group");audioPlayer.setAttribute("aria-label","Narration playback");
-audioPlayer.innerHTML='<button class="lex-player-btn" id="lex-seek-back" type="button" aria-label="Back approximately 15 seconds">↶<small>15s</small></button><button class="lex-player-btn lex-player-play" id="lex-player-play" type="button" aria-label="Play narration">▶</button><button class="lex-player-btn" id="lex-seek-forward" type="button" aria-label="Forward approximately 15 seconds">↷<small>15s</small></button><button class="lex-player-return" id="lex-return" type="button" hidden>↗ Narration</button>';
+const roundedSeekIcon=direction=>'<svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path d="'+(direction==="back"?"M11 16 A16 16 0 1 1 8 30":"M37 16 A16 16 0 1 0 40 30")+'" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/><path d="'+(direction==="back"?"M5 16 H13 V24":"M43 16 H35 V24")+'" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/><text x="24" y="29" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="700" fill="currentColor">15</text></svg>';
+audioPlayer.innerHTML='<button class="lex-player-btn lex-player-seek" id="lex-seek-back" type="button" aria-label="Back approximately 15 seconds" title="Back 15 seconds">'+roundedSeekIcon("back")+'</button><button class="lex-player-btn lex-player-play" id="lex-player-play" type="button" aria-label="Play narration">▶</button><button class="lex-player-btn lex-player-seek" id="lex-seek-forward" type="button" aria-label="Forward approximately 15 seconds" title="Forward 15 seconds">'+roundedSeekIcon("forward")+'</button><button class="lex-player-return" id="lex-return" type="button" hidden>↗ Narration</button>';
 document.querySelector("#read .grid>.panel:first-child").appendChild(audioPlayer);
 function syncPlaybackButtons(){
  $("lex-play").textContent=playing?"Ⅱ Pause":"▶ Play";
@@ -376,6 +382,24 @@ if(typeof originalChoose==="function"){
 }
 
 function sentences(s){return (s.match(/[^.!?]+(?:[.!?]+(?=\s|$)|$)/g)||[]).map(v=>v.trim()).filter(v=>/[a-z]/i.test(v))}
+function cancelSegmentTimers(){segmentTimers.forEach(clearTimeout);segmentTimers=[]}
+/* A native-voice utterance with two or three sentences keeps Apple's natural
+   punctuation without a full speechSynthesis restart at every full stop. */
+function narrationChunk(from){
+ const anchor=liveEl(from)?.closest?.("p,li,blockquote"),starts=[],words=[];
+ let chars=0,end=from;
+ while(end<items.length&&words.length<3){
+  const current=liveEl(end)?.closest?.("p,li,blockquote");
+  if(end>from&&current!==anchor)break;
+  const next=String(items[end]?.text||"").trim();
+  if(!next){end++;continue}
+  if(words.length&&chars+next.length+1>320)break;
+  starts.push(chars+(words.length?1:0));
+  words.push(next);chars+=next.length+(words.length>1?1:0);end++;
+ }
+ if(end<=from){words.push(items[from].text);starts.push(0);end=from+1}
+ return {text:words.join(" "),starts,end,from}
+}
 function clear(){
  if(activeHighlightDoc){try{activeHighlightDoc.defaultView?.CSS?.highlights?.delete("lexora-current-sentence")}catch{}activeHighlightDoc=null}
  if(marker){marker.classList.remove("lex-active");marker=null}
@@ -419,7 +443,7 @@ function continueReading(){
  const resume=()=>{if(!autoContinue)return;autoContinue=false;if(prepare(true))play(true)};
  if(guide)setTimeout(resume,900);else{let done=false;const once=()=>{if(done)return;done=true;setTimeout(resume,400)};try{rendition.once?.("relocated",once)}catch{}setTimeout(once,4000)}
 }
-function stop(){autoContinue=false;run++;playing=false;window.lexoraSpeech?.cancel();syncPlaybackButtons();
+function stop(){autoContinue=false;run++;playing=false;cancelSegmentTimers();window.lexoraSpeech?.cancel();syncPlaybackButtons();
  // Do not leave "Speaking…" on screen after Pause or Exit.
  $("lex-status").textContent=items.length?"Sentence "+(Math.min(index,items.length-1)+1)+" / "+items.length:""}
 function epubBody(){try{return document.querySelector("#epub-view iframe")?.contentDocument?.body}catch{return null}}
@@ -483,23 +507,47 @@ function followPage(el){
  }catch{}return}
  el.scrollIntoView?.({block:"nearest",behavior:"smooth"})
 }
-// The system voice is the sole narrator. Begin inside the user's tap on iOS.
+// The system voice is the narrator. Begin in the user's gesture on iOS.
 function play(auto=false){
  if(!auto)showControls();
  window.lexoraSpeech?.unlock();
  if(!items.length&&!prepare(true))return;
  if(!window.speechSynthesis||!window.lexoraSpeech){$("lex-status").textContent="Device voice unavailable. Try Settings → Audio check.";return}
  const session=++run;playing=true;inspect.hidden=true;syncPlaybackButtons();
- const speed=()=>Number(JSON.parse(localStorage.getItem("lexora-voice-speed")||"0.9"));
+ const speed=()=>Math.max(.5,Math.min(2,Number(JSON.parse(localStorage.getItem("lexora-voice-speed")||"0.9"))||0.9));
  function next(){
   if(session!==run||!playing)return;
+  cancelSegmentTimers();
   if(index>=items.length){continueReading();return}
-  highlight();let started=false,finished=false;
-  const ok=lexoraSpeech.speak(items[index].text,{
+  const chunk=narrationChunk(index);index=chunk.from;highlight();
+  let started=false,finished=false,hasBoundary=false;
+  function showSentence(i){
+   if(session!==run||!playing||i===index||i<chunk.from||i>=chunk.end)return;
+   index=i;highlight();
+  }
+  const ok=lexoraSpeech.speak(chunk.text,{
    rate:speed(),
    voiceURI:JSON.parse(localStorage.getItem("lexora-voice-choice")||'""'),
-   onstart:()=>{started=true;if(session===run)$("lex-status").textContent="Speaking…"},
-   onend:()=>{finished=true;if(session===run&&playing){index++;next()}},
+   onstart:()=>{
+    started=true;
+    if(session!==run||!playing)return;
+    $("lex-status").textContent="Speaking…";
+    // Safari can omit speech boundaries: approximate sentence progress visually
+    // while retaining one uninterrupted utterance.
+    let delay=0;
+    for(let i=chunk.from+1;i<chunk.end;i++){
+     const words=items[i-1].text.trim().split(/\s+/).length;
+     delay+=Math.max(600,words*60000/(165*speed())+200);
+     segmentTimers.push(setTimeout(()=>{if(!hasBoundary)showSentence(i)},delay));
+    }
+   },
+   onboundary:e=>{
+    if(session!==run||!playing||typeof e.charIndex!=="number"||e.charIndex<=0)return;
+    hasBoundary=true;let position=chunk.from;
+    for(let k=1;k<chunk.starts.length;k++)if(e.charIndex>=chunk.starts[k])position=chunk.from+k;
+    showSentence(position);
+   },
+   onend:()=>{finished=true;if(session===run&&playing){cancelSegmentTimers();index=chunk.end;next()}},
    onerror:error=>{finished=true;if(session!==run)return;stop();$("lex-status").textContent="Device voice failed ("+error+"). Try Settings → Audio check."}
   });
   if(ok===false){finished=true;return}

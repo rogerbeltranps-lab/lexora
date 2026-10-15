@@ -1,4 +1,4 @@
-const CACHE="lexora-shell-v30",SHELL=["./","./index.html","./manifest.webmanifest"];
+const CACHE="lexora-shell-v31",SHELL=["./","./index.html","./manifest.webmanifest"];
 self.addEventListener("install",e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)));self.skipWaiting()});
 self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE&&(k.startsWith("lexora-shell-")||k==="lexora-flags")).map(k=>caches.delete(k)))));self.clients.claim()});
 self.addEventListener("message",e=>{if(e.data?.type==="SKIP_WAITING")self.skipWaiting()});
