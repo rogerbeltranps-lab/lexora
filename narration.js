@@ -261,11 +261,12 @@ function attachSwipe(surface,doc){
  function finish(){
   if(!start||!last){start=last=null;return}
   const dx=last.x-start.x,dy=last.y-start.y;
-  const duration=Date.now()-start.at,wasSelecting=start.selecting;
+  const beganMoving=start.movedAt||Date.now();
+  const longPress=beganMoving-start.at>420,wasSelecting=start.selecting;
   start=last=null;
   if(!document.body.classList.contains("lex-reader-fullscreen"))return;
-  if(wasSelecting||hasSelection()||duration>650)return; // Long-press or a selected phrase is never a page turn.
-  if(Math.abs(dx)<60||Math.abs(dx)<Math.abs(dy)*1.35)return;
+  if(wasSelecting||hasSelection()||longPress)return; // Long-press or selected text is never a page turn.
+  if(Math.abs(dx)<52||Math.abs(dx)<Math.abs(dy)*1.3)return;
   moveReadingPage(dx<0?1:-1);
  }
  surface.addEventListener("touchstart",e=>{
@@ -275,6 +276,7 @@ function attachSwipe(surface,doc){
  surface.addEventListener("touchmove",e=>{
   if(!start||e.touches.length!==1)return;
   const t=e.touches[0];last={x:t.clientX,y:t.clientY};
+  if(!start.movedAt&&Math.hypot(last.x-start.x,last.y-start.y)>10)start.movedAt=Date.now();
  },{passive:true});
  surface.addEventListener("touchend",e=>{
   if(!start)return;
