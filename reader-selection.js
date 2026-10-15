@@ -73,7 +73,7 @@ function bind(doc,root,lookup){
   css.textContent="html body,html body :is(p,li,blockquote,span,em,i,b,strong,a){-webkit-user-select:text!important;user-select:text!important;-webkit-touch-callout:default!important}";
   doc.head.appendChild(css);
  }
- let start=null,dragged=false,lastTouch=0;
+ let start=null,dragged=false,lastTouch=0,suppressTapUntil=0;
  const check=(delay=0)=>setTimeout(()=>update(doc,root,lookup),delay);
  // iOS WebKit does not consistently send selectionchange for selection-handle drags.
  // Also recheck after native context menus close and after the selection settles.
@@ -101,7 +101,7 @@ function bind(doc,root,lookup){
    if(selectFromDrag(doc,root,start.caret,end))check(30);
   }
  },{passive:true,capture:true});
- root.addEventListener("touchend",()=>{lastTouch=Date.now();start=null;refresh()},{passive:true,capture:true});
+ root.addEventListener("touchend",()=>{lastTouch=Date.now();if(start&&(dragged||lastTouch-start.at>350))suppressTapUntil=lastTouch+750;start=null;refresh()},{passive:true,capture:true});
  root.addEventListener("touchcancel",()=>{start=null;refresh()},{passive:true,capture:true});
  root.addEventListener("pointerdown",e=>{
   if(e.pointerType!=="mouse"||e.button!==0)return;
@@ -111,7 +111,7 @@ function bind(doc,root,lookup){
   if(e.pointerType==="mouse"&&start&&Math.hypot(e.clientX-start.x,e.clientY-start.y)>8)dragged=true
  },true);
  root.addEventListener("click",e=>{
-  if(e.detail>1||dragged||e.target.closest?.("a,button,input,select"))return;
+  if(e.detail>1||dragged||Date.now()<suppressTapUntil||e.target.closest?.("a,button,input,select"))return;
   if(Date.now()-lastTouch<700&&(selectionOf(doc,root,lookup)||!doc.getSelection()?.isCollapsed))return;
   if(selectionOf(doc,root,lookup))return; // Never substitute a word tap for a drag selection.
   const pos=caretAt(doc,e.clientX,e.clientY);
