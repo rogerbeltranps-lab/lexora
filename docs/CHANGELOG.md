@@ -1,5 +1,14 @@
 # Lexora changelog
 
+## 2026-10-15 · 32 — iPhone phrase selection and smoother reading
+- Reader selection: respond to native iPhone `selectionchange`, release/selection-handle actions and delayed WebKit updates in both the guide and EPUB iframes. Restore native `user-select` on EPUB inline elements; if WebKit fails to select during a deliberate long-press drag, create a text range without preventing default touch handling.
+- **Explore selection** stays usable when native handles are dragged and sits above the narration controls. Long-presses are not mistaken for a single-word tap. Native swipe/page navigation still takes precedence for ordinary short swipes.
+- Device narration now speaks up to three consecutive sentences in **one** utterance (maximum ~320 characters, same paragraph) instead of restarting after every period. Uses speech word-boundary offsets to follow highlighted sentences, with estimated highlight progression only when WebKit omits boundaries. This reduces synthetic gaps between sentences but cannot control Apple’s natural punctuation pauses.
+- The approximate ±15-second controls are now circular, with curved SVG skip arrows and a central 15. Voice engine, app name, favicon, user content and flashcard storage unchanged.
+- JavaScript syntax and mocked sentence grouping / selection range checks passed. Actual iPhone Safari/PWA touch and speech timing still require device verification. Version 32; PWA shell v31.
+
+
+
 ## 2026-10-15 · 31 — Automatic device appearance, no theme icons
 - The EPUB and built-in reader always use the device's **current** dark/light appearance. Older saved sepia/white/black overrides no longer take precedence.
 - Removed the compact sun/moon theme button and immersive theme choices. Font size and typeface controls remain.
