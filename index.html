@@ -16,6 +16,36 @@ aside{padding-top:calc(30px + env(safe-area-inset-top,0px))}.main{padding-top:ca
 @media (max-width:1100px){.main{padding-top:calc(18px + env(safe-area-inset-top,0px))}}
 @media (max-width:980px){aside{padding-top:calc(18px + env(safe-area-inset-top,0px))}}
 @media (max-width:650px){.app>aside{padding-top:calc(10px + env(safe-area-inset-top,0px))}.main{padding-top:12px}}
+
+/* Mobile reader: all interactive elements stay inside the viewport. */
+html,body{max-width:100%;overflow-x:clip}
+.app,.main,.section,.grid,.panel,.section-title,.reader-toolbar,.reader-toolbar>.buttonrow{min-width:0;max-width:100%}
+#read .section-title{flex-wrap:wrap;align-items:flex-start}
+#read .section-title>.buttonrow{min-width:0;max-width:100%}
+#read .reader,#epub-view{min-width:0;width:100%;max-width:100%}
+#epub-view iframe{display:block;max-width:100%}
+#read .reader-toolbar select{min-width:0;box-sizing:border-box;text-overflow:ellipsis}
+@media (max-width:650px){
+ .app,.app>aside,.main,#read,#read>.grid,#read .grid>.panel{width:100%;max-width:100%}
+ .app>aside .nav{min-width:0;max-width:100%;overflow-x:auto}
+ #read .grid>.panel{padding:14px}
+ #read .section-title{gap:12px}
+ #read .section-title h2{flex:0 0 auto}
+ #read .section-title>.buttonrow{flex:1 1 210px}
+ #read .section-title .btn{max-width:100%}
+ #read .reader-toolbar{display:flex;flex-direction:column;align-items:stretch}
+ #read .reader-toolbar>.buttonrow:first-child{
+  display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px;width:100%
+ }
+ #read .reader-toolbar #chapter,#read .reader-toolbar #booklist{
+  display:block;width:100%;min-width:0;max-width:100%;grid-column:1
+ }
+ #read .reader-toolbar #chapter[hidden],#read .reader-toolbar #booklist[hidden]{display:none}
+ #read .reader-toolbar #delete-book{grid-column:2;grid-row:1 / span 2}
+ #read .reader-toolbar>.buttonrow:nth-child(2){width:100%;justify-content:flex-start}
+ #read .reader-toolbar .btn{flex:0 0 auto}
+ #epub-view{overflow:hidden}
+}
 </style></head><body>
 <div class="app"><aside><div><div class="logo">Lexora</div><div class="tagline">READ. DISCOVER. REMEMBER.</div></div><nav class="nav" aria-label="Main navigation"><button class="active" data-view="read"><span>◫</span><span class="label">Read</span></button><button data-view="cards"><span>▤</span><span class="label">My flashcards</span></button><button data-view="practice"><span>✦</span><span class="label">Practice</span></button><button data-view="settings"><span>⚙</span><span class="label">Settings</span></button></nav><div class="side-note">A place for the words you don't want to forget.<br><br>© RBP · Roger Beltran · v0.1</div></aside>
 <main class="main"><header class="top"><div><h1 id="page-title">Your reading space</h1><p id="page-sub">A little curiosity can take you a long way.</p></div><div class="capsule" id="account-label">Personal · local mode</div></header>
@@ -73,10 +103,39 @@ function renderBookList(){$("booklist").innerHTML='<option value="guide">The Lex
 // Books from the cloud library are downloaded the first time they are opened here, then kept for offline reading.
 function bookCloud(){return window.lexoraBookCloud||window.lexoraAuthKnown?Promise.resolve(window.lexoraBookCloud||null):new Promise(ok=>{const t=setTimeout(()=>ok(null),10000);addEventListener("lexora:book-cloud",()=>{clearTimeout(t);ok(window.lexoraBookCloud||null)},{once:true})})}
 async function fetchCloudBook(id){const entry=bookNames.find(x=>x.id===id);if(!entry?.cloud)return null;const cloud=await bookCloud();if(cloud?.uid!==entry.cloud)throw Error("Sign in with the Google account that added this book to download it");$("position").textContent="Downloading book…";const file=await cloud.download(id);await putBook(id,file);return file}
-async function showBook(id){if(rendition){try{rendition.destroy()}catch{}rendition=null}if(ebook){try{ebook.destroy()}catch{}ebook=null}currentBook=id;store("book",id);renderBookList();setReaderMode();if(id==="guide")return;if(typeof ePub!=="function"){toast("EPUB engine unavailable. Check internet access.");return}try{const file=await getBook(id)||await fetchCloudBook(id);if(!file)throw Error("Book not found on this device");ebook=ePub(await file.arrayBuffer());ebook.spine.hooks.content.register(sanitizeChapter);rendition=ebook.renderTo("epub-view",{width:"100%",height:"100%",spread:"none",flow:"paginated",allowScriptedContent:true});applyEpubAppearance();rendition.on("selected",(cfi,contents)=>{const range=contents.range(cfi),s=range.toString().trim();if(s){let text=range.commonAncestorContainer.parentElement?.textContent||s;choose(s,text);contents.window.getSelection()?.removeAllRanges()}});const showPosition=location=>{const pct=ebook?.locations?.length()?ebook.locations.percentageFromCfi(location.start.cfi):null;$("position").textContent="Reading EPUB"+(pct!=null?" · "+Math.round(pct*100)+"%":"")};rendition.on("relocated",location=>{if(location?.start?.cfi){store("cfi-"+id,location.start.cfi);showPosition(location)}});await rendition.display(load("cfi-"+id,null)||undefined);const book=ebook;book.locations.generate(1600).then(()=>{if(ebook!==book||!rendition)return;const location=rendition.currentLocation();if(location?.start?.cfi)showPosition(location)}).catch(()=>{});return true}catch(e){toast("Could not open EPUB: "+e.message);currentBook="guide";store("book","guide");renderBookList();setReaderMode();return false}}
+async function showBook(id){if(rendition){try{rendition.destroy()}catch{}rendition=null}if(ebook){try{ebook.destroy()}catch{}ebook=null}currentBook=id;store("book",id);renderBookList();setReaderMode();if(id==="guide")return;if(typeof ePub!=="function"){toast("EPUB engine unavailable. Check internet access.");return}try{const file=await getBook(id)||await fetchCloudBook(id);if(!file)throw Error("Book not found on this device");ebook=ePub(await file.arrayBuffer());ebook.spine.hooks.content.register(sanitizeChapter);rendition=ebook.renderTo("epub-view",{width:"100%",height:"100%",spread:"none",flow:"paginated",allowScriptedContent:true});applyEpubAppearance();const showPosition=location=>{const pct=ebook?.locations?.length()?ebook.locations.percentageFromCfi(location.start.cfi):null;$("position").textContent="Reading EPUB"+(pct!=null?" · "+Math.round(pct*100)+"%":"")};rendition.on("relocated",location=>{if(location?.start?.cfi){store("cfi-"+id,location.start.cfi);showPosition(location)}});await rendition.display(load("cfi-"+id,null)||undefined);const book=ebook;book.locations.generate(1600).then(()=>{if(ebook!==book||!rendition)return;const location=rendition.currentLocation();if(location?.start?.cfi)showPosition(location)}).catch(()=>{});return true}catch(e){toast("Could not open EPUB: "+e.message);currentBook="guide";store("book","guide");renderBookList();setReaderMode();return false}}
 // iOS Safari ignores every event listener inside a book page whose iframe may not run scripts (taps, swipes, selections),
 // so the book frame allows scripts and each chapter loses its own scripts, handlers and embeds before it is shown.
-function sanitizeChapter(doc){doc.querySelectorAll("script,iframe,object,embed,frame,frameset").forEach(el=>el.remove());doc.querySelectorAll("*").forEach(el=>{for(const a of [...el.attributes]){const v=a.value.trim().toLowerCase();if(/^on/i.test(a.name)||(/(^|:)href$|^src$|^action$|^formaction$/i.test(a.name)&&v.startsWith("javascript:")))el.removeAttribute(a.name)}});const head=doc.querySelector("head");if(head){const csp=doc.createElementNS(head.namespaceURI,"meta");csp.setAttribute("http-equiv","Content-Security-Policy");csp.setAttribute("content","script-src 'none'; object-src 'none'");head.prepend(csp)}}
+function sanitizeChapter(doc){
+ doc.querySelectorAll("script,iframe,object,embed,frame,frameset").forEach(el=>el.remove());
+ doc.querySelectorAll("*").forEach(el=>{
+  for(const a of [...el.attributes]){
+   const v=a.value.trim().toLowerCase();
+   if(/^on/i.test(a.name)||(/(^|:)href$|^src$|^action$|^formaction$/i.test(a.name)&&v.startsWith("javascript:")))el.removeAttribute(a.name);
+  }
+ });
+ // EPUBs can contain U+FB01 'fi' ligatures that some bundled fonts show as missing glyphs.
+ // Normalize visible text deterministically so saved EPUB positions remain stable on every load.
+ const map={"ﬀ":"ff","ﬁ":"fi","ﬂ":"fl","ﬃ":"ffi","ﬄ":"ffl","ﬅ":"st","ﬆ":"st"};
+ if(doc.body){
+  const walker=doc.createTreeWalker(doc.body,4);let node;
+  while((node=walker.nextNode())){
+   if(/[ﬀﬁﬂﬃﬄﬅﬆ]/.test(node.nodeValue||"")&&!node.parentElement?.closest("style,script,noscript,svg,math")){
+    node.nodeValue=node.nodeValue.replace(/[ﬀﬁﬂﬃﬄﬅﬆ]/g,ch=>map[ch]);
+   }
+  }
+ }
+ const head=doc.querySelector("head");
+ if(head){
+  const csp=doc.createElementNS(head.namespaceURI,"meta");
+  csp.setAttribute("http-equiv","Content-Security-Policy");
+  csp.setAttribute("content","script-src 'none'; object-src 'none'");
+  head.prepend(csp);
+  const css=doc.createElementNS(head.namespaceURI,"style");
+  css.textContent="html body, html body p, html body p *, html body li, html body li *{-webkit-user-select:text!important;user-select:text!important;word-break:normal!important;overflow-wrap:break-word}html body{-webkit-hyphens:none;hyphens:none;touch-action:auto!important}html body img,html body svg{max-width:100%;height:auto}";
+  head.appendChild(css);
+ }
+}
 // Font size goes on the book's <body> with !important: books often size the body through a class (calibre's .calibre), which beat the plain theme rule.
 function applyEpubAppearance(keepPlace=false){if(!rendition)return;const cfi=keepPlace?rendition.currentLocation()?.start?.cfi:null;rendition.themes.default({body:{"background":readingTheme==="black"?"#000":readingTheme==="white"?"#fff":"#fffaf1","color":readingTheme==="black"?"#fff":"#111","line-height":"1.65"}});rendition.themes.override("font-size",Math.round(size/19*100)+"%",true);
 // A new text size changes how many pages the chapter has: go back to the sentence that was on screen.
@@ -87,10 +146,10 @@ async function deleteBook(id){const entry=bookNames.find(x=>x.id===id);if(!entry
 // Book list access for book-sync.js. An entry's cloud field names the account whose cloud library holds it.
 async function forgetBook(id){try{const db=await openDB();await new Promise((ok,no)=>{const tx=db.transaction("books","readwrite");tx.objectStore("books").delete(id);tx.oncomplete=()=>{db.close();ok()};tx.onerror=()=>no(tx.error)})}catch{}bookNames=bookNames.filter(x=>x.id!==id);store("booknames",bookNames);localStorage.removeItem("lexora-cfi-"+id);if(currentBook===id)showBook("guide");else renderBookList()}
 window.lexoraBookBridge={list:()=>bookNames.map(x=>({...x})),getLocal:getBook,addRemote:entry=>{if(bookNames.some(x=>x.id===entry.id))return;bookNames.push(entry);store("booknames",bookNames);renderBookList()},markCloud:(id,uid)=>{const entry=bookNames.find(x=>x.id===id);if(entry){entry.cloud=uid;store("booknames",bookNames)}},forget:forgetBook,deletions:uid=>load("book-deletions",[]).filter(x=>x.uid===uid).map(x=>x.id),clearDeletion:(uid,id)=>store("book-deletions",load("book-deletions",[]).filter(x=>!(x.uid===uid&&x.id===id)))};
-function choose(term,source=""){selected=term.trim().slice(0,140);context=source.trim().slice(0,400);$("lookup").value=selected;renderDiscovery()}
+function choose(term,source=""){selected=term.trim().slice(0,500);context=source.trim().slice(0,1200);$("lookup").value=selected;renderDiscovery()}
 function findKnown(term){const needle=term.trim().toLowerCase().replace(/[.,!?;:]+$/,"");return cards.find(c=>c.term.toLowerCase()===needle)||glossary.find(c=>c.term.toLowerCase()===needle)||glossary.find(c=>needle.includes(c.term.toLowerCase())&&c.term.length>5)||null}
 function renderDiscovery(){let c=findKnown(selected);$("discovery").innerHTML='<span class="chip">'+safe(c?.type||"New discovery")+'</span><div class="word">'+safe(selected||"New expression")+'</div>'+(c?'<div class="ipa">'+safe(c.ipa)+'</div><div class="detail"><h4>Meaning</h4><p>'+safe(c.definition)+'</p><h4>Català</h4><p>'+safe(c.catalan)+'</p><h4>Natural structure</h4><p>'+safe(c.structure)+'</p><h4>Examples</h4><p>'+c.examples.map(safe).join("<br>")+'</p><h4>Remember it</h4><p>'+safe(c.tip)+'</p></div>':'<p class="detail">This expression isn’t in the built-in glossary yet. You can save it and add your own meaning. Automatic AI explanations will come later.</p>')+(context?'<p class="quote">'+safe(context)+'</p>':'')+'<div class="buttonrow"><button class="btn primary" id="add-discovery">＋ Save as flashcard</button></div>';$("add-discovery").onclick=()=>editCard(c,selected,context)}
-$("guide").addEventListener("mouseup",()=>{const s=window.getSelection()?.toString().trim();if(s){const node=window.getSelection().anchorNode;const txt=node?.parentElement?.closest("p")?.textContent||s;choose(s,txt)}});$("guide").addEventListener("touchend",()=>setTimeout(()=>{let s=window.getSelection()?.toString().trim();if(s){let txt=window.getSelection().anchorNode?.parentElement?.closest("p")?.textContent||s;choose(s,txt)}},140));
+// Reader selections are handled by reader-selection.js; never clear them on touchend.
 function availableVoices(){return window.lexoraSpeech?lexoraSpeech.voices():[]}
 function refreshVoices(){const list=$("voice-choice");if(!list)return;const saved=load("voice-choice","");list.innerHTML='<option value="">Automatic American English voice</option>';availableVoices().forEach(v=>{const opt=document.createElement("option");opt.value=v.voiceURI;const q=lexoraSpeech.quality?.(v);opt.textContent=v.name+(q?" · "+q:"")+(v.localService?" · on device":" · browser service");list.appendChild(opt)});list.value=Array.from(list.options).some(o=>o.value===saved)?saved:""}
 function speak(term){if(!term)return;if(!window.lexoraSpeech)return;lexoraSpeech.speakBest(term,{rate:load("voice-speed",0.9),voiceURI:load("voice-choice",""),onerror:e=>toast(e==="unsupported"?"Speech playback unavailable in this browser":"Voice did not play ("+e+"). Check the volume and try again.")})}
