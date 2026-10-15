@@ -1,5 +1,11 @@
 # Lexora changelog
 
+## 2026-10-15 · 33 — Default typeface and rewind icon
+- New readers with **no saved typeface preference** now default to Modern (system sans-serif). Classic and New York remain options, and existing selections stay unchanged.
+- Redesigned only the back-15-second curved arrow orientation and arrowhead; playback direction and approximate skipping behavior are unchanged.
+- App v33, PWA shell cache v32. JavaScript syntax and control wiring checks passed; actual iPhone appearance still needs device verification.
+
+
 ## 2026-10-15 · 32 — iPhone phrase selection and smoother reading
 - Reader selection: respond to native iPhone `selectionchange`, release/selection-handle actions and delayed WebKit updates in both the guide and EPUB iframes. Restore native `user-select` on EPUB inline elements; if WebKit fails to select during a deliberate long-press drag, create a text range without preventing default touch handling.
 - **Explore selection** stays usable when native handles are dragged and sits above the narration controls. Long-presses are not mistaken for a single-word tap. Native swipe/page navigation still takes precedence for ordinary short swipes.
