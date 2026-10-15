@@ -180,7 +180,7 @@ const controls=document.createElement("div");controls.className="lex-narr";contr
 document.querySelector(".reader-toolbar").insertAdjacentElement("afterend",controls);
 const audioPlayer=document.createElement("div");audioPlayer.id="lex-audio-player";audioPlayer.className="lex-audio-player";audioPlayer.hidden=true;
 audioPlayer.setAttribute("role","group");audioPlayer.setAttribute("aria-label","Narration playback");
-const roundedSeekIcon=direction=>'<svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path d="'+(direction==="back"?"M11 16 A16 16 0 1 1 8 30":"M37 16 A16 16 0 1 0 40 30")+'" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/><path d="'+(direction==="back"?"M5 16 H13 V24":"M43 16 H35 V24")+'" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/><text x="24" y="29" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="700" fill="currentColor">15</text></svg>';
+const roundedSeekIcon=direction=>'<svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path d="'+(direction==="back"?"M8 30 A16 16 0 1 0 11 16":"M37 16 A16 16 0 1 0 40 30")+'" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/><path d="'+(direction==="back"?"M18 9 L10 16 L18 23":"M43 16 H35 V24")+'" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/><text x="24" y="29" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="700" fill="currentColor">15</text></svg>';
 audioPlayer.innerHTML='<button class="lex-player-btn lex-player-seek" id="lex-seek-back" type="button" aria-label="Back approximately 15 seconds" title="Back 15 seconds">'+roundedSeekIcon("back")+'</button><button class="lex-player-btn lex-player-play" id="lex-player-play" type="button" aria-label="Play narration">▶</button><button class="lex-player-btn lex-player-seek" id="lex-seek-forward" type="button" aria-label="Forward approximately 15 seconds" title="Forward 15 seconds">'+roundedSeekIcon("forward")+'</button><button class="lex-player-return" id="lex-return" type="button" hidden>↗ Narration</button>';
 document.querySelector("#read .grid>.panel:first-child").appendChild(audioPlayer);
 function syncPlaybackButtons(){
@@ -197,7 +197,8 @@ function refreshRunningTitle(){const sel=$("booklist"),name=sel?.selectedOptions
 $("booklist").addEventListener("change",()=>setTimeout(refreshRunningTitle,0));
 refreshRunningTitle();
 const fontFamilyChoices={classic:'Georgia,"Times New Roman",serif',newyork:'ui-serif,"New York","Iowan Old Style",Palatino,serif',modern:'-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif'};
-let readerFont=localStorage.getItem("lexora-reader-font-family")||"classic";
+const storedReaderFont=localStorage.getItem("lexora-reader-font-family");
+let readerFont=["classic","newyork","modern"].includes(storedReaderFont)?storedReaderFont:"modern";
 function applyReaderFont(){
  const reader=$("reader");reader.classList.remove("lex-font-classic","lex-font-newyork","lex-font-modern");reader.classList.add("lex-font-"+readerFont);
  const doc=document.querySelector("#epub-view iframe")?.contentDocument;
