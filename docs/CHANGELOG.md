@@ -1,5 +1,14 @@
 # Lexora changelog
 
+## 2026-10-15 · 27
+- Mobile reader: constrained the book selector, panel, toolbar and EPUB iframe to the iPhone viewport without horizontal overflow.
+- EPUB sanitization now substitutes explicit Unicode presentation ligatures (e.g. the missing “fi” in “chafing”) with normal characters, restores selectable text and sensible word wrapping, and leaves personal book storage untouched.
+- Reader selection now respects native iPhone long-press and drag handles. An unobtrusive **Explore selection** action appears after a phrase is selected; the exact selected phrase is used only after tapping it. One-tap word lookup remains available. Removed older handlers that immediately opened the dictionary and cleared the selection.
+- Page swiping now distinguishes deliberate horizontal movements from long presses, selection-handle drags and vertical scrolling. Reader sentence spans are not focusable on touch devices.
+- Native speech no longer cancels completed speech before queuing the next sentence (avoids a delayed, out-of-gesture iOS restart); desktop browsers no longer prime a silent HTML audio player. Unexpected speech errors and failure-to-start now surface in the UI.
+- Static parsing of modified scripts and a mocked consecutive-sentence speech test passed. Physical iPhone / desktop browser playback and iOS WebKit layout/gesture behavior still require on-device verification.
+- Version `2026-10-15 · 27`; PWA shell cache v26.
+
 ## 2026-10-15
 - Native device voice only in Read & Listen, dictionary pronunciation, and flashcards. Removed Kokoro voice selector, model downloads, Web Worker, long prebuffer waits, and the delayed fallback. Narration invokes the built-in voice in the user's Play tap and displays failures.
 - Removed Kokoro-only cross-origin isolation and its Google Sign-In extra reload; obsolete isolation caches are retired, preserving IndexedDB, personal EPUBs, flashcards and saved settings.
