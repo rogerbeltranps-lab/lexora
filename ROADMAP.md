@@ -193,5 +193,5 @@ This is an **initial implementation**, not a complete dictionary. Cloud login an
 - [ ] Improve EPUB sentence-level visual highlighting: currently imported EPUBs highlight the containing paragraph rather than the exact sentence.
 - [ ] Test sentence navigation and voice playback on iOS Safari and real imported EPUBs.
 - [ ] Preserve narration position reliably across EPUB page turns and reloads.
-- [ ] Consider Kokoro or another locally downloaded neural voice after the browser-voice version is stable.
+- [x] Use the device’s native voice only for now; Kokoro removed 2026-10-15. Reconsider optional HD cloud voice later, after native speech is verified.
 
