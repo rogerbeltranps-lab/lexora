@@ -1,6 +1,6 @@
 (()=>{"use strict";
 const $=id=>document.getElementById(id);
-let mode="read",playing=false,items=[],index=0,run=0,marker=null,followingAudio=true,activeHighlightDoc=null,lastAutoTurn=0,segmentTimers=[];
+let mode="read",playing=false,items=[],index=0,run=0,marker=null,followingAudio=true,activeHighlightDoc=null,epubSentenceLayer=null,highlightRendition=null,lastAutoTurn=0,segmentTimers=[];
 const css=document.createElement("style");css.textContent=".lex-narr{display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:#eaf4f7;padding:10px;border-radius:12px;margin-bottom:12px}.lex-narr select{padding:9px;border:1px solid #cbd8df;border-radius:8px}.lex-narr-status{font-size:12px;color:#617589}.lex-tappable{cursor:pointer;border-radius:3px;-webkit-user-select:text;user-select:text}.lex-tappable:focus-visible{outline:2px solid #297eaa}.lex-active{background:rgba(229,195,123,.28)!important;color:inherit!important;border-radius:3px;-webkit-box-decoration-break:clone;box-decoration-break:clone}.reader.lex-audio-only .prose,.reader.lex-audio-only #epub-view{visibility:hidden}.lex-inspect{background:#edf6f9;padding:15px;border-radius:12px;margin:0 0 12px;border:1px solid #cbdfe6}.lex-inspect p{line-height:1.6}";
 css.textContent+=`
 body.lex-reader-fullscreen{overflow:hidden}
@@ -264,7 +264,10 @@ function paginateGuide(reset=false){
   guideEl.scrollLeft=guidePageIndex*guideEl.clientWidth;
   lastPageMarkup=guideEl.innerHTML;
   // The pages are new nodes: point the narration and its tap-to-replay at them.
-  if(items.length&&!guideEl.querySelector("[data-lex-i]"))prepare(false);else items.forEach((_,i)=>liveEl(i));if(playing&&mode!=="listen")highlight();
+  // Some long paragraphs were split into text-only page fragments: rebuild
+  // sentence markers on EVERY paginated page, not only when all are missing.
+  if(items.length)prepare(false);
+  if(playing&&mode!=="listen")highlight();
  }finally{paginating=false}
 }
 function clearGuidePagination(){
@@ -404,6 +407,7 @@ function narrationChunk(from){
 function clear(){
  if(activeHighlightDoc){try{activeHighlightDoc.defaultView?.CSS?.highlights?.delete("lexora-current-sentence")}catch{}activeHighlightDoc=null}
  if(marker){marker.classList.remove("lex-active");marker=null}
+ if(epubSentenceLayer)epubSentenceLayer.replaceChildren();
  // Paginating the guide clones its HTML, so a copy of the old highlight can linger on the new page.
  readingRoot()?.querySelectorAll(".lex-active").forEach(el=>el.classList.remove("lex-active"))
 }
@@ -414,6 +418,57 @@ function applyEpubHighlightStyle(){
  let style=doc.getElementById("lexora-sentence-highlight");
  if(!style){style=doc.createElement("style");style.id="lexora-sentence-highlight";doc.head.appendChild(style)}
  style.textContent='html body .lex-active{background:'+fill+'!important;color:inherit!important;-webkit-box-decoration-break:clone;box-decoration-break:clone;border-radius:3px}::highlight(lexora-current-sentence){background-color:'+fill+'}';
+}
+/* Draw exact sentence rects over the EPUB viewport without rewriting the book.
+   This also works on iOS/WebKit where CSS.highlights may be unavailable or invisible
+   inside an epub.js iframe. The layer never intercepts touch/selection gestures. */
+function drawEpubSentence(range){
+ if(!range?.startContainer?.isConnected)return false;
+ const frame=epubHost.querySelector("iframe");
+ if(!frame||frame.contentDocument!==range.startContainer.ownerDocument)return false;
+ const hostRect=epubHost.getBoundingClientRect(),frameRect=frame.getBoundingClientRect();
+ if(!hostRect.width||!hostRect.height||!frameRect.width)return false;
+ if(!epubSentenceLayer||!epubSentenceLayer.isConnected){
+  epubHost.style.position="relative";
+  epubSentenceLayer=document.createElement("div");
+  epubSentenceLayer.className="lex-sentence-overlay";
+  epubSentenceLayer.setAttribute("aria-hidden","true");
+  epubSentenceLayer.style.cssText="position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:8";
+  epubHost.append(epubSentenceLayer);
+ }
+ epubSentenceLayer.replaceChildren();
+ const dark=$("reader").classList.contains("black");
+ const fill=dark?"rgba(140,181,213,.26)":"rgba(233,194,111,.28)";
+ // iframe coordinates are different from the EPUB host's, particularly with
+ // status-bar padding on iPhones and when epub.js shifts columns horizontally.
+ const sx=frameRect.width/(frame.clientWidth||frameRect.width);
+ const sy=frameRect.height/(frame.clientHeight||frameRect.height);
+ const fragment=document.createDocumentFragment();
+ let drawn=0;
+ for(const rect of range.getClientRects()){
+  const left=frameRect.left-hostRect.left+rect.left*sx;
+  const top=frameRect.top-hostRect.top+rect.top*sy;
+  const right=Math.min(hostRect.width,left+rect.width*sx),bottom=Math.min(hostRect.height,top+rect.height*sy);
+  const x=Math.max(0,left),y=Math.max(0,top);
+  if(right-x<2||bottom-y<2)continue;
+  const mark=document.createElement("span");
+  mark.style.cssText="position:absolute;pointer-events:none;border-radius:3px;box-decoration-break:clone";
+  mark.style.left=x+"px";mark.style.top=y+"px";
+  mark.style.width=(right-x)+"px";mark.style.height=(bottom-y)+"px";
+  mark.style.background=fill;
+  fragment.append(mark);
+  if(++drawn>=120)break;
+ }
+ epubSentenceLayer.append(fragment);
+ return drawn>0;
+}
+function watchEpubHighlightPosition(){
+ if(typeof rendition==="undefined"||!rendition||rendition===highlightRendition)return;
+ highlightRendition=rendition;
+ rendition.on("relocated",()=>{
+  if(!playing||!followingAudio||mode!=="both")return;
+  requestAnimationFrame(()=>drawEpubSentence(items[index]?.range));
+ });
 }
 /* Text ranges highlight exactly one sentence in EPUB paragraphs with inline formatting,
    without breaking the book's HTML, CFI navigation, or native selection. */
@@ -451,6 +506,7 @@ function epubBody(){try{return document.querySelector("#epub-view iframe")?.cont
 function prepare(reset){
  clear();if(reset)index=0;
  const guide=$("booklist").value==="guide",body=guide?$("guide"):epubBody();items=[];
+ if(!guide)watchEpubHighlightPosition();
  if(!body){$("lex-status").textContent="Waiting for EPUB page";return false}
  body.querySelectorAll("p").forEach(p=>{
   const txt=p.textContent||"";
@@ -458,20 +514,14 @@ function prepare(reset){
    let parts=sentences(txt);p.replaceChildren(...parts.map((part,i)=>{const sp=document.createElement("span");sp.textContent=part+(i<parts.length-1?" ":"");return sp}));
    p.querySelectorAll("span").forEach(sp=>{sp.dataset.lexI=String(items.length);items.push({text:sp.textContent.trim(),el:sp})})
   }else{
-   const prior=Array.from(p.children);
-   if(prior.length&&p.childNodes.length===prior.length&&prior.every(sp=>sp.matches("span[data-lex-i]"))){
-    // A previous preparation already segmented plain paragraphs: reuse the sentence spans.
-    prior.forEach(sp=>{sp.dataset.lexI=String(items.length);items.push({text:sp.textContent.trim(),el:sp})})
-   }else if(p.children.length===0){
-    const parts=sentences(txt);
-    p.replaceChildren(...parts.map((part,i)=>{const sp=p.ownerDocument.createElement("span");sp.textContent=part+(i<parts.length-1?" ":"");return sp}));
-    p.querySelectorAll("span").forEach(sp=>{sp.dataset.lexI=String(items.length);items.push({text:sp.textContent.trim(),el:sp})})
-   }else{sentenceRanges(p).forEach(item=>items.push(item))}
+   // EPUB content must remain untouched: wrapping plain text in spans moves CFI
+   // positions and can interfere with native drag-selection on an iPhone.
+   sentenceRanges(p).forEach(item=>items.push(item))
   }
  });
  items.forEach(enableTap);if(!guide)applyEpubHighlightStyle();
  // An EPUB chapter is one long page strip: start from the page on screen, not the top of the chapter.
- if(reset&&!guide){const view=$("epub-view").getBoundingClientRect(),frame=document.querySelector("#epub-view iframe")?.getBoundingClientRect();if(frame){const i=items.findIndex(it=>{const x=frame.left+it.el.getBoundingClientRect().left;return x>=view.left-2&&x<view.right-2});if(i>0)index=i}}
+ if(reset&&!guide){const view=$("epub-view").getBoundingClientRect(),frame=document.querySelector("#epub-view iframe")?.getBoundingClientRect();if(frame){const i=items.findIndex(it=>{const r=it.range?.getClientRects()?.[0]||it.el.getBoundingClientRect();const x=frame.left+r.left;return x>=view.left-2&&x<view.right-2});if(i>0)index=i}}
  index=Math.min(index,Math.max(0,items.length-1));$("lex-status").textContent=items.length?"Sentence "+(index+1)+" / "+items.length:"No text on this page";
  return items.length>0
 }
@@ -488,19 +538,22 @@ function enableTap(item,number){
 function highlight(){
  clear();const item=items[index],el=liveEl(index);if(!item)return;
  if(mode==="both"&&el){
-  const view=el.ownerDocument.defaultView;
-  if(item.range&&item.range.startContainer.isConnected&&view?.CSS?.highlights&&view.Highlight){
-   try{applyEpubHighlightStyle();view.CSS.highlights.set("lexora-current-sentence",new view.Highlight(item.range));activeHighlightDoc=el.ownerDocument}catch{marker=el;marker.classList.add("lex-active")}
+  if(item.range){
+   // Range rects highlight only this sentence, even across inline formatting.
+   // On WebKit there is no paragraph-wide fallback to hide the exact position.
+   drawEpubSentence(item.range);
   }else{marker=el;marker.classList.add("lex-active")}
-  if(playing&&followingAudio)followPage(el)
+  if(playing&&followingAudio)followPage(el,item.range)
  }
  $("lex-status").textContent="Sentence "+(index+1)+" / "+items.length
 }
 // Turn the page with the narration instead of leaving the highlight on a page that is not shown.
-function followPage(el){
+function followPage(el,range){
  if(guideEl.classList.contains("lex-paginated")){const page=el.closest(".lex-book-page"),i=page?Array.prototype.indexOf.call(guideEl.children,page):-1;if(i>=0&&i!==guidePageIndex){guidePageIndex=i;guideEl.scrollTo({left:i*guideEl.clientWidth,behavior:"smooth"})}return}
  if(el.ownerDocument!==document){try{
-  const frame=document.querySelector("#epub-view iframe"),view=$("epub-view").getBoundingClientRect(),x=frame.getBoundingClientRect().left+el.getBoundingClientRect().left;
+  const frame=document.querySelector("#epub-view iframe"),view=$("epub-view").getBoundingClientRect();
+  const target=range?.getClientRects()?.[0]||el.getBoundingClientRect();
+  const x=frame.getBoundingClientRect().left+target.left;
   if(Date.now()-lastAutoTurn>450&&typeof rendition!=="undefined"&&rendition){
    if(x>=view.right-2){lastAutoTurn=Date.now();rendition.next()}
    else if(x<view.left-2){lastAutoTurn=Date.now();rendition.prev()}
@@ -603,7 +656,11 @@ $("lex-forward").onclick=()=>{stop();if(!items.length)prepare(true);index=Math.m
 ["chapter","booklist","prev","next","load-guide","upload-book"].forEach(id=>$(id)?.addEventListener("click",()=>{stop();setTimeout(()=>prepare(true),350)}));
 $("chapter").addEventListener("change",()=>{stop();setTimeout(()=>prepare(true),100)});
 $("booklist").addEventListener("change",()=>{stop();setTimeout(()=>prepare(true),900)});
-const observer=new MutationObserver(()=>{if($("booklist").value!=="guide"&&!playing){setTimeout(()=>prepare(true),250)}});observer.observe($("epub-view"),{childList:true});
+const observer=new MutationObserver(records=>{
+ // Our non-interactive sentence layer is not a new EPUB chapter.
+ const bookChanged=records.some(r=>[...r.addedNodes,...r.removedNodes].some(node=>!node.classList?.contains("lex-sentence-overlay")));
+ if(bookChanged&&$("booklist").value!=="guide"&&!playing)setTimeout(()=>prepare(true),250);
+});observer.observe($("epub-view"),{childList:true});
 $("lex-read").classList.add("primary");$("lex-play").hidden=$("lex-back").hidden=$("lex-forward").hidden=$("lex-status").hidden=true;
 syncPlaybackButtons();
 $("reader").addEventListener("click",e=>{if(!document.body.classList.contains("lex-reader-fullscreen"))return;if(window.getSelection()?.toString().trim())return;if(e.target.closest(".lex-tappable"))return;showControls()});
