@@ -1,5 +1,10 @@
 # Lexora changelog
 
+## 2026-10-15 · 28
+- Mobile reader default font size increased from 19 to 26 on narrow screens (up to 650px); desktop default remains 19.
+- Legacy 19px mobile defaults are upgraded automatically. Any new A−/A+ choice is kept, including choosing smaller text; EPUB and guide still share the same setting.
+- Updated PWA version to 28, shell cache to v27. Physical iPhone appearance and EPUB reflow still need verification.
+
 ## 2026-10-15 · Documentation consolidation
 - Consolidated product status, roadmap, deferred ideas, October 15 decisions, and unresolved bugs into the canonical `README.md`.
 - Kept this dated changelog as the technical history and simplified the documentation agent's responsibilities. Retired duplicate `ROADMAP.md` and `docs/FEATURES.md`; their previous contents remain in Git history.
