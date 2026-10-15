@@ -1,5 +1,13 @@
 # Lexora changelog
 
+## 2026-10-15 · 35 — iPhone highlighting and auto-hide follow-up
+- User screenshot confirms v34 still lacked visible sentence highlighting in a real imported EPUB and that the top playback menu remained on screen.
+- Moved the translucent exact-sentence overlay inside the EPUB iframe, directly above the text, while keeping it non-interactive. Redraw when epub.js relocates pages. No EPUB text wrapping/rewriting or data deletion.
+- Fixed the top toolbar hide timer so it runs on Play and after entering immersive mode, fading after ~3.2 seconds without interactions; bottom audio player remains visible.
+- **Still requires user verification on a physical iPhone**. Code parses; neither bug is claimed fixed on-device.
+- Version 35, service worker shell v34.
+
+
 ## 2026-10-15 · 34 — Exact spoken-sentence highlighting
 - EPUB narration now paints the **exact current sentence** with a subtle, theme-aware overlay based on DOM Range rectangles instead of depending on CSS Highlights support or marking a whole paragraph as a fallback.
 - Does not rewrite EPUB paragraphs, so iPhone long-press/drag selection and book location markers are better preserved. Uses the current sentence position to choose the visible starting point and follow narration across columns.
