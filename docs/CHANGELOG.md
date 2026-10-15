@@ -1,5 +1,13 @@
 # Lexora changelog
 
+## 2026-10-15 · 34 — Exact spoken-sentence highlighting
+- EPUB narration now paints the **exact current sentence** with a subtle, theme-aware overlay based on DOM Range rectangles instead of depending on CSS Highlights support or marking a whole paragraph as a fallback.
+- Does not rewrite EPUB paragraphs, so iPhone long-press/drag selection and book location markers are better preserved. Uses the current sentence position to choose the visible starting point and follow narration across columns.
+- Rebuilds sentence markers after guide pagination, including paragraphs split across pages; maintains highlighting as EPUB pages relocate.
+- Added safeguards so the passive overlay is not mistaken for a newly loaded chapter.
+- **Code change only:** verify physical iPhone Safari/PWA and desktop browser, plus mixed inline-format EPUB text and reflow behavior. Not yet validated on a real device.
+- App version 34; PWA shell cache v33.
+
 ## 2026-10-15 · 33 — Default typeface and rewind icon
 - New readers with **no saved typeface preference** now default to Modern (system sans-serif). Classic and New York remain options, and existing selections stay unchanged.
 - Redesigned only the back-15-second curved arrow orientation and arrowhead; playback direction and approximate skipping behavior are unchanged.
