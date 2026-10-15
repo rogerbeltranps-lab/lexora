@@ -46,6 +46,67 @@ html,body{max-width:100%;overflow-x:clip}
  #read .reader-toolbar .btn{flex:0 0 auto}
  #epub-view{overflow:hidden}
 }
+
+/* Global system appearance. EPUB already follows this preference; extend it to every app surface. */
+@media (prefers-color-scheme: dark) {
+ :root {
+  color-scheme:dark;
+  --navy:#263e50;--navy2:#34546b;--cream:#151e27;
+  --line:#354554;--muted:#a8b8c6;--accent:#8dc5dc;
+  color:#e8edf2;background:#10171e;
+ }
+ html,body{background:#10171e;color:#e8edf2}
+ .app,.main,.section{background:#10171e;color:#e8edf2}
+ aside{background:#15212c;color:#e5eef5}
+ .logo{color:#f0f5fa}
+ .tagline,aside .side-note{color:#a1b4c4}
+ .nav button{color:#b9cbd8}
+ .nav button.active,.nav button:hover{background:#294356;color:#fff}
+ .top h1,.section-title h2,#settings h2{color:#f0f4f7}
+ .top p,.muted,.small.muted,.app-copyright,.site-footer,.reader-copyright{color:#a8b8c6}
+ .capsule{border-color:#415565;color:#bdd0de}
+ .panel,.mini,.stat,#edit-dialog,.lex-login-card{
+  background:#1b2631;color:#e6ecf1;border-color:#374857;
+  box-shadow:0 8px 28px #0003;
+ }
+ .mini h3,.mini p,.stat b,.stat span{color:#dce6ed}
+ .mini p,.stat span{color:#a5b7c5}
+ .btn{background:#263744;color:#e5eef5;border-color:#4b6271}
+ .btn:hover{background:#324b5d}
+ .btn.primary{background:#345e76;border-color:#527b92;color:#f7fbfd}
+ .btn.primary:hover{background:#416e86}
+ .btn.soft{background:#233945;color:#e2eaf0}
+ .btn.danger{color:#ff9d9d}
+ .reader-toolbar select,.reader-toolbar input,.toolbar select,
+ .field input,.field select,.field textarea,.search,#edit-dialog input,#edit-dialog select,#edit-dialog textarea {
+  background:#151f28!important;color:#e8edf2!important;border-color:#435565!important
+ }
+ input::placeholder,textarea::placeholder{color:#9bafbe;opacity:1}
+ .field{color:#bfd0dd}
+ .box-label{color:#9ec6d7}
+ .discovery-empty{border-color:#536a7b;color:#b4c7d4;background:#1a2a34}
+ .word,.detail,.detail h4{color:#e8eef3}
+ .ipa{color:#9bd2e7}
+ .quote{border-color:#719dad;color:#bcced9}
+ .chip{background:#263f4e;color:#c4e0ec}
+ .callout{background:#243644;color:#c4d5e1}
+ .callout .muted{color:#b7c8d4}
+ .flash{background:linear-gradient(140deg,#1b3140,#253f51);border:1px solid #486374}
+ .flash .hint{color:#c2d3e0}
+ .toast{background:#273b49;color:#edf4f7;border:1px solid #536877}
+ #edit-dialog::backdrop{background:#000b}
+ .lex-login-gate{background:#10171eee}
+ .lex-login-logo{color:#dcecf6}
+ .lex-login-tagline{color:#adc1cf}
+ .lex-login-card p{color:#c3d2dd}
+ .lex-login-skip{color:#bbd0de}
+ .lex-login-card .lex-login-error{color:#ffb5aa}
+ .reader-foot .muted{color:#bdccd7}
+ .reader.black{background:#000;border-color:#2c333c}
+ .reader.black .prose{color:#f2f4f6}
+ body:not(.lex-reader-fullscreen) .lex-narr{background:#233441!important;color:#e8eef3}
+ :focus-visible{outline-color:#9fbdcf}
+}
 </style></head><body>
 <div class="app"><aside><div><div class="logo">Lexora</div><div class="tagline">READ. DISCOVER. REMEMBER.</div></div><nav class="nav" aria-label="Main navigation"><button class="active" data-view="read"><span>◫</span><span class="label">Read</span></button><button data-view="cards"><span>▤</span><span class="label">My flashcards</span></button><button data-view="practice"><span>✦</span><span class="label">Practice</span></button><button data-view="settings"><span>⚙</span><span class="label">Settings</span></button></nav><div class="side-note">A place for the words you don't want to forget.<br><br>© RBP · Roger Beltran · v0.1</div></aside>
 <main class="main"><header class="top"><div><h1 id="page-title">Your reading space</h1><p id="page-sub">A little curiosity can take you a long way.</p></div><div class="capsule" id="account-label">Personal · local mode</div></header>
@@ -105,7 +166,12 @@ function navigate(to){document.querySelectorAll(".section").forEach(x=>x.classLi
 document.querySelectorAll(".nav button").forEach(b=>b.addEventListener("click",()=>navigate(b.dataset.view)));
 function setupChapterList(){ $("chapter").innerHTML=chapters.map((c,i)=>'<option value="'+i+'">'+safe(c.title)+'</option>').join("");$("chapter").value=String(chapterIndex)}
 function renderGuide(){chapterIndex=Math.max(0,Math.min(chapters.length-1,chapterIndex));store("chapter",chapterIndex);const c=chapters[chapterIndex];$("guide").innerHTML="<h2>"+safe(c.title)+"</h2>"+c.paragraphs.map(x=>"<p>"+safe(x)+"</p>").join("");$("chapter").value=chapterIndex;$("position").textContent="Chapter "+(chapterIndex+1)+" of "+chapters.length;$("reader").scrollTop=0;$("prev").disabled=chapterIndex===0;$("next").disabled=chapterIndex===chapters.length-1}
-function updateReaderTheme(){readingTheme=resolvedReadingTheme();$("reader").classList.remove("dark","black","white","sepia");$("reader").classList.add(readingTheme)}
+function syncAppChrome(){
+ if(document.body.classList.contains("lex-reader-fullscreen"))return;
+ const meta=document.querySelector('meta[name="theme-color"]');
+ if(meta)meta.content=resolvedReadingTheme()==="black"?"#10171e":"#f4f6f8";
+}
+function updateReaderTheme(){readingTheme=resolvedReadingTheme();$("reader").classList.remove("dark","black","white","sepia");$("reader").classList.add(readingTheme);syncAppChrome()}
 function setReaderMode(){const isGuide=currentBook==="guide";$("guide").hidden=!isGuide;$("epub-view").style.display=isGuide?"none":"block";$("chapter").hidden=!isGuide;$("reader").style.setProperty("--reader-size",size+"px");updateReaderTheme();if(isGuide)renderGuide();else{$("position").textContent="EPUB reader";$("prev").disabled=false;$("next").disabled=false}}
 function openDB(){return new Promise((ok,no)=>{const req=indexedDB.open("lexora-books",1);req.onupgradeneeded=()=>req.result.createObjectStore("books");req.onsuccess=()=>ok(req.result);req.onerror=()=>no(req.error)})}
 async function putBook(id,file){const db=await openDB();return new Promise((ok,no)=>{const tx=db.transaction("books","readwrite");tx.objectStore("books").put(file,id);tx.oncomplete=()=>{db.close();ok()};tx.onerror=()=>no(tx.error)})}
