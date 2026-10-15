@@ -29,6 +29,8 @@ function speak(text,options={}){
   const chosen=voiceURI&&voices().find(v=>v.voiceURI===voiceURI);if(chosen)u.voice=chosen;
   let started=false;current=u;
   u.onstart=()=>{started=true;if(current===u)options.onstart?.()};
+  // One utterance can contain several sentences; boundary offsets let the reader follow without restarting speech after every period.
+  u.onboundary=e=>{if(current===u)options.onboundary?.({charIndex:e.charIndex,elapsedTime:e.elapsedTime,name:e.name})};
   u.onend=()=>{if(current===u){current=null;options.onend?.()}};
   u.onerror=e=>{if(current!==u)return;current=null;options.onerror?.(e.error||"error")};
   synth.speak(u);if(synth.paused)synth.resume();
