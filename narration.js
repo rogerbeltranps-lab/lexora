@@ -160,19 +160,19 @@ body.lex-reader-fullscreen.lex-audio-mode .lex-audio-player:not([hidden]){
 }
 .lex-player-btn{font:650 14px/1 system-ui,-apple-system,sans-serif;border:0;border-radius:13px;min-width:58px;min-height:46px;padding:8px;color:#344955;background:transparent;cursor:pointer}
 .lex-player-btn:focus-visible,.lex-player-return:focus-visible{outline:3px solid #b58947;outline-offset:2px}
-.lex-player-seek{display:inline-flex;align-items:center;justify-content:center;flex:0 0 54px!important;width:54px;height:54px;min-width:54px!important;min-height:54px!important;border:1px solid #d8d4cd!important;border-radius:50%!important;background:#ffffffa8!important;padding:7px!important;line-height:1}
-.lex-player-seek svg{display:block;width:40px;height:40px;overflow:visible}
+.lex-player-seek{display:inline-flex;align-items:center;justify-content:center;flex:0 0 58px!important;width:58px;height:58px;min-width:58px!important;min-height:58px!important;border:0!important;border-radius:14px!important;background:transparent!important;padding:3px!important;line-height:1}
+.lex-player-seek svg{display:block;width:51px;height:51px;overflow:visible}
 .lex-player-seek:active{transform:scale(.96)}
-.lex-player-seek:hover{background:#ece7de!important}
-.lex-player-play{background:#263d4c;color:#fff;font-size:21px;border-radius:50%;min-width:54px;width:54px;height:54px}
+.lex-player-seek:hover{background:#e6e0d733!important}
+.lex-player-play{background:transparent;color:#273a48;font-size:21px;border-radius:12px;min-width:62px;width:62px;height:58px;display:inline-flex;align-items:center;justify-content:center}.lex-player-play svg{width:44px;height:44px;display:block}
 .lex-player-return{border:0;background:#e7e7db;color:#354951;padding:9px;border-radius:11px;font-size:12px;font-weight:650}
 .reader.white .lex-active{background:#fff0cd!important}
 .reader.black .lex-active{background:rgba(138,166,191,.30)!important;color:inherit!important}
 body.lex-reader-fullscreen:has(#reader.black) .lex-audio-player{background:#1f252bf5!important;border-color:#3f4951!important}
 body.lex-reader-fullscreen:has(#reader.black) .lex-player-btn{color:#d5e0e6}
-body.lex-reader-fullscreen:has(#reader.black) .lex-player-play{background:#a1b6c7;color:#17242e}
-body.lex-reader-fullscreen:has(#reader.black) .lex-player-seek{background:#333e46!important;border-color:#53606b!important;color:#d5e0e6}
-body.lex-reader-fullscreen:has(#reader.black) .lex-player-seek:hover{background:#475662!important}
+body.lex-reader-fullscreen:has(#reader.black) .lex-player-play{background:transparent;color:#edf0f3}
+body.lex-reader-fullscreen:has(#reader.black) .lex-player-seek{background:transparent!important;border-color:transparent!important;color:#edf0f3}
+body.lex-reader-fullscreen:has(#reader.black) .lex-player-seek:hover{background:#c4d8e51c!important}
 body.lex-reader-fullscreen:has(#reader.black) .lex-player-return{background:#39454d;color:#e3ecf1}
 @media(max-width:400px){.lex-audio-player{gap:4px!important;padding:6px 8px!important}.lex-player-seek{flex-basis:48px!important;width:48px;height:48px;min-width:48px!important;min-height:48px!important}.lex-player-play{min-width:50px!important;width:50px;height:50px}}
 `;document.head.appendChild(css);
@@ -180,12 +180,14 @@ const controls=document.createElement("div");controls.className="lex-narr";contr
 document.querySelector(".reader-toolbar").insertAdjacentElement("afterend",controls);
 const audioPlayer=document.createElement("div");audioPlayer.id="lex-audio-player";audioPlayer.className="lex-audio-player";audioPlayer.hidden=true;
 audioPlayer.setAttribute("role","group");audioPlayer.setAttribute("aria-label","Narration playback");
-const roundedSeekIcon=direction=>'<svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path d="'+(direction==="back"?"M8 30 A16 16 0 1 0 11 16":"M37 16 A16 16 0 1 0 40 30")+'" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/><path d="'+(direction==="back"?"M18 9 L10 16 L18 23":"M43 16 H35 V24")+'" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/><text x="24" y="29" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="700" fill="currentColor">15</text></svg>';
-audioPlayer.innerHTML='<button class="lex-player-btn lex-player-seek" id="lex-seek-back" type="button" aria-label="Back approximately 15 seconds" title="Back 15 seconds">'+roundedSeekIcon("back")+'</button><button class="lex-player-btn lex-player-play" id="lex-player-play" type="button" aria-label="Play narration">▶</button><button class="lex-player-btn lex-player-seek" id="lex-seek-forward" type="button" aria-label="Forward approximately 15 seconds" title="Forward 15 seconds">'+roundedSeekIcon("forward")+'</button><button class="lex-player-return" id="lex-return" type="button" hidden>↗ Narration</button>';
+// Mirrored circular arrows with the same 15 in each icon, matching the reference.
+const roundedSeekIcon=direction=>'<svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><g'+(direction==="forward"?' transform="translate(48 0) scale(-1 1)"':'')+'><path d="M15 11 A17 17 0 1 1 8 27" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><path d="M16 4 L9 11 L16 18" fill="none" stroke="currentColor" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round"/></g><text x="24" y="30" text-anchor="middle" font-family="system-ui,sans-serif" font-size="16" font-weight="750" fill="currentColor">15</text></svg>';
+const playerGlyph=paused=>paused?'<svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path d="M15 10 L38 23 Q40 24 38 26 L15 39 Q12 40 12 36 L12 13 Q12 9 15 10 Z" fill="currentColor"/></svg>':'<svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><rect x="11" y="6" width="10" height="36" rx="3.5" fill="currentColor"/><rect x="27" y="6" width="10" height="36" rx="3.5" fill="currentColor"/></svg>';
+audioPlayer.innerHTML='<button class="lex-player-btn lex-player-seek" id="lex-seek-back" type="button" aria-label="Back approximately 15 seconds" title="Back 15 seconds">'+roundedSeekIcon("back")+'</button><button class="lex-player-btn lex-player-play" id="lex-player-play" type="button" aria-label="Play narration">'+playerGlyph(true)+'</button><button class="lex-player-btn lex-player-seek" id="lex-seek-forward" type="button" aria-label="Forward approximately 15 seconds" title="Forward 15 seconds">'+roundedSeekIcon("forward")+'</button><button class="lex-player-return" id="lex-return" type="button" hidden>↗ Narration</button>';
 document.querySelector("#read .grid>.panel:first-child").appendChild(audioPlayer);
 function syncPlaybackButtons(){
  $("lex-play").textContent=playing?"Ⅱ Pause":"▶ Play";
- $("lex-player-play").textContent=playing?"Ⅱ":"▶";
+ $("lex-player-play").innerHTML=playerGlyph(!playing);
  $("lex-player-play").setAttribute("aria-label",playing?"Pause narration":"Play narration");
  audioPlayer.hidden=mode!=="both";
  $("lex-return").hidden=followingAudio;
@@ -212,7 +214,7 @@ applyReaderFont();
 const guideEl=$("guide");
 let paginating=false,guideSource="",lastPageMarkup="",guidePageIndex=0,guidePageTotal=1;
 const themeMeta=document.querySelector('meta[name="theme-color"]'),originalTheme=themeMeta?.content||"#152d42";
-function syncStatusBar(){if(themeMeta)themeMeta.content=document.body.classList.contains("lex-reader-fullscreen")?($("reader").classList.contains("black")?"#000000":$("reader").classList.contains("white")?"#ffffff":"#fffaf1"):originalTheme}
+function syncStatusBar(){if(themeMeta)themeMeta.content=document.body.classList.contains("lex-reader-fullscreen")?($("reader").classList.contains("black")?"#000000":$("reader").classList.contains("white")?"#ffffff":"#fffaf1"):(matchMedia("(prefers-color-scheme: dark)").matches?"#10171e":"#f4f6f8")}
 function makeBookPage(){const p=document.createElement("div");p.className="lex-book-page";return p}
 function bookPageOverflow(page){return page.scrollHeight>page.clientHeight+2}
 function paginateGuide(reset=false){
