@@ -1,5 +1,11 @@
 # Lexora changelog
 
+## 2026-10-15 · Documentation consolidation
+- Consolidated product status, roadmap, deferred ideas, October 15 decisions, and unresolved bugs into the canonical `README.md`.
+- Kept this dated changelog as the technical history and simplified the documentation agent's responsibilities. Retired duplicate `ROADMAP.md` and `docs/FEATURES.md`; their previous contents remain in Git history.
+- Recorded **Lexitale as a candidate only**, with **no app/repository/URL/favicon rename**. Reaffirmed native device voice (Kokoro removed) and real-device checks outstanding.
+- **Documentation change only**; no code, live deployment, or physical-device test was performed in this update.
+
 ## 2026-10-15 · 27
 - Mobile reader: constrained the book selector, panel, toolbar and EPUB iframe to the iPhone viewport without horizontal overflow.
 - EPUB sanitization now substitutes explicit Unicode presentation ligatures (e.g. the missing “fi” in “chafing”) with normal characters, restores selectable text and sensible word wrapping, and leaves personal book storage untouched.
