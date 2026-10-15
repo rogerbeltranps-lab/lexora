@@ -1,5 +1,12 @@
 # Lexora changelog
 
+## 2026-10-15 · 30 — Follow device reader appearance
+- Reader now defaults to the device's light/dark preference (white in light mode, black in dark mode), rather than sepia.
+- An explicit sepia/white/black preference is preserved. Added **Dispositiu** in immersive appearance settings to restore automatic behavior; the compact reader theme button cycles through all four options.
+- In automatic mode, changes to the device's color scheme immediately update the guide, EPUB reading theme, narration highlights and iPhone status bar while keeping the manual override intact.
+- Version 30, PWA shell cache v29. Physical iPhone visual verification still pending.
+
+
 ## 2026-10-15 · 29 — Read & Listen controls
 - Reader audio **starts paused** when switching to Read & Listen, and only plays after a deliberate Play tap.
 - A small persistent, safe-area-aware audio control in the immersive reader adds Play/Pause and backward/forward **approximately 15 seconds**. Native device TTS has no accurate audio timestamp seeking, so skips are estimated from sentence lengths and chosen speed.

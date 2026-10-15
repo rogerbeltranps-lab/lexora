@@ -328,7 +328,7 @@ new MutationObserver(attachEpubSwipe).observe(epubHost,{childList:true,subtree:t
 
 const appearance=document.createElement("div");
 appearance.id="lex-appearance";appearance.hidden=true;
-appearance.innerHTML='<span class="lex-appearance-label">Appearance</span><button class="btn" type="button" id="lex-font-down" aria-label="Smaller text">A−</button><button class="btn" type="button" id="lex-font-up" aria-label="Larger text">A＋</button><button class="btn" type="button" id="lex-theme-sepia">Sèpia</button><button class="btn" type="button" id="lex-theme-white">Blanc</button><button class="btn" type="button" id="lex-theme-black">Negre</button><button class="btn" type="button" id="lex-appearance-close" aria-label="Close appearance settings">✕</button>';
+appearance.innerHTML='<span class="lex-appearance-label">Appearance</span><button class="btn" type="button" id="lex-font-down" aria-label="Smaller text">A−</button><button class="btn" type="button" id="lex-font-up" aria-label="Larger text">A＋</button><button class="btn" type="button" id="lex-theme-auto">Dispositiu</button><button class="btn" type="button" id="lex-theme-sepia">Sèpia</button><button class="btn" type="button" id="lex-theme-white">Blanc</button><button class="btn" type="button" id="lex-theme-black">Negre</button><button class="btn" type="button" id="lex-appearance-close" aria-label="Close appearance settings">✕</button>';
 document.querySelector("#read .grid>.panel:first-child").appendChild(appearance);
 const fontChoices=document.createElement("div");fontChoices.className="lex-font-choices";
 fontChoices.innerHTML='<button class="btn" type="button" data-lex-font="classic">Classic</button><button class="btn" type="button" data-lex-font="newyork">New York</button><button class="btn" type="button" data-lex-font="modern">Modern</button>';
@@ -338,9 +338,10 @@ applyReaderFont();
 
 $("lex-font-down").onclick=()=>{$("smaller").click()};
 $("lex-font-up").onclick=()=>{$("bigger").click()};
-["sepia","white","black"].forEach(t=>{$("lex-theme-"+t).onclick=()=>{window.lexoraSetReadingTheme?.(t);updateAppearance()}});
+["auto","sepia","white","black"].forEach(t=>{$("lex-theme-"+t).onclick=()=>{window.lexoraSetReadingTheme?.(t);updateAppearance()}});
 $("lex-appearance-close").onclick=()=>{appearance.hidden=true;controls.classList.remove("lex-show-advanced")};
-function updateAppearance(){syncStatusBar();const active=$("reader").classList.contains("black")?"black":$("reader").classList.contains("white")?"white":"sepia";["sepia","white","black"].forEach(t=>{$("lex-theme-"+t).classList.toggle("primary",t===active);$("lex-theme-"+t).setAttribute("aria-pressed",String(t===active))});applyEpubHighlightStyle()}
+function updateAppearance(){syncStatusBar();const active=window.lexoraGetReadingThemePreference?.()||"auto";["auto","sepia","white","black"].forEach(t=>{$("lex-theme-"+t).classList.toggle("primary",t===active);$("lex-theme-"+t).setAttribute("aria-pressed",String(t===active))});applyEpubHighlightStyle()}
+window.addEventListener("lexora:reader-theme-changed",updateAppearance);
 
 async function enterReader(){if(document.body.classList.contains("lex-reader-fullscreen"))return;document.body.classList.add("lex-reader-fullscreen");document.body.classList.add("lex-controls-hidden");refreshRunningTitle();syncStatusBar();requestAnimationFrame(()=>paginateGuide(false));$("lex-enter").hidden=true;const panel=document.querySelector("#read .grid>.panel:first-child");if(panel.requestFullscreen&&!document.fullscreenElement){try{await panel.requestFullscreen({navigationUI:"hide"})}catch(e){console.info("Using screen-filling reader layout",e)}}requestAnimationFrame(()=>{try{window.rendition?.resize?.()}catch{}})}
 function exitReader(){clearGuidePagination();appearance.hidden=true;closeResults();clearTimeout(fadeTimer);document.body.classList.remove("lex-reader-fullscreen","lex-controls-hidden");syncStatusBar();$("lex-enter").hidden=false;stop();if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});requestAnimationFrame(()=>{try{window.rendition?.resize?.()}catch{}})}
