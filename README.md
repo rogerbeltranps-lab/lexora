@@ -26,7 +26,7 @@ The learner owns **one unified flashcard deck**; vocabulary, phrasal verbs, idio
 | Unified flashcards, local review, JSON import/export | Implemented locally | Preserve local data. Source sentences and optional source metadata exist on newly captured cards. |
 | Google sign-in and Firestore sync | Implemented in code; **real-device reliability unresolved** | Earlier blank OAuth popups and `permission-denied` reports; emulator tests are not proof the browser sign-in flow works for the user. |
 | Cloud EPUB library | Implemented in code; emulator tested | Firestore book chunking / multi-device exchange were tested in emulator; verify end to end after real Google sign-in succeeds. Reading position remains per-device. |
-| Read & Listen, dictionary and flashcard pronunciation | **Native device voice only** (Oct 15) | Kokoro was removed. Recent speech fixes need physical iPhone and desktop playback tests. |
+| Read & Listen, dictionary and flashcard pronunciation | **Native device voice only** (Oct 15) | Read & Listen starts paused; Play/Pause and approximate ±15-second skipping, non-disruptive page browsing, and soft sentence tracking are implemented. Browser/physical iPhone playback, seeking accuracy and text selection still need verification. |
 | PWA install, service worker, temporary manual update button | Implemented; device QA pending | Settings → **Comprova i actualitza** updates app assets without deleting user books/cards. Remove button only when automatic PWA updates are proven reliable. |
 
 **Verification rule:** “Implemented” means present in code, not necessarily functioning on every device. Do not report a bug as fixed until the relevant user flow is tested.
@@ -119,3 +119,11 @@ There are only **three maintained project documents**:
 The old standalone `ROADMAP.md` and `docs/FEATURES.md` were consolidated into this README on **2026-10-15**. Earlier contents remain available in Git history. Do not recreate duplicate status or planning documents. Log substantive code changes in the changelog and update this README accordingly.
 
 **Last documentation consolidation:** 2026-10-15. Documentation-only reorganization; not evidence of a new app release or successful device test.
+
+## Narration controls — October 15, 2026
+
+- In the immersive reader, **Read & Listen** does not automatically start speaking. Tap **Play** to begin and **Pause** to stop. Pause does not open an obstructing sentence dialog.
+- A bottom audio bar offers **back 15s / forward 15s**. The native Web Speech API does **not** expose reliable audio timestamps or seeking, so these buttons skip an *estimated* 15 seconds across sentences, not precisely 15 seconds within the recording.
+- Swiping to browse pages while audio is playing keeps speech going and suspends automatic page following. Choose **↗ Narration** to return to the spoken position. Paused page browsing changes the sentence where the next Play starts.
+- Highlight the spoken sentence with eye-friendly warm cream (light/sepia) or muted blue-gray (dark). In formatted EPUB paragraphs, CSS Highlights ranges avoid altering the book text, but a browser without this API may highlight a whole paragraph.
+- **Verification still needed:** actual iPhone PWA and Safari playback, desktop Chrome/Safari, book pages with nested markup, selection-and-drag gestures, ±15s jump feel, and transitions between chapters. No claim of live device verification.
