@@ -1,5 +1,12 @@
 # Lexora changelog
 
+## 2026-10-15 · 31 — Automatic device appearance, no theme icons
+- The EPUB and built-in reader always use the device's **current** dark/light appearance. Older saved sepia/white/black overrides no longer take precedence.
+- Removed the compact sun/moon theme button and immersive theme choices. Font size and typeface controls remain.
+- Watches operating-system appearance changes, and rechecks on app resume/pageshow for iOS PWA reliability. EPUB theme, highlights and status bar update without resetting the current reading position.
+- Version 31; PWA shell cache v30. Physical iPhone testing remains pending.
+
+
 ## 2026-10-15 · 30 — Follow device reader appearance
 - Reader now defaults to the device's light/dark preference (white in light mode, black in dark mode), rather than sepia.
 - An explicit sepia/white/black preference is preserved. Added **Dispositiu** in immersive appearance settings to restore automatic behavior; the compact reader theme button cycles through all four options.
