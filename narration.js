@@ -1,7 +1,7 @@
 (()=>{"use strict";
 const $=id=>document.getElementById(id);
-let mode="read",playing=false,items=[],index=0,run=0,marker=null;
-const css=document.createElement("style");css.textContent=".lex-narr{display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:#eaf4f7;padding:10px;border-radius:12px;margin-bottom:12px}.lex-narr select{padding:9px;border:1px solid #cbd8df;border-radius:8px}.lex-narr-status{font-size:12px;color:#617589}.lex-tappable{cursor:pointer;border-radius:3px;-webkit-user-select:text;user-select:text}.lex-tappable:focus-visible{outline:2px solid #297eaa}.lex-active{background:#b8e6f1!important;color:#153b49!important}.reader.lex-audio-only .prose,.reader.lex-audio-only #epub-view{visibility:hidden}.lex-inspect{background:#edf6f9;padding:15px;border-radius:12px;margin:0 0 12px;border:1px solid #cbdfe6}.lex-inspect p{line-height:1.6}";
+let mode="read",playing=false,items=[],index=0,run=0,marker=null,followingAudio=true,activeHighlightDoc=null,lastAutoTurn=0;
+const css=document.createElement("style");css.textContent=".lex-narr{display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:#eaf4f7;padding:10px;border-radius:12px;margin-bottom:12px}.lex-narr select{padding:9px;border:1px solid #cbd8df;border-radius:8px}.lex-narr-status{font-size:12px;color:#617589}.lex-tappable{cursor:pointer;border-radius:3px;-webkit-user-select:text;user-select:text}.lex-tappable:focus-visible{outline:2px solid #297eaa}.lex-active{background:rgba(229,195,123,.28)!important;color:inherit!important;border-radius:3px;-webkit-box-decoration-break:clone;box-decoration-break:clone}.reader.lex-audio-only .prose,.reader.lex-audio-only #epub-view{visibility:hidden}.lex-inspect{background:#edf6f9;padding:15px;border-radius:12px;margin:0 0 12px;border:1px solid #cbdfe6}.lex-inspect p{line-height:1.6}";
 css.textContent+=`
 body.lex-reader-fullscreen{overflow:hidden}
 body.lex-reader-fullscreen #read .grid>.panel:first-child, #read .grid>.panel:first-child:fullscreen{position:fixed;inset:0;z-index:1000;background:#fff;display:flex;flex-direction:column;min-height:0;padding:12px clamp(10px,3vw,32px);border-radius:0;border:0;box-shadow:none}
@@ -149,9 +149,42 @@ body.lex-reader-fullscreen #epub-view{height:100%!important}
 #lex-reader-results #discovery .sense-entry fieldset{display:block!important}
 #lex-reader-results #discovery .sense-entry legend{margin-bottom:8px}
 body.lex-reader-fullscreen .lex-narr{top:calc(12px + env(safe-area-inset-top,0px))!important}
+/* Always-available playback controls stay visible when the top reader toolbar fades. */
+.lex-audio-player{display:none}
+body.lex-reader-fullscreen.lex-audio-mode #read .grid>.panel:first-child>.reader{margin-bottom:calc(86px + env(safe-area-inset-bottom,0px))!important}
+body.lex-reader-fullscreen.lex-audio-mode .lex-audio-player:not([hidden]){
+ position:absolute;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:9px;
+ bottom:calc(12px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);
+ z-index:7;max-width:calc(100% - 24px);width:max-content;padding:8px 12px;
+ border:1px solid #e4ded2;border-radius:22px;background:#f8f4eced;box-shadow:0 5px 23px #10202d20;
+}
+.lex-player-btn{font:650 14px/1 system-ui,-apple-system,sans-serif;border:0;border-radius:13px;min-width:58px;min-height:46px;padding:8px;color:#344955;background:transparent;cursor:pointer}
+.lex-player-btn:focus-visible,.lex-player-return:focus-visible{outline:3px solid #b58947;outline-offset:2px}
+.lex-player-btn small{display:block;font-size:11px;font-weight:500;margin-top:4px}
+.lex-player-play{background:#263d4c;color:#fff;font-size:21px;border-radius:50%;min-width:54px;width:54px;height:54px}
+.lex-player-return{border:0;background:#e7e7db;color:#354951;padding:9px;border-radius:11px;font-size:12px;font-weight:650}
+.reader.white .lex-active{background:#fff0cd!important}
+.reader.black .lex-active{background:rgba(138,166,191,.30)!important;color:inherit!important}
+body.lex-reader-fullscreen:has(#reader.black) .lex-audio-player{background:#1f252bf5!important;border-color:#3f4951!important}
+body.lex-reader-fullscreen:has(#reader.black) .lex-player-btn{color:#d5e0e6}
+body.lex-reader-fullscreen:has(#reader.black) .lex-player-play{background:#a1b6c7;color:#17242e}
+body.lex-reader-fullscreen:has(#reader.black) .lex-player-return{background:#39454d;color:#e3ecf1}
+@media(max-width:400px){.lex-audio-player{gap:4px!important;padding:6px 8px!important}.lex-player-btn{min-width:49px}}
 `;document.head.appendChild(css);
 const controls=document.createElement("div");controls.className="lex-narr";controls.innerHTML='<button class="btn" type="button" id="lex-read">Read</button><button class="btn" type="button" id="lex-listen">Read &amp; Listen</button><button class="btn primary" id="lex-play">▶ Play</button><button class="btn lex-advanced" id="lex-back">← Sentence</button><button class="btn lex-advanced" id="lex-forward">Sentence →</button><span class="lex-narr-status lex-advanced" id="lex-status">Ready</span><button class="btn lex-advanced" id="lex-enter" type="button">⛶ Full screen</button><button class="btn" id="lex-appearance-button" type="button" aria-label="Reader appearance" hidden>Aa</button><button class="btn" id="lex-options" type="button" aria-label="More reading controls">⋯</button><button class="btn lex-reader-exit" id="lex-exit" type="button">✕ Exit</button>';
 document.querySelector(".reader-toolbar").insertAdjacentElement("afterend",controls);
+const audioPlayer=document.createElement("div");audioPlayer.id="lex-audio-player";audioPlayer.className="lex-audio-player";audioPlayer.hidden=true;
+audioPlayer.setAttribute("role","group");audioPlayer.setAttribute("aria-label","Narration playback");
+audioPlayer.innerHTML='<button class="lex-player-btn" id="lex-seek-back" type="button" aria-label="Back approximately 15 seconds">↶<small>15s</small></button><button class="lex-player-btn lex-player-play" id="lex-player-play" type="button" aria-label="Play narration">▶</button><button class="lex-player-btn" id="lex-seek-forward" type="button" aria-label="Forward approximately 15 seconds">↷<small>15s</small></button><button class="lex-player-return" id="lex-return" type="button" hidden>↗ Narration</button>';
+document.querySelector("#read .grid>.panel:first-child").appendChild(audioPlayer);
+function syncPlaybackButtons(){
+ $("lex-play").textContent=playing?"Ⅱ Pause":"▶ Play";
+ $("lex-player-play").textContent=playing?"Ⅱ":"▶";
+ $("lex-player-play").setAttribute("aria-label",playing?"Pause narration":"Play narration");
+ audioPlayer.hidden=mode!=="both";
+ $("lex-return").hidden=followingAudio;
+}
+function detachNarration(){if(playing&&followingAudio){followingAudio=false;syncPlaybackButtons()}}
 const runningTitle=document.createElement("div");runningTitle.className="lex-running-title";runningTitle.setAttribute("aria-live","polite");
 document.querySelector("#read .grid>.panel:first-child").appendChild(runningTitle);
 function refreshRunningTitle(){const sel=$("booklist"),name=sel?.selectedOptions?.[0]?.textContent?.trim()||"Lexora";runningTitle.textContent=name}
@@ -239,6 +272,7 @@ new MutationObserver(()=>{if(paginating)return;if(document.body.classList.contai
 let bookResizeTimer;window.addEventListener("resize",()=>{clearTimeout(bookResizeTimer);bookResizeTimer=setTimeout(()=>{if(guideEl.classList.contains("lex-paginated")){paginating=true;guideEl.classList.remove("lex-paginated");paginating=false;paginateGuide()}},160)});
 function moveReadingPage(direction){
  if(!$("lex-reader-results")?.hidden||!document.querySelector(".lex-inspect")?.hidden)return;
+ detachNarration();
  if($("booklist").value==="guide"){
  if(!guideEl.classList.contains("lex-paginated"))paginateGuide();
  const next=guidePageIndex+(direction>0?1:-1);
@@ -247,7 +281,10 @@ function moveReadingPage(direction){
   const first=guideEl.children[next]?.querySelector("[data-lex-i]");if(first&&!playing)index=Number(first.dataset.lexI)}
  else $(""+(direction>0?"next":"prev")).click();
  }
- else if(typeof rendition!=="undefined"&&rendition){direction>0?rendition.next():rendition.prev()}
+ else if(typeof rendition!=="undefined"&&rendition){
+  const movement=direction>0?rendition.next():rendition.prev();
+  if(!playing)Promise.resolve(movement).then(()=>setTimeout(()=>{if(!playing)prepare(true)},180)).catch(()=>{});
+ }
 }
 // Page buttons and arrow keys (reader-keys.js) turn pages the same way as a swipe.
 window.lexoraTurnPage=moveReadingPage;
@@ -303,9 +340,9 @@ $("lex-font-down").onclick=()=>{$("smaller").click()};
 $("lex-font-up").onclick=()=>{$("bigger").click()};
 ["sepia","white","black"].forEach(t=>{$("lex-theme-"+t).onclick=()=>{window.lexoraSetReadingTheme?.(t);updateAppearance()}});
 $("lex-appearance-close").onclick=()=>{appearance.hidden=true;controls.classList.remove("lex-show-advanced")};
-function updateAppearance(){syncStatusBar();const active=$("reader").classList.contains("black")?"black":$("reader").classList.contains("white")?"white":"sepia";["sepia","white","black"].forEach(t=>{$("lex-theme-"+t).classList.toggle("primary",t===active);$("lex-theme-"+t).setAttribute("aria-pressed",String(t===active))})}
+function updateAppearance(){syncStatusBar();const active=$("reader").classList.contains("black")?"black":$("reader").classList.contains("white")?"white":"sepia";["sepia","white","black"].forEach(t=>{$("lex-theme-"+t).classList.toggle("primary",t===active);$("lex-theme-"+t).setAttribute("aria-pressed",String(t===active))});applyEpubHighlightStyle()}
 
-async function enterReader(){document.body.classList.add("lex-reader-fullscreen");document.body.classList.add("lex-controls-hidden");refreshRunningTitle();syncStatusBar();requestAnimationFrame(()=>paginateGuide(true));$("lex-enter").hidden=true;const panel=document.querySelector("#read .grid>.panel:first-child");if(panel.requestFullscreen&&!document.fullscreenElement){try{await panel.requestFullscreen({navigationUI:"hide"})}catch(e){console.info("Using screen-filling reader layout",e)}}requestAnimationFrame(()=>{try{window.rendition?.resize?.()}catch{}})}
+async function enterReader(){if(document.body.classList.contains("lex-reader-fullscreen"))return;document.body.classList.add("lex-reader-fullscreen");document.body.classList.add("lex-controls-hidden");refreshRunningTitle();syncStatusBar();requestAnimationFrame(()=>paginateGuide(false));$("lex-enter").hidden=true;const panel=document.querySelector("#read .grid>.panel:first-child");if(panel.requestFullscreen&&!document.fullscreenElement){try{await panel.requestFullscreen({navigationUI:"hide"})}catch(e){console.info("Using screen-filling reader layout",e)}}requestAnimationFrame(()=>{try{window.rendition?.resize?.()}catch{}})}
 function exitReader(){clearGuidePagination();appearance.hidden=true;closeResults();clearTimeout(fadeTimer);document.body.classList.remove("lex-reader-fullscreen","lex-controls-hidden");syncStatusBar();$("lex-enter").hidden=false;stop();if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});requestAnimationFrame(()=>{try{window.rendition?.resize?.()}catch{}})}
 $("lex-enter").onclick=enterReader;$("lex-exit").onclick=exitReader;
 document.addEventListener("fullscreenchange",()=>{if(!document.fullscreenElement&&document.body.classList.contains("lex-reader-fullscreen"))exitReader()});
@@ -339,9 +376,37 @@ if(typeof originalChoose==="function"){
 }
 
 function sentences(s){return (s.match(/[^.!?]+(?:[.!?]+(?=\s|$)|$)/g)||[]).map(v=>v.trim()).filter(v=>/[a-z]/i.test(v))}
-function clear(){if(marker){marker.classList.remove("lex-active");marker=null}
+function clear(){
+ if(activeHighlightDoc){try{activeHighlightDoc.defaultView?.CSS?.highlights?.delete("lexora-current-sentence")}catch{}activeHighlightDoc=null}
+ if(marker){marker.classList.remove("lex-active");marker=null}
  // Paginating the guide clones its HTML, so a copy of the old highlight can linger on the new page.
- readingRoot()?.querySelectorAll(".lex-active").forEach(el=>el.classList.remove("lex-active"))}
+ readingRoot()?.querySelectorAll(".lex-active").forEach(el=>el.classList.remove("lex-active"))
+}
+function applyEpubHighlightStyle(){
+ const doc=epubBody();if(!doc?.head)return;
+ const dark=$("reader").classList.contains("black"),white=$("reader").classList.contains("white");
+ const fill=dark?"rgba(138,166,191,.30)":white?"#fff0cd":"rgba(229,195,123,.28)";
+ let style=doc.getElementById("lexora-sentence-highlight");
+ if(!style){style=doc.createElement("style");style.id="lexora-sentence-highlight";doc.head.appendChild(style)}
+ style.textContent='html body .lex-active{background:'+fill+'!important;color:inherit!important;-webkit-box-decoration-break:clone;box-decoration-break:clone;border-radius:3px}::highlight(lexora-current-sentence){background-color:'+fill+'}';
+}
+/* Text ranges highlight exactly one sentence in EPUB paragraphs with inline formatting,
+   without breaking the book's HTML, CFI navigation, or native selection. */
+function sentenceRanges(p){
+ const text=p.textContent||"",matches=[...text.matchAll(/[^.!?]+(?:[.!?]+(?=\s|$)|$)/g)];
+ const walker=p.ownerDocument.createTreeWalker(p,NodeFilter.SHOW_TEXT);
+ const nodes=[];let offset=0,n;
+ while((n=walker.nextNode())){nodes.push({node:n,start:offset,end:offset+n.textContent.length});offset+=n.textContent.length}
+ function locate(at){for(const item of nodes){if(at<=item.end)return {node:item.node,at:Math.max(0,at-item.start)}}return nodes.length?{node:nodes[nodes.length-1].node,at:nodes[nodes.length-1].node.length}:null}
+ return matches.map(m=>{
+  const raw=m[0],trim=raw.trim(),leading=raw.length-raw.trimStart().length;
+  if(!/[a-z]/i.test(trim))return null;
+  const a=locate(m.index+leading),b=locate(m.index+leading+trim.length);
+  if(!a||!b)return null;
+  const range=p.ownerDocument.createRange();range.setStart(a.node,a.at);range.setEnd(b.node,b.at);
+  return {text:trim,el:p,range}
+ }).filter(Boolean);
+}
 function readingRoot(){return $("booklist").value==="guide"?$("guide"):epubBody()}
 // Sentence spans carry data-lex-i so they can be found again after the guide is re-paginated into new nodes.
 function liveEl(i){const item=items[i];if(!item)return null;if(item.el?.isConnected)return item.el;const found=readingRoot()?.querySelector('[data-lex-i="'+i+'"]');if(found){item.el=found;enableTap(item,i)}return found}
@@ -354,7 +419,7 @@ function continueReading(){
  const resume=()=>{if(!autoContinue)return;autoContinue=false;if(prepare(true))play(true)};
  if(guide)setTimeout(resume,900);else{let done=false;const once=()=>{if(done)return;done=true;setTimeout(resume,400)};try{rendition.once?.("relocated",once)}catch{}setTimeout(once,4000)}
 }
-function stop(){autoContinue=false;run++;playing=false;window.lexoraSpeech?.cancel();$("lex-play").textContent="▶ Play";
+function stop(){autoContinue=false;run++;playing=false;window.lexoraSpeech?.cancel();syncPlaybackButtons();
  // Do not leave "Speaking…" on screen after Pause or Exit.
  $("lex-status").textContent=items.length?"Sentence "+(Math.min(index,items.length-1)+1)+" / "+items.length:""}
 function epubBody(){try{return document.querySelector("#epub-view iframe")?.contentDocument?.body}catch{return null}}
@@ -368,10 +433,14 @@ function prepare(reset){
    let parts=sentences(txt);p.replaceChildren(...parts.map((part,i)=>{const sp=document.createElement("span");sp.textContent=part+(i<parts.length-1?" ":"");return sp}));
    p.querySelectorAll("span").forEach(sp=>{sp.dataset.lexI=String(items.length);items.push({text:sp.textContent.trim(),el:sp})})
   }else{
-   if(p.children.length===0){const parts=sentences(txt);p.replaceChildren(...parts.map((part,i)=>{const sp=p.ownerDocument.createElement("span");sp.textContent=part+(i<parts.length-1?" ":"");return sp}));p.querySelectorAll("span").forEach(sp=>{sp.dataset.lexI=String(items.length);items.push({text:sp.textContent.trim(),el:sp})})}else{sentences(txt).forEach(t=>items.push({text:t,el:p}))}
+   if(p.children.length===0){
+    const parts=sentences(txt);
+    p.replaceChildren(...parts.map((part,i)=>{const sp=p.ownerDocument.createElement("span");sp.textContent=part+(i<parts.length-1?" ":"");return sp}));
+    p.querySelectorAll("span").forEach(sp=>{sp.dataset.lexI=String(items.length);items.push({text:sp.textContent.trim(),el:sp})})
+   }else{sentenceRanges(p).forEach(item=>items.push(item))}
   }
  });
- items.forEach(enableTap);
+ items.forEach(enableTap);if(!guide)applyEpubHighlightStyle();
  // An EPUB chapter is one long page strip: start from the page on screen, not the top of the chapter.
  if(reset&&!guide){const view=$("epub-view").getBoundingClientRect(),frame=document.querySelector("#epub-view iframe")?.getBoundingClientRect();if(frame){const i=items.findIndex(it=>{const x=frame.left+it.el.getBoundingClientRect().left;return x>=view.left-2&&x<view.right-2});if(i>0)index=i}}
  index=Math.min(index,Math.max(0,items.length-1));$("lex-status").textContent=items.length?"Sentence "+(index+1)+" / "+items.length:"No text on this page";
@@ -387,11 +456,27 @@ function enableTap(item,number){
  el.addEventListener("dblclick",replay);
  el.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();replay()}});
 }
-function highlight(){clear();const el=liveEl(index);if(!items[index])return;if(mode!=="listen"&&el){marker=el;marker.classList.add("lex-active");followPage(el)}$("lex-status").textContent="Sentence "+(index+1)+" / "+items.length}
+function highlight(){
+ clear();const item=items[index],el=liveEl(index);if(!item)return;
+ if(mode==="both"&&el){
+  const view=el.ownerDocument.defaultView;
+  if(item.range&&item.range.startContainer.isConnected&&view?.CSS?.highlights&&view.Highlight){
+   try{applyEpubHighlightStyle();view.CSS.highlights.set("lexora-current-sentence",new view.Highlight(item.range));activeHighlightDoc=el.ownerDocument}catch{marker=el;marker.classList.add("lex-active")}
+  }else{marker=el;marker.classList.add("lex-active")}
+  if(playing&&followingAudio)followPage(el)
+ }
+ $("lex-status").textContent="Sentence "+(index+1)+" / "+items.length
+}
 // Turn the page with the narration instead of leaving the highlight on a page that is not shown.
 function followPage(el){
  if(guideEl.classList.contains("lex-paginated")){const page=el.closest(".lex-book-page"),i=page?Array.prototype.indexOf.call(guideEl.children,page):-1;if(i>=0&&i!==guidePageIndex){guidePageIndex=i;guideEl.scrollTo({left:i*guideEl.clientWidth,behavior:"smooth"})}return}
- if(el.ownerDocument!==document){try{const frame=document.querySelector("#epub-view iframe"),view=$("epub-view").getBoundingClientRect(),x=frame.getBoundingClientRect().left+el.getBoundingClientRect().left;if(x>=view.right-2&&typeof rendition!=="undefined"&&rendition)rendition.next()}catch{}return}
+ if(el.ownerDocument!==document){try{
+  const frame=document.querySelector("#epub-view iframe"),view=$("epub-view").getBoundingClientRect(),x=frame.getBoundingClientRect().left+el.getBoundingClientRect().left;
+  if(Date.now()-lastAutoTurn>450&&typeof rendition!=="undefined"&&rendition){
+   if(x>=view.right-2){lastAutoTurn=Date.now();rendition.next()}
+   else if(x<view.left-2){lastAutoTurn=Date.now();rendition.prev()}
+  }
+ }catch{}return}
  el.scrollIntoView?.({block:"nearest",behavior:"smooth"})
 }
 // The system voice is the sole narrator. Begin inside the user's tap on iOS.
@@ -400,7 +485,7 @@ function play(auto=false){
  window.lexoraSpeech?.unlock();
  if(!items.length&&!prepare(true))return;
  if(!window.speechSynthesis||!window.lexoraSpeech){$("lex-status").textContent="Device voice unavailable. Try Settings → Audio check.";return}
- const session=++run;playing=true;inspect.hidden=true;$("lex-play").textContent="Ⅱ Pause";
+ const session=++run;playing=true;inspect.hidden=true;syncPlaybackButtons();
  const speed=()=>Number(JSON.parse(localStorage.getItem("lexora-voice-speed")||"0.9"));
  function next(){
   if(session!==run||!playing)return;
@@ -423,10 +508,43 @@ function examine(i){const item=items[i];if(!item)return;inspect.hidden=false;sho
  function send(){const chosen=window.getSelection()?.toString().trim()||item.text;openResults(chosen,item.text)}
  $("lex-analyze").onclick=()=>{window.getSelection()?.removeAllRanges();send()};$("lex-sentence").addEventListener("mouseup",()=>{if(window.getSelection()?.toString().trim())send()})
 }
-function pause(){showControls();stop();clear();inspect.hidden=false;inspect.innerHTML='<button type="button" class="btn lex-sheet-close" aria-label="Close">✕</button><b>Explore a sentence</b><div class="buttonrow" style="margin-top:10px"><button class="btn" id="lex-current">Current sentence</button><button class="btn" id="lex-previous">Previous sentence</button></div>';$("lex-current").onclick=()=>examine(Math.min(index,items.length-1));$("lex-previous").onclick=()=>examine(Math.max(0,index-1))}
-function chooseMode(next){appearance.hidden=true;closeResults();showControls();controls.classList.remove("lex-show-advanced");mode=next;stop();inspect.hidden=true;clear();$("lex-read").classList.toggle("primary",mode==="read");$("lex-listen").classList.toggle("primary",mode==="both");$("lex-play").hidden=mode==="read";$("lex-back").hidden=mode==="read";$("lex-forward").hidden=mode==="read";$("lex-status").hidden=mode==="read";if(mode==="both")play();enterReader()}
+function pause(){showControls();stop();clear();inspect.hidden=true}
+function chooseMode(next){appearance.hidden=true;closeResults();showControls();controls.classList.remove("lex-show-advanced");mode=next;followingAudio=true;stop();inspect.hidden=true;clear();document.body.classList.toggle("lex-audio-mode",mode==="both");$("lex-read").classList.toggle("primary",mode==="read");$("lex-listen").classList.toggle("primary",mode==="both");$("lex-play").hidden=mode==="read";$("lex-back").hidden=mode==="read";$("lex-forward").hidden=mode==="read";$("lex-status").hidden=mode==="read";syncPlaybackButtons();enterReader()}
 $("lex-read").onclick=()=>chooseMode("read");$("lex-listen").onclick=()=>chooseMode("both");
-$("lex-play").onclick=()=>{if(playing)pause();else{if(mode==="read")chooseMode("both");else{play();enterReader()}}};
+function togglePlayback(){if(playing)pause();else if(mode==="read")chooseMode("both");else play()}
+$("lex-play").onclick=togglePlayback;$("lex-player-play").onclick=togglePlayback;
+function sentenceSeconds(i){
+ const speed=Math.max(.5,Math.min(2,Number(JSON.parse(localStorage.getItem("lexora-voice-speed")||"0.9"))||.9));
+ return Math.max(.8,(items[i]?.text.trim().split(/\s+/).length||1)*60/(175*speed)+.2);
+}
+function seekBy(seconds){
+ if(!items.length&&!prepare(true))return;
+ const wasPlaying=playing;let remaining=Math.abs(seconds),next=index;
+ if(seconds>0){do{remaining-=sentenceSeconds(next);if(next>=items.length-1)break;next++}while(remaining>0)}
+ else{do{if(next===0)break;next--;remaining-=sentenceSeconds(next)}while(remaining>0)}
+ if(wasPlaying)stop();index=next;
+ if(wasPlaying)play();else{$("lex-status").textContent="Sentence "+(index+1)+" / "+items.length;clear()}
+}
+$("lex-seek-back").onclick=()=>seekBy(-15);
+$("lex-seek-forward").onclick=()=>seekBy(15);
+$("lex-return").onclick=()=>{
+ followingAudio=true;syncPlaybackButtons();
+ const target=liveEl(index);if(!target)return;
+ if(target.ownerDocument===document){followPage(target);return}
+ // epub.js moves one column at a time; keep finding the narrated position on explicit request.
+ const anchorIndex=index;let turns=0;
+ async function locate(){
+  while(turns++<40&&followingAudio&&index>=anchorIndex&&target.isConnected){
+   const frame=document.querySelector("#epub-view iframe"),view=$("epub-view").getBoundingClientRect();
+   if(!frame)break;
+   const x=frame.getBoundingClientRect().left+target.getBoundingClientRect().left;
+   if(x>=view.left-2&&x<view.right-2)break;
+   if(typeof rendition==="undefined"||!rendition)break;
+   try{if(x<view.left-2)await rendition.prev();else await rendition.next()}catch{break}
+  }
+ }
+ locate();
+};
 $("lex-back").onclick=()=>{stop();if(!items.length)prepare(true);index=Math.max(0,index-1);highlight()};
 $("lex-forward").onclick=()=>{stop();if(!items.length)prepare(true);index=Math.min(items.length-1,index+1);highlight()};
 ["chapter","booklist","prev","next","load-guide","upload-book"].forEach(id=>$(id)?.addEventListener("click",()=>{stop();setTimeout(()=>prepare(true),350)}));
@@ -434,6 +552,7 @@ $("chapter").addEventListener("change",()=>{stop();setTimeout(()=>prepare(true),
 $("booklist").addEventListener("change",()=>{stop();setTimeout(()=>prepare(true),900)});
 const observer=new MutationObserver(()=>{if($("booklist").value!=="guide"&&!playing){setTimeout(()=>prepare(true),250)}});observer.observe($("epub-view"),{childList:true});
 $("lex-read").classList.add("primary");$("lex-play").hidden=$("lex-back").hidden=$("lex-forward").hidden=$("lex-status").hidden=true;
+syncPlaybackButtons();
 $("reader").addEventListener("click",e=>{if(!document.body.classList.contains("lex-reader-fullscreen"))return;if(window.getSelection()?.toString().trim())return;if(e.target.closest(".lex-tappable"))return;showControls()});
 prepare(true);
 })();
