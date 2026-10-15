@@ -140,3 +140,10 @@ The old standalone `ROADMAP.md` and `docs/FEATURES.md` were consolidated into th
 - The initial reader font is now **Modern** only if no valid preference is stored. An existing Classic, New York or Modern choice remains as selected by the user. No stored preferences are overwritten on launch.
 - The curved rewind button icon is reversed for clearer visual direction; rewind remains an approximately 15-second backward seek, and the forward control is unchanged.
 - Updated app version 33 and PWA shell cache v32. Real iPhone/PWA visual verification remains pending.
+
+## Open issues follow-up — 2026-10-15 (v35)
+
+- **User-confirmed on physical iPhone:** spoken-sentence shading remained invisible in an imported EPUB in v34, despite code-level highlighting changes; the top Read / Read & Listen / Pause toolbar did not fade away during playback. Both are real, unresolved user observations, not verified fixes.
+- **v35 code changes to test:** place the noninteractive exact-sentence highlight layer inside the EPUB's own iframe (rather than over the parent container), redraw after EPUB page relocation, and restart the top toolbar's 3.2-second inactivity auto-hide timer when playback starts. Bottom ±15s/Play controls remain visible.
+- [ ] **Verify on the user's iPhone:** select Read & Listen → Play. The spoken sentence should be visibly but softly shaded, including italic and justified sentences in a real book; the top control bar should disappear after ~3 seconds with no interaction, while the lower audio controls remain accessible. Tap the menu button to reveal the top controls again.
+- Preserve EPUB data/CFI positions, selection gestures, device voice, reader theme, and existing favicon. Do not mark either bug resolved until confirmed on the real device.
