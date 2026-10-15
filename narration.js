@@ -175,6 +175,27 @@ body.lex-reader-fullscreen:has(#reader.black) .lex-player-seek{background:transp
 body.lex-reader-fullscreen:has(#reader.black) .lex-player-seek:hover{background:#c4d8e51c!important}
 body.lex-reader-fullscreen:has(#reader.black) .lex-player-return{background:#39454d;color:#e3ecf1}
 @media(max-width:400px){.lex-audio-player{gap:4px!important;padding:6px 8px!important}.lex-player-seek{flex-basis:48px!important;width:48px;height:48px;min-width:48px!important;min-height:48px!important}.lex-player-play{min-width:50px!important;width:50px;height:50px}}
+
+/* Dark system appearance includes popovers and discovery sheets, not only the EPUB. */
+@media (prefers-color-scheme: dark) {
+ .lex-narr,.lex-inspect{background:#233542;color:#e7edf2;border-color:#3f5360}
+ body.lex-reader-fullscreen #read .grid>.panel:first-child>.lex-narr{background:#202d38ed!important;border-color:#435463!important;box-shadow:0 8px 22px #0008}
+ body.lex-reader-fullscreen #read .grid>.panel:first-child>.lex-inspect:not([hidden]){background:#1d2b35;color:#e4ecf1;border-color:#425767;box-shadow:0 10px 30px #0009}
+ body.lex-reader-fullscreen #lex-appearance:not([hidden]){background:#1d2b35;color:#ecf0f3;border-color:#485967;box-shadow:0 10px 35px #0009}
+ #lex-appearance .lex-appearance-label{color:#cad5df}
+ #lex-reader-results{background:#1c2934!important;color:#e5edf2;border-color:#465866!important;box-shadow:0 15px 40px #000b}
+ #lex-reader-results .lex-results-top,.lex-results-top,#lex-reader-results .lex-dictionary-heading{background:#1c2934!important;color:#edf2f5;border-color:#465866!important}
+ #lex-reader-results .lex-selected-word{color:#eef2f5!important}
+ #lex-reader-results .word,#lex-reader-results .detail,#lex-reader-results .detail h4{color:#edf2f5!important}
+ #lex-reader-results .chip{background:#304a5b!important;color:#d5edf8!important}
+ #discovery .lex-sense-copy,#lex-reader-results #discovery .lex-sense-copy{color:#e2eaf0!important}
+ #discovery .sense-entry{border-color:#445463!important}
+ #lex-reader-results .quote{color:#b9cad7!important;border-color:#769aaa!important}
+ #lex-reader-results .muted{color:#b5c7d2!important}
+ body.lex-reader-fullscreen .lex-reader-reveal{color:#bccbd7!important}
+ body.lex-reader-fullscreen:has(#reader.black) .lex-audio-player{background:#1c242bdf!important;border-color:#35414a!important}
+ body.lex-reader-fullscreen .lex-player-return{background:#344a57;color:#e8f1f5}
+}
 `;document.head.appendChild(css);
 const controls=document.createElement("div");controls.className="lex-narr";controls.innerHTML='<button class="btn" type="button" id="lex-read">Read</button><button class="btn" type="button" id="lex-listen">Read &amp; Listen</button><button class="btn primary" id="lex-play">▶ Play</button><button class="btn lex-advanced" id="lex-back">← Sentence</button><button class="btn lex-advanced" id="lex-forward">Sentence →</button><span class="lex-narr-status lex-advanced" id="lex-status">Ready</span><button class="btn lex-advanced" id="lex-enter" type="button">⛶ Full screen</button><button class="btn" id="lex-appearance-button" type="button" aria-label="Reader appearance" hidden>Aa</button><button class="btn" id="lex-options" type="button" aria-label="More reading controls">⋯</button><button class="btn lex-reader-exit" id="lex-exit" type="button">✕ Exit</button>';
 document.querySelector(".reader-toolbar").insertAdjacentElement("afterend",controls);
