@@ -40,5 +40,6 @@ $('lex-audio-rate').onclick=()=>{const opts=[0.8,0.9,1,1.1,1.2],v=Number(localSt
 ['chapter','booklist'].forEach(id=>$(id)?.addEventListener('change',()=>{lastTotal=0;lastIndex=0;updateChapter();bindEpub()}));
 const mo=new MutationObserver(refresh);[$('lex-status'),$('lex-play')].filter(Boolean).forEach(el=>mo.observe(el,{childList:true,subtree:true,characterData:true}));
 const view=$('epub-view');if(view){new MutationObserver(bindEpub).observe(view,{childList:true,subtree:true});view.addEventListener('load',()=>setTimeout(bindEpub,80),true)}
+new MutationObserver(()=>{if(!document.body.classList.contains('lex-reader-fullscreen')&&active())audioFocus(false)}).observe(document.body,{attributes:true,attributeFilter:['class']});
 window.addEventListener('pageshow',bindEpub);
 })();
