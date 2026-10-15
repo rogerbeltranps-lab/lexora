@@ -5,6 +5,7 @@ import {getFirestore,doc,runTransaction,onSnapshot} from "https://www.gstatic.co
 import {startBookSync} from "./book-sync.js";
 const config={apiKey:"AIzaSyATUuOolgUl0iod1zEIYV1zLbcvbMgrLpc",authDomain:"lexora-2d1f4.firebaseapp.com",projectId:"lexora-2d1f4",appId:"1:38390223406:web:a6f0712a38d7d98a2405bf"};
 const app=initializeApp(config),auth=getAuth(app),db=getFirestore(app);
+window.lexoraTtsToken=()=>auth.currentUser?.getIdToken();
 const provider=new GoogleAuthProvider();
 // Always show the account chooser instead of silently reusing a previous Google session.
 provider.setCustomParameters({prompt:"select_account"});
@@ -30,7 +31,7 @@ function gateMessage(t){if(!gateError)return;gateError.textContent=t||"";gateErr
 const ISOLATION_CACHE="lexora-flags",ISOLATION_KEY="./__lexora_isolated__",RETRY_KEY="lexora-signin-retry";
 async function setIsolation(on){
  try{// Only phones, where Kokoro runs on the slow wasm path, gain from several cores; computers use the GPU and need no isolation.
- if(localStorage.getItem("lexora-isolation-off")==="1"||!/iPad|iPhone|iPod|Android/.test(navigator.userAgent))on=false;const cache=await caches.open(ISOLATION_CACHE);if(on)await cache.put(ISOLATION_KEY,new Response("1"));else await cache.delete(ISOLATION_KEY);navigator.serviceWorker?.controller?.postMessage({type:"ISOLATION"})}catch{}
+ if(localStorage.getItem("lexora-narration-engine")!=="kokoro"||localStorage.getItem("lexora-isolation-off")==="1"||!/iPad|iPhone|iPod|Android/.test(navigator.userAgent))on=false;const cache=await caches.open(ISOLATION_CACHE);if(on)await cache.put(ISOLATION_KEY,new Response("1"));else await cache.delete(ISOLATION_KEY);navigator.serviceWorker?.controller?.postMessage({type:"ISOLATION"})}catch{}
 }
 let retrying=false;
 if(gateSkip)gateSkip.onclick=()=>{try{sessionStorage.setItem(SKIP_KEY,"1")}catch{}retrying=false;showGate(false);setIsolation(true)};
