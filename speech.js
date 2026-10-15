@@ -46,7 +46,7 @@ function speak(text,options={}){
  return true;
 }
 // Only cancel real speech: a needless cancel() before the first speak() is what can leave an iPhone silent.
-function cancel(){generation++;current=null;window.lexoraKokoro?.stop();if(synth&&(synth.speaking||synth.pending)){synth.cancel();cancelledAt=Date.now()}}
+function cancel(){generation++;current=null;window.lexoraChirp?.stop();window.lexoraKokoro?.stop();if(synth&&(synth.speaking||synth.pending)){synth.cancel();cancelledAt=Date.now()}}
 // iOS fills the voice list lazily; asking once at load makes it ready by the first tap.
 if(synth)synth.getVoices();
 // Single words and cards: use the natural Kokoro voice when it is the chosen narrator and already loaded, else the device voice.

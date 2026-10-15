@@ -1,0 +1,26 @@
+name: Chirp narration checks
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+      - run: npm ci --ignore-scripts --prefix functions
+      - run: npm test --prefix functions
+      - run: |
+          node --check chirp.js
+          node --check chirp-settings.js
+          node --check narration.js
+          node --check speech.js
+          node --check firebase-sync.js
+          node --check functions/proxy.js
+          node --input-type=module -e "import('./functions/index.js')"

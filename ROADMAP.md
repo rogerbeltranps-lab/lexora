@@ -195,3 +195,15 @@ This is an **initial implementation**, not a complete dictionary. Cloud login an
 - [ ] Preserve narration position reliably across EPUB page turns and reloads.
 - [ ] Consider Kokoro or another locally downloaded neural voice after the browser-voice version is stable.
 
+
+## Chirp 3 HD narration — 2026-10-15
+
+- [x] Implement preferred Chirp narrator, American voice selection, sentence chunks,
+  gesture audio unlock, cancellation and device-voice fallback; offline mocked tests pass.
+- [x] Implement Firebase-authenticated proxy with UID allowlist, transactional
+  daily/monthly character limits, disabled-by-default setup and private audio cache.
+- [ ] Configure cloud IAM, private cache rules/TTL, billing alerts and approved caps.
+- [ ] Verify live synthesis and fallback on iPhone Safari/PWA and desktop before merge/deployment.
+
+See [cloud setup and validation](docs/CHIRP_SETUP.md). No credentials or paid calls
+are required for device-voice fallback; no cloud resources have been deployed.
