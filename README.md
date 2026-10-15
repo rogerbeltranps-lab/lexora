@@ -134,3 +134,9 @@ The old standalone `ROADMAP.md` and `docs/FEATURES.md` were consolidated into th
 - **Narration rhythm:** native device speech now speaks several consecutive sentences per utterance (up to three, within one paragraph and ~320 characters) to avoid restarting the TTS engine after every full stop. Sentence highlighting follows speech word boundaries where supported; when the browser omits them, progress highlighting is approximate.
 - **15-second controls:** buttons now have round outlines and curved arrows; seeking time is still estimated from words rather than audio timestamps.
 - **Validation:** static JavaScript and mock logic tests passed. Physical iPhone PWA/Safari behavior and audio rhythm must be tested before marking these problems as resolved on-device.
+
+## Reader typography and playback controls (October 15, 2026)
+
+- The initial reader font is now **Modern** only if no valid preference is stored. An existing Classic, New York or Modern choice remains as selected by the user. No stored preferences are overwritten on launch.
+- The curved rewind button icon is reversed for clearer visual direction; rewind remains an approximately 15-second backward seek, and the forward control is unchanged.
+- Updated app version 33 and PWA shell cache v32. Real iPhone/PWA visual verification remains pending.
