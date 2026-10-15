@@ -180,3 +180,11 @@ The app is at [Lexora](https://rogerbeltranps-lab.github.io/lexora/) **once GitH
 - [Change history](docs/CHANGELOG.md) — shipped changes and manual verification gaps.
 - [Feature documentation agent](.github/agents/lexora-feature-documenter.agent.md) — instructions for compatible coding agents. Invoke it when developing; it is not an always-running daemon.
 - **Temporary update button:** Settings → **Comprova i actualitza**. It refreshes app files and service worker cache, without deleting IndexedDB or locally saved vocabulary. Remove when automatic updates have been validated on installed iPhone PWAs.
+
+## Narration controls — October 15, 2026
+
+- In the immersive reader, **Read & Listen** does not automatically start speaking. Tap **Play** to begin and **Pause** to stop. Pause does not open an obstructing sentence dialog.
+- A bottom audio bar offers **back 15s / forward 15s**. The native Web Speech API does **not** expose reliable audio timestamps or seeking, so these buttons skip an *estimated* 15 seconds across sentences, not precisely 15 seconds within the recording.
+- Swiping to browse pages while audio is playing keeps speech going and suspends automatic page following. Choose **↗ Narration** to return to the spoken position. Paused page browsing changes the sentence where the next Play starts.
+- Highlight the spoken sentence with eye-friendly warm cream (light/sepia) or muted blue-gray (dark). In formatted EPUB paragraphs, CSS Highlights ranges avoid altering the book text, but a browser without this API may highlight a whole paragraph.
+- **Verification still needed:** actual iPhone PWA and Safari playback, desktop Chrome/Safari, book pages with nested markup, selection-and-drag gestures, ±15s jump feel, and transitions between chapters. No claim of live device verification.
