@@ -2,181 +2,120 @@
 
 **Read. Discover. Remember.**
 
-Lexora is a planned web application for learning natural American English through reading, exploration, and long-term vocabulary practice. It brings an EPUB reader, contextual language explanations, pronunciation support, and a unified flashcard collection into one learning environment.
+Lexora is a personal web app for learning natural American English from reading and real-life encounters: discover a word or expression, understand it in context, save its original sentence, and remember it in one flashcard collection. It begins with an EPUB reader and can eventually accept vocabulary from ChatGPT, websites, videos, and other apps.
 
-> **Project status:** v0.1 personal MVP. The reader, an in-app guide, local EPUB imports, built-in glossary, personal flashcards, review scheduling, and local backups are implemented. Other features described below remain planned.
+**Current stage:** personal web/PWA prototype (v0.1). Some features are implemented in code but have **not** been verified on a physical phone or all browsers. The live app is [rogerbeltranps-lab.github.io/lexora](https://rogerbeltranps-lab.github.io/lexora/). This README is the **single source of truth** for project direction, current status, known issues, and future plans.
 
-## The idea
+> **Naming decision (2026-10-15):** **Lexitale** is the preferred *candidate* for a future rebrand, **not an approved rename**. Keep the application name, repository, URLs, code identifiers, manifest, and existing favicon **unchanged** until an explicit decision to switch.
 
-Language learning is more effective when words and expressions are encountered in meaningful contexts. Lexora is designed to turn questions that come up while reading—or during everyday conversations with an AI assistant—into reusable learning material.
+## What the app is for
 
-The core journey is simple:
+1. **Read:** import EPUBs and read in a comfortable, paginated interface.
+2. **Discover:** select a word, phrasal verb, idiom, or sentence; explore its contextual meaning, American English IPA, Catalan translation, grammar/prepositions, and natural examples.
+3. **Remember:** create a flashcard using the **exact sentence from the source** as its first example, then revisit it through spaced repetition.
 
-1. **Read** — Import an EPUB book and enjoy it in a comfortable, distraction-free reader.
-2. **Discover** — Select an unfamiliar word, phrasal verb, idiom, or sentence to understand what it means *in context*, how it's used, and how it sounds in American English.
-3. **Remember** — Save useful discoveries as flashcards in one personal collection and revisit them through spaced repetition.
+The learner owns **one unified flashcard deck**; vocabulary, phrasal verbs, idioms, grammar and pronunciation are categories/filters, not separate decks. Prioritize straightforward language, useful explanations, contextual precision, and data portability.
 
-## Planned features
+## Current implementation and verification (2026-10-15)
 
-### 📖 EPUB reader
-- Import EPUB books and browse a personal reading library.
-- Read with adjustable text size, theme, and layout.
-- Select words and passages without leaving the reading experience.
-- Keep useful context alongside vocabulary discoveries.
-- Save reading progress and return to where you left off.
+| Area | Status | Important limitation or next check |
+| --- | --- | --- |
+| In-app guide and EPUB reader | Implemented | Imported EPUB behavior, pagination, and reading position still need broader real-device testing. |
+| Immersive reader, themes, font sizes, swipe navigation | Implemented; **physical iPhone QA pending** | Fixes for viewport overflow, tap/swipe conflicts and text-selection drag handles were committed on Oct 15. Do not call them verified on an actual iPhone yet. |
+| Dictionary, contextual lookup and phrase matching | Initial implementation | Coverage is incomplete. The starter lexicon and Kaikki-derived indexes exist; verify matches and sense selection in diverse EPUBs. |
+| Unified flashcards, local review, JSON import/export | Implemented locally | Preserve local data. Source sentences and optional source metadata exist on newly captured cards. |
+| Google sign-in and Firestore sync | Implemented in code; **real-device reliability unresolved** | Earlier blank OAuth popups and `permission-denied` reports; emulator tests are not proof the browser sign-in flow works for the user. |
+| Cloud EPUB library | Implemented in code; emulator tested | Firestore book chunking / multi-device exchange were tested in emulator; verify end to end after real Google sign-in succeeds. Reading position remains per-device. |
+| Read & Listen, dictionary and flashcard pronunciation | **Native device voice only** (Oct 15) | Kokoro was removed. Recent speech fixes need physical iPhone and desktop playback tests. |
+| PWA install, service worker, temporary manual update button | Implemented; device QA pending | Settings → **Comprova i actualitza** updates app assets without deleting user books/cards. Remove button only when automatic PWA updates are proven reliable. |
 
-### 💡 Context-aware English explanations
-- Explain vocabulary, idioms, phrasal verbs, collocations, and natural ways of saying things.
-- Distinguish literal and figurative meanings.
-- Provide simple English definitions and Catalan translations.
-- Highlight common prepositions and natural grammar patterns, such as **look after somebody** or **carry something out**.
-- Give practical American English examples, with the original reading context whenever available.
-- Offer memory tips that make expressions easier to remember.
+**Verification rule:** “Implemented” means present in code, not necessarily functioning on every device. Do not report a bug as fixed until the relevant user flow is tested.
 
-### 🔊 American English pronunciation
-- Show American English IPA transcriptions.
-- Play audio pronunciations.
-- Highlight word stress, connected speech, and commonly confusing sounds.
-- Save pronunciation questions as flashcards too.
+## Decisions made on October 15, 2026
 
-### 🗂️ One unified flashcard deck
-All learning items belong to **one collection**, rather than separate decks for vocabulary, idioms, phrasal verbs, or pronunciation.
+- **Branding exploration, no rename:** **Lexitale** (lexicon + tale) is the favored candidate. Potential brand line: **“Every word has a story.”** It remains a proposal, not finalized branding. **Lexora** remains the product name everywhere for now.
+- **Keep the favicon:** retain the **existing rounded blue icon with the stylized L and discreet RBP signature exactly as it is**. No new logo/favicon work is authorized by this decision.
+- **Voice simplification:** use **only the device's native voice** for narration, dictionary audio, and flashcards. **Kokoro has been removed** along with its heavy model-loading / worker / isolation logic. Optional high-quality cloud voices (e.g. Chirp 3 HD) are a **later possibility**, not part of the current implementation or an approved paid dependency.
+- **Stability before expansion:** current priority is reliable audio, mobile layout, text selection by long-press/drag, swipe navigation, and sign-in/sync. Oct 15 code changes target these problems; real iPhone 13 Pro and desktop browser testing remains outstanding.
+- **No data loss during debugging:** avoid deleting localStorage, IndexedDB, EPUBs, flashcards or backups to force a refresh.
 
-A flashcard may include:
-- The English word or expression
-- Category and American English IPA
-- A clear English meaning and Catalan translation
-- Idiomatic structure and required prepositions, where relevant
-- Natural examples and the sentence where it was encountered
-- A mnemonic or usage note
-- Review history and spaced-repetition scheduling
+## Active work — stabilize the prototype first
 
-Users should be able to search, filter, edit, import, export, and review their cards.
+- [ ] **Verify native audio** on a physical iPhone (Safari and installed Home Screen PWA) and on a desktop browser: Settings voice test, Read & Listen, dictionary pronunciation, and flashcards. Inspect Audio check reports if silent; displaying voices does **not** prove playback works.
+- [ ] **Verify mobile reader** on real EPUBs: responsive layout without horizontal overflow, book title/header, full-page text, paragraph spacing, selected text remaining draggable, **Explore selection** behavior, one-word lookup, and horizontal swipe without interfering with text selection.
+- [ ] **Verify Google sign-in and Firestore sync** on the actual Mac and iPhone; preserve locally stored cards and books throughout. Confirm identity, Firestore permissions, two-device syncing, offline edits, and conflict handling before calling the sync reliable.
+- [ ] Improve imported EPUB sentence-level narration highlighting (currently may highlight a containing paragraph) and narration position across page turns/reloads.
+- [ ] Expand dictionary coverage, lemmatization/idiom matching, accuracy and licensing checks; validate Kaikki import output and mobile performance.
+- [ ] Test installed PWA update/reload and offline behavior; remove the **temporary** Settings update button only once unnecessary.
+- [ ] Review accessibility, privacy, synchronization rules, error reporting, EPUB robustness, and any security-scanning warnings. Treat publicly embedded Firebase client configuration differently from genuinely private credentials; investigate rather than assume every reported key is a secret.
 
-### 💬 ChatGPT-assisted card creation
-An important goal is to make adding cards feel effortless. When a learner asks ChatGPT about an English expression, they should be able to say:
+### Known sign-in incident (first reported 2026-10-11)
 
-> **“Add this to the Lexora flashcards.”**
+Firebase project: `lexora-2d1f4`; Google Authentication enabled; authorized GitHub Pages domain configured; Firestore in `europe-west1`. The OAuth handler `lexora-2d1f4.firebaseapp.com/__/auth/handler` previously showed a blank popup or a quickly closed tab; Firestore reported `permission-denied`. These symptoms **do not establish a single root cause**. Before changing Firestore rules, confirm the active signed-in UID, OAuth handler/network errors, and exact denied path. Do **not** open database access to the public to bypass the problem or erase the local backup. A JSON backup was previously exported; create a fresh one before risky changes.
 
-With an authorized integration, the assistant would format the card and add it to the shared collection without manual copying. This workflow must preserve the user's control over repository changes and data. **It is a planned integration, not an automatic capability of the current repository.**
+## Future roadmap — deferred until the core is reliable
 
-## Design principles
+### 1. Better contextual learning
 
-- **Context first:** Learn how language is actually used, not just isolated definitions.
-- **American English focus:** Prioritize natural US usage and pronunciation.
-- **English + Catalan:** Use English for explanations and Catalan as a translation aid.
-- **One place for everything:** Reading discoveries and conversational questions feed the same collection.
-- **Simple but powerful:** Keep the interface clean and practical on desktop, tablet, and mobile.
-- **User-controlled data:** Make the vocabulary collection portable, and be clear about what is stored locally versus synchronized.
+- [ ] More complete vocabulary and idiom explanations: clear English, Catalan, literal/figurative meanings, AmE IPA, common prepositions, grammar patterns such as *carry something out*, real examples and a helpful mnemonic.
+- [ ] Higher-quality sentence alignment, pronunciation notes, and reliable reading/listening state.
+- [ ] Optional cloud HD speech **only after** native audio is working and there is an explicit decision on cost, privacy and browser reliability.
 
-## Development roadmap
+### 2. ⭐ Very high priority: vocabulary capture from anywhere
 
-- [ ] Define the application structure and data model.
-- [ ] Build the responsive application shell and EPUB reader.
-- [ ] Add text selection and context-aware explanations.
-- [ ] Build the unified flashcard collection and editor.
-- [ ] Add spaced-repetition review and progress tracking.
-- [ ] Add American English pronunciation support.
-- [ ] Implement import/export and a cross-device synchronization strategy.
-- [ ] Connect an explicitly authorized ChatGPT-to-Lexora flashcard workflow.
-- [ ] Test accessibility, mobile usability, and EPUB compatibility.
+**Important but deferred; do not begin in the current stabilization phase.**
 
-## Repository
+- [ ] Authorized **ChatGPT → Lexora** command such as “Add this to Lexora,” storing the expression, context and source in the **same** collection.
+- [ ] Browser extension to select text on webpages and add it from the context menu.
+- [ ] iOS/iPadOS and Android sharing workflows (try simple system sharing/Shortcuts before considering native extensions).
+- [ ] Secure, common capture/sync pipeline with duplicate detection and user review.
+- [ ] Test a first phone-based integration before building broad app-store distribution. Consider a shared codebase such as Capacitor if needed.
 
-This repository is the future home of Lexora. The initial prototype previously made under the English Lab project is **not** automatically part of this repository; migration and future code changes will be handled separately with permission.
+### 3. Learn from real experiences
 
----
+- [x] Save the **exact original book sentence** as the first flashcard example, and optional `source` metadata on new cards.
+- [ ] Later capture context from video, webpages, conversations or apps with a location/URL/timestamp where applicable.
+- [ ] Gentle opt-in **reminders**, not only quizzes. First proposed notification: “Remember that *look up* means *buscar*? You came across it in this sentence: ‘[exact sentence from the source].’”
+- [ ] Show familiar expressions in new contexts; let the learner choose notification frequency. Apple Watch reminders are a possible future extension.
 
-*Lexora — Read. Discover. Remember.*
+Cards already have an editable `examples` list and a `context` passage. New cards can additionally store the optional `source` object, without breaking old cards or backups:
 
-
-## Try the v0.1 preview
-
-The app is at [Lexora](https://rogerbeltranps-lab.github.io/lexora/) **once GitHub Pages is enabled** for the main branch (root directory). Open `index.html` through a local web server during development.
-
-### Available now
-
-- Seven-chapter **in-app** Lexora guide (the original EPUB can be imported separately).
-- Import EPUB books, navigate pages, and restore reading location on the same device. Signed in with Google, books are saved to your Firestore library and available on every device.
-- Select words or expressions in the guide or an EPUB and see built-in glossary entries.
-- Add/edit one unified collection of flashcards with AmE IPA, Catalan translations, examples, structures and source context.
-- Text-to-speech via your browser, spaced-repetition review, and JSON backup/import.
-- Responsive desktop/mobile interface and basic web-app manifest/offline app shell.
-
-### Not connected yet
-
-- Reliable cross-device sync: Google Sign-In and Firestore sync are implemented (sign-in screen at launch) but not yet verified end-to-end. EPUBs sync through Firestore when signed in.
-- Automated AI-generated explanations and ChatGPT-to-Lexora additions.
-- Full offline EPUB engine dependency, student accounts and App Store release.
-
-**Privacy note:** This version saves content locally in the current browser. Browser data removal may delete your flashcards and books; export backups regularly. Signed out, EPUBs stay on this device until the next sign-in. The built-in glossary is limited; unfamiliar selections open a manual card editor, not a live AI explanation.
-
-
-## Informe d'incidència: Google Sign-In i sincronització Firebase — 11/10/2026
-
-**Estat: PENDENT DE RESOLDRE.** No es pot confirmar l'inici de sessió ni la sincronització entre dispositius. Aquesta secció documenta les observacions i les hipòtesis; no dona per diagnosticada una causa encara no verificada.
-
-### Entorn i configuració confirmada
-
-- Aplicació: https://rogerbeltranps-lab.github.io/lexora/ (GitHub Pages; també oberta com a finestra d'aplicació de Chrome a macOS).
-- Projecte Firebase: `lexora-2d1f4`, pla Spark.
-- Firebase Authentication: proveïdor **Google — Enabled**.
-- Authorized domains: `rogerbeltranps-lab.github.io` afegit.
-- Cloud Firestore: base de dades `(default)`, edició Standard, ubicació `europe-west1 (Belgium)`, creada inicialment en mode producció.
-- Regles publicades (captura verificada a la consola):
-  ```javascript
-  rules_version = '2';
-  service cloud.firestore {
-    match /databases/{database}/documents {
-      match /users/{userId}/{document=**} {
-        allow read, write: if request.auth != null
-                           && request.auth.uid == userId;
-      }
-    }
+```json
+{
+  "source": {
+    "kind": "book",
+    "title": "Source title",
+    "bookId": "local EPUB id or guide",
+    "sentence": "Exact original sentence.",
+    "location": "EPUB CFI, guide chapter, URL or later timestamp",
+    "capturedAt": "ISO-8601 timestamp"
   }
-  ```
-- El codi de sincronització escriu a `users/{uid}/state/lexora`, una ruta que **hauria** d'estar permesa per aquestes regles si l'usuari realment està autenticat amb el `uid` corresponent.
+}
+```
 
-### Símptomes observats
+The `source` fields may eventually expand to multiple contexts; **do not rewrite older flashcards just to support future ideas**.
 
-1. A `Settings → Compte Lexora`, apareix el botó **Inicia sessió amb Google**. No hi ha confirmació d'una sessió activa.
-2. Amb `signInWithPopup`, s'obre una finestra d'autenticació que queda **completament en blanc**; a la captura es veu l'adreça `https://lexora-2d1f4.firebaseapp.com/__/auth/handler`. La finestra es tanca o no permet escollir el compte.
-3. L'opció alternativa amb `signInWithRedirect` tampoc ha permès completar l'accés en les proves explicades; s'ha descrit que s'obre i es tanca una pestanya.
-4. Lexora ha mostrat repetidament `permission-denied` en la sincronització de Firestore. És un **error d'accés a dades**, i **no prova per si sol** que l'autenticació Google hagi funcionat o fallat.
-5. En tornar a carregar, la interfície pot mostrar «Les targetes es desen en aquest dispositiu. Inicia sessió per sincronitzar», cosa coherent amb una sessió no establerta.
-6. Els problemes s'han observat també en **Chrome normal al Mac**, no només a la finestra instal·lada de l'aplicació. Encara no hi ha prova concloent al navegador de l'iPhone per a Firebase.
-7. Les flashcards i els repassos continuen disponibles localment. S'ha fet **una exportació JSON de seguretat** abans de començar la integració; no s'ha confirmat cap sincronització completa.
+### 4. Optional mobile and student editions
 
-### Codi actual relacionat
+- [ ] Evaluate dedicated iOS/Android releases **only if the PWA proves insufficient** for sharing, reading, offline use or notifications.
+- [ ] Optional student mode with privacy-appropriate accounts, teacher control, accessible differentiated learning and school safeguards.
+- [ ] **Unit-end student vocabulary books** collecting language learned during a unit in **three differentiated versions: Insecure, Safe and Daring**. Allow teacher review/editing before EPUB/export. No student rollout until the personal product is stable and privacy requirements are addressed.
 
-- `firebase-sync.js`: inicialitza SDK Firebase v13, Google Authentication (`signInWithPopup` i `signInWithRedirect`), Firestore i sincronització per transacció amb fusió de dades.
-- `index.html`: exposa els botons de connexió i el pont `window.lexoraSyncBridge` cap a les targetes locals.
-- S'han afegit estats separats per **Google** i **Firestore** i errors d'autenticació visibles per poder diagnosticar el següent intent.
-- `sw.js`: service worker amb memòria cau del shell; pot complicar la verificació de versions noves. No eliminar dades locals per forçar una actualització.
+## Data, privacy and technical notes
 
-### Hipòtesis a comprovar (no verificades)
+- EPUBs and flashcards are available locally; deleting browser/app storage can erase unsynced data. **Export JSON backups regularly**.
+- Intended architecture: responsive GitHub Pages web/PWA; local IndexedDB/other app storage; Google Authentication and per-user Firestore sync. EPUB cloud records are implemented using per-user Firestore chunks; storage/usage limits and real sign-in must be monitored.
+- For local development, serve `index.html` from a web server. Live preview: <https://rogerbeltranps-lab.github.io/lexora/>.
+- This repository is **`rogerbeltranps-lab/lexora` only**. Never change English Lab or other repositories as part of this app without separate authorization.
 
-- El handler OAuth a `firebaseapp.com/__/auth/handler` podria no carregar-se correctament per restriccions del navegador, bloquejadors de contingut, cookies o polítiques d'emmagatzematge entre orígens.
-- La configuració d'Authentication/OAuth o la implementació de la redirecció en GitHub Pages (origen diferent de `authDomain`) pot requerir un ajust.
-- L'error `permission-denied` podria reflectir una sessió no vàlida o una discrepància de permisos/ruta. S'ha de confirmar amb el codi d'error i el `auth.currentUser?.uid`, sense publicar dades personals.
-- Pot haver-hi fallades addicionals de sincronització després d'autenticar-se; encara no s'ha verificat el flux de fusió de dades de dos dispositius.
+## Documentation — keep it simple
 
-### Pla de represa
+There are only **three maintained project documents**:
 
-1. Obrir Lexora en una pestanya normal de Chrome actualitzat i comprovar la línia **Google:** per veure si diu «sessió no iniciada» o mostra un error `auth/...`; recollir el missatge complet de consola/red sense exposar tokens.
-2. Comprovar si `https://lexora-2d1f4.firebaseapp.com/__/auth/handler` carrega en el flux d'OAuth i si hi ha errors de xarxa/JavaScript. Fer-ho abans de modificar les regles.
-3. Verificar a la consola Firebase els dominis autoritzats, el proveïdor Google i la configuració del client OAuth. Si el problema és el domini d'auth en hosting extern, aplicar una solució compatible amb els requisits actuals de Firebase per a redireccions.
-4. Quan hi hagi sessió real (`auth.currentUser`), comprovar la ruta `users/{uid}/state/lexora` amb el simulador de regles i diagnosticar el `permission-denied` sense obrir accés públic.
-5. Provar la primera sincronització amb el Mac, després amb l'iPhone: conservar targetes locals, comparar recompte/contingut/repassos i provar reconnexió, recàrrega i exportació JSON.
-6. Revisar conflictes entre dispositius i la política de fusió abans d'anunciar que la sincronització funciona.
+1. **`README.md` (this file):** the canonical product description, implemented/verified status, current issues, decisions and roadmap. Update it when priorities or real functionality change.
+2. **`docs/CHANGELOG.md`:** dated **history of changes** and what still needed checking at the time. Historical entries may describe superseded implementations; they are not current instructions.
+3. **`.github/agents/lexora-feature-documenter.agent.md`:** the small instruction file required by compatible coding agents; it points here instead of creating separate feature inventories or roadmaps. It does not run a background process.
 
-**Precaucions:** conservar `lexora-backup.json`; no esborrar localStorage/IndexedDB/cau de Safari fins que les dades estiguin recuperables i s'hagi comprovat la sincronització. No relaxar Firestore a `allow read, write: if true` ni activar Blaze per resoldre aquest problema.
+The old standalone `ROADMAP.md` and `docs/FEATURES.md` were consolidated into this README on **2026-10-15**. Earlier contents remain available in Git history. Do not recreate duplicate status or planning documents. Log substantive code changes in the changelog and update this README accordingly.
 
----
-
-## Development documentation (October 2026)
-
-- [Current feature inventory](docs/FEATURES.md) — implementation and testing status.
-- [Change history](docs/CHANGELOG.md) — shipped changes and manual verification gaps.
-- [Feature documentation agent](.github/agents/lexora-feature-documenter.agent.md) — instructions for compatible coding agents. Invoke it when developing; it is not an always-running daemon.
-- **Temporary update button:** Settings → **Comprova i actualitza**. It refreshes app files and service worker cache, without deleting IndexedDB or locally saved vocabulary. Remove when automatic updates have been validated on installed iPhone PWAs.
+**Last documentation consolidation:** 2026-10-15. Documentation-only reorganization; not evidence of a new app release or successful device test.
