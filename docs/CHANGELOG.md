@@ -1,5 +1,13 @@
 # LumoUp changelog (repository: lexora)
 
+## 2026-10-16 · 42 — Make bookmarks visible and cover the built-in guide
+- Fix the bookmark control being hard to find because it sat inside the auto-hiding toolbar. A compact bookmark icon is now always visible at the top-left while reading in immersive mode; the normal toolbar also keeps its button.
+- Enable bookmarking in the built-in LumoUp Guide too. Save and reopen chapter/page positions in the guide, in addition to EPUB CFI bookmarks.
+- Keep last guide page on this device for reopening; EPUB CFI restoration from v41 is retained. Neither feature changes native narration or flashcards.
+- Bust mobile PWA script caches for the reader/bookmark scripts; shell cache v41.
+- Ran mocked user-flow tests against the exact bookmark module: save, list, jump and delete an EPUB bookmark; save/jump guide bookmark; EPUB location restore after a page turn and reopening. All these simulated tests passed. Physical iPhone/Safari testing remains to be done.
+
+
 ## 2026-10-16 · 41 — Resume reading and EPUB bookmarks
 - Restore each EPUB to its last saved text location (EPUB CFI) on reopening; continue saving when pages change, when switching books and when the app is backgrounded or closed. Guard against startup relocation overwriting the saved point before it is restored.
 - Add a compact bookmark icon to the existing reading controls. Bookmarks are **per EPUB**: save multiple locations, jump back to one, or remove it. They remain in local browser storage on the device; no Firestore, login or flashcard changes.
