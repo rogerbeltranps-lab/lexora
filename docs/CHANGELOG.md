@@ -1,5 +1,11 @@
 # LumoUp changelog (repository: lexora)
 
+## 2026-10-16 · 46 — Narration keeps going when the iPhone would auto-lock
+- Hold a screen wake lock while Read & Listen is playing, released on pause or stop. Without it the iPhone auto-locks after its Auto-Lock delay, Safari suspends the page and the device voice stops after a couple of pages.
+- If the voice engine is left reporting speaking or paused with nothing playing (after a lock or backgrounding), cancel it before the next utterance so Play works again. A just-finished utterance (under 1 s) is not treated as stuck.
+- Returning to the app after the voice died in the background now stops cleanly with a message instead of showing "Speaking…".
+- Not verified on a real iPhone; the stuck-engine path cannot be reproduced in desktop Chromium.
+
 ## 2026-10-16 · 45 — Narration highlight that actually shows, exact reopen page, bookmark sync status
 - Fix the spoken-sentence highlight and page following doing nothing in Read & Listen. Entering the full-screen reader (or rotating, or changing text size) makes epub.js rebuild the chapter in a new iframe, but the sentence ranges still pointed at the old one; a node in a discarded iframe still reports `isConnected`, so the earlier detached-range check never fired. Sentences are now rebuilt from the iframe on screen before each highlight and on Play, keeping the same sentence.
 - The highlight blends with the page (multiply on light, screen on dark) so words stay crisp, and fades in as narration moves to the next sentence.

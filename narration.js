@@ -596,7 +596,22 @@ function continueReading(){
  const resume=()=>{if(!autoContinue)return;autoContinue=false;if(prepare(true))play(true)};
  if(guide)setTimeout(resume,900);else{let done=false;const once=()=>{if(done)return;done=true;setTimeout(resume,400)};try{rendition.once?.("relocated",once)}catch{}setTimeout(once,4000)}
 }
-function stop(){autoContinue=false;run++;playing=false;cancelSegmentTimers();window.lexoraSpeech?.cancel();syncPlaybackButtons();
+/* Keep the screen awake while narrating: when an iPhone auto-locks, Safari suspends the page and the
+   device voice stops mid-book (and could not restart). iOS releases the lock whenever the app is hidden. */
+let wakeLock=null;
+async function holdScreen(){
+ if(!playing||document.hidden||wakeLock||!navigator.wakeLock?.request)return;
+ try{wakeLock=await navigator.wakeLock.request("screen");wakeLock.addEventListener?.("release",()=>{wakeLock=null});if(!playing)releaseScreen()}catch{wakeLock=null}
+}
+function releaseScreen(){const lock=wakeLock;wakeLock=null;try{lock?.release()}catch{}}
+document.addEventListener("visibilitychange",()=>{
+ if(document.hidden||!playing)return;
+ holdScreen();
+ // Returning to the app: if the voice died while it was hidden, say so instead of showing "Speaking…".
+ const silent=()=>playing&&!window.speechSynthesis?.speaking&&!window.speechSynthesis?.pending;
+ setTimeout(()=>{if(silent())setTimeout(()=>{if(!silent())return;stop();$("lex-status").textContent="Audio stopped while LumoUp was in the background. Tap Play to continue."},1200)},1500);
+});
+function stop(){autoContinue=false;run++;playing=false;releaseScreen();cancelSegmentTimers();window.lexoraSpeech?.cancel();syncPlaybackButtons();
  // Do not leave "Speaking…" on screen after Pause or Exit.
  $("lex-status").textContent=items.length?"Sentence "+(Math.min(index,items.length-1)+1)+" / "+items.length:""}
 function epubBody(){try{return document.querySelector("#epub-view iframe")?.contentDocument?.body}catch{return null}}
@@ -739,7 +754,7 @@ function play(auto=false){
  refreshEpubItems();
  if(!items.length&&!prepare(true))return;
  if(!window.speechSynthesis||!window.lexoraSpeech){$("lex-status").textContent="Device voice unavailable. Try Settings → Audio check.";return}
- const session=++run;playing=true;inspect.hidden=true;
+ const session=++run;playing=true;inspect.hidden=true;holdScreen();
  if(!auto)followingAudio=true; // An explicit Play reattaches the text to narration.
  syncPlaybackButtons();
  window.dispatchEvent(new Event("lexora:narration-started"));

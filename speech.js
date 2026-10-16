@@ -4,7 +4,7 @@ const synth=window.speechSynthesis;
 const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
 // iOS 17+ lists Apple's novelty voices as en-US. Some of them speak nothing in Safari, and one of them was often voices[0].
 const NOVELTY=/^(Albert|Bad News|Bahh|Bells|Boing|Bubbles|Cellos|Deranged|Fred|Good News|Hysterical|Jester|Junior|Kathy|Organ|Pipe Organ|Princess|Ralph|Superstar|Trinoids|Whisper|Wobble|Zarvox)\b/i;
-let primer=null,current=null,cancelledAt=0,generation=0;
+let primer=null,current=null,cancelledAt=0,generation=0,endedAt=0;
 // 0.1 s of 8-bit silence, built here so no audio file has to be cached.
 function silentWav(){const n=800,d=new DataView(new ArrayBuffer(44+n)),s=(o,t)=>[...t].forEach((c,i)=>d.setUint8(o+i,c.charCodeAt(0)));s(0,"RIFF");d.setUint32(4,36+n,true);s(8,"WAVEfmt ");d.setUint32(16,16,true);d.setUint16(20,1,true);d.setUint16(22,1,true);d.setUint32(24,8000,true);d.setUint32(28,8000,true);d.setUint16(32,1,true);d.setUint16(34,8,true);s(36,"data");d.setUint32(40,n,true);for(let i=0;i<n;i++)d.setUint8(44+i,128);return URL.createObjectURL(new Blob([d],{type:"audio/wav"}))}
 // Call inside the tap handler. The iPhone ring/silent switch mutes web audio unless the page holds the media playback session.
@@ -21,7 +21,12 @@ function speak(text,options={}){
  text=String(text||"").trim();if(!text)return false;
  if(!synth||!("SpeechSynthesisUtterance"in window)){options.onerror?.("unsupported");return false}
  unlock();
- cancel();const busy=Date.now()-cancelledAt<150,mine=generation;
+ cancel();
+ // After the screen locks or the app is backgrounded mid-sentence, iOS can leave the engine reporting
+ // speaking/paused with nothing of ours playing; every later speak() then queues silently behind it.
+ // Right after our own onend WebKit briefly still reports speaking; that is not stuck.
+ if(synth.paused||((synth.speaking||synth.pending)&&Date.now()-endedAt>1000)){try{synth.cancel();if(synth.paused)synth.resume()}catch{}cancelledAt=Date.now()}
+ const busy=Date.now()-cancelledAt<150,mine=generation;
  const say=(voiceURI,retry)=>{
   if(mine!==generation)return;
   const u=new SpeechSynthesisUtterance(text);u.lang="en-US";u.rate=Number(options.rate)||0.9;u.volume=1;
@@ -34,7 +39,7 @@ function speak(text,options={}){
   u.onstart=()=>{started=true;currentStartedAt=Date.now();lastBoundary=currentStartedAt;if(current===u)options.onstart?.()};
   // One utterance can contain several sentences; boundary offsets let the reader follow without restarting speech after every period.
   u.onboundary=e=>{if(current===u){lastBoundary=Date.now();hadBoundary=true;options.onboundary?.({charIndex:e.charIndex,elapsedTime:e.elapsedTime,name:e.name})}};
-  u.onend=()=>{if(current===u){current=null;options.onend?.()}};
+  u.onend=()=>{endedAt=Date.now();if(current===u){current=null;options.onend?.()}};
   u.onerror=e=>{if(current!==u)return;current=null;options.onerror?.(e.error||"error")};
   synth.speak(u);if(synth.paused)synth.resume();
   // Chrome and Safari sometimes never fire onend (long text, remote voices); finish the sentence ourselves once speech has gone quiet.
