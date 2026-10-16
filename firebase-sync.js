@@ -3,6 +3,7 @@ import {initializeApp} from "https://www.gstatic.com/firebasejs/13.0.0/firebase-
 import {getAuth,GoogleAuthProvider,signInWithPopup,signInWithRedirect,getRedirectResult,signOut,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/13.0.0/firebase-auth.js";
 import {getFirestore,doc,runTransaction,onSnapshot} from "https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js";
 import {startBookSync} from "./book-sync.js";
+import {startBookmarkSync} from "./bookmark-sync.js";
 const config={apiKey:"AIzaSyATUuOolgUl0iod1zEIYV1zLbcvbMgrLpc",authDomain:"lexora-2d1f4.firebaseapp.com",projectId:"lexora-2d1f4",appId:"1:38390223406:web:a6f0712a38d7d98a2405bf"};
 const app=initializeApp(config),auth=getAuth(app),db=getFirestore(app);
 const provider=new GoogleAuthProvider();
@@ -10,7 +11,7 @@ const provider=new GoogleAuthProvider();
 provider.setCustomParameters({prompt:"select_account"});
 const bridge=window.lexoraSyncBridge;
 const login=document.getElementById("lex-cloud-login"),logout=document.getElementById("lex-cloud-logout"),syncBtn=document.getElementById("lex-cloud-sync"),status=document.getElementById("lex-cloud-status");
-let uid=null,unsubscribe=null,stopBooks=null,busy=false,queued=false,queuedImmediate=false,clock=null,ready=false,loginFailure="",retryAfterConnection=false;
+let uid=null,unsubscribe=null,stopBooks=null,stopBookmarks=null,busy=false,queued=false,queuedImmediate=false,clock=null,ready=false,loginFailure="",retryAfterConnection=false;
 const message=t=>{status.textContent=t};
 const booksStatus=document.getElementById("lex-cloud-books");
 const booksMessage=t=>{if(booksStatus)booksStatus.textContent=t};
@@ -154,10 +155,11 @@ window.addEventListener("online",()=>{if(retryAfterConnection)queueSync(true)});
 onAuthStateChanged(auth,async user=>{
  if(unsubscribe){unsubscribe();unsubscribe=null}
  if(stopBooks){stopBooks();stopBooks=null}
+ if(stopBookmarks){stopBookmarks();stopBookmarks=null}
  uid=user?.uid||null;
  // The reader waits for this before deciding whether a cloud book can be downloaded.
  window.lexoraAuthKnown=true;
- if(user)stopBooks=startBookSync(db,user.uid,booksMessage);else{booksMessage("");dispatchEvent(new Event("lexora:book-cloud"))}
+ if(user){stopBooks=startBookSync(db,user.uid,booksMessage);stopBookmarks=startBookmarkSync(db,user.uid)}else{booksMessage("");dispatchEvent(new Event("lexora:book-cloud"))}
 ready=false;queued=false;queuedImmediate=false;retryAfterConnection=false;showGate(!user&&!skipped());clearTimeout(clock);clock=null;if(user){loginFailure="";authMessage("Google: connectat · "+(user.email||"usuari autenticat"))}else if(!loginFailure){authMessage("Google: sessió no iniciada")}
  login.hidden=!!user;logout.hidden=!user;syncBtn.hidden=!user;
  if(!user){message("Firestore: sense sincronització; les targetes es desen localment.");setBadge("Personal · local mode");return}
