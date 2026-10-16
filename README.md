@@ -21,7 +21,7 @@ The learner owns **one unified flashcard deck**; vocabulary, phrasal verbs, idio
 | Area | Status | Important limitation or next check |
 | --- | --- | --- |
 | In-app guide and EPUB reader | Implemented | Imported EPUB behavior, pagination, and reading position still need broader real-device testing. |
-| Immersive reader, themes, font sizes, swipe navigation | Implemented; **physical iPhone QA pending** | Device light/dark theme now extends to the entire app, including settings, flashcards, login and dictionary overlays. Swipe and selection behavior still needs device QA. |
+| Immersive reader, themes, font sizes, swipe navigation | Implemented; **physical iPhone QA pending** | Choose System, Light or Dark under Settings; color selection covers every app surface and EPUB. Image-only EPUB pages have edge navigation when swipes fail. On-device testing is still needed. |
 | Dictionary, contextual lookup and phrase matching | Initial implementation | Coverage is incomplete. The starter lexicon and Kaikki-derived indexes exist; verify matches and sense selection in diverse EPUBs. |
 | Unified flashcards, local review, JSON import/export | Implemented locally | Preserve local data. Source sentences and optional source metadata exist on newly captured cards. |
 | Google sign-in and Firestore sync | Implemented in code; **real-device reliability unresolved** | Earlier blank OAuth popups and `permission-denied` reports; emulator tests are not proof the browser sign-in flow works for the user. |
@@ -153,3 +153,12 @@ The old standalone `ROADMAP.md` and `docs/FEATURES.md` were consolidated into th
 - The operating system controls light/dark mode across **all Lexora screens**, not only EPUB content. This includes navigation, flashcards, practice, Settings, forms, sign-in and dictionary/reader overlays. No manual theme toggle is introduced.
 - The reader audio controls use bold, mirrored circular-arrow icons for **back 15s** and **forward 15s**, with a matching Play/Pause symbol, based on the supplied reference. These remain estimated 15-second jumps with native speech.
 - App version 36, PWA shell v35. Code has been checked, but iPhone Safari/PWA and desktop visual inspection are still pending. No reading data or saved typeface preferences have been modified.
+
+## EPUB navigation, read from word and iPhone reliability (October 16, 2026)
+
+- On image-only EPUB pages (e.g. book covers and publisher pages) the immersive reader shows unobtrusive left/right edge buttons to turn pages even if WebKit does not deliver swipe events. The EPUB frame document root also handles swipe gestures. Confirm with imported books on a physical iPhone.
+- In **Read & Listen**, tap a word to choose **Read from here** or **Look up**. The first option starts native speech at the tapped word within the sentence. Long-press and drag for multi-word dictionary selection as before.
+- A native speech progress watchdog detects utterances that never finish and stops playback with a message to tap Play again; position is retained at the current sentence. It cannot guarantee recovery from all iOS background-audio restrictions.
+- The flashcard editor avoids Safari's zoom-on-focus by using inputs of at least 16px and a keyboard-friendly scrollable modal; pinch zoom remains enabled.
+- **Settings → Appearance → App theme:** **Match my device** (default), **Light** or **Dark**. The preference applies to the library, editor, settings, reader, menus and EPUB and persists across sessions.
+- Version 37 / PWA shell v36. Changes have passed static and logic checks but must still be verified on a physical iPhone (cover page, keyboard/editor, selected word, voice behavior and theme switching). No clearing of personal EPUBs, flashcards or review history.
