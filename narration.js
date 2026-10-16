@@ -498,43 +498,56 @@ function applyEpubHighlightStyle(targetDoc){
 }
 /* Highlight the sentence's actual Range inside its EPUB iframe, with no DOM edits. */
 function drawEpubSentence(range){
- if(!range?.startContainer?.isConnected)return false;
- const doc=range.startContainer.ownerDocument,win=doc.defaultView;
- if(!doc?.documentElement)return false;
- applyEpubHighlightStyle(doc);
- // iPhone Safari can expose CSS Highlights without visibly painting them.
- // Prefer non-interactive Range rectangles drawn inside the EPUB iframe.
- if(activeHighlightDoc){try{activeHighlightDoc.defaultView?.CSS?.highlights?.delete("lexora-current-sentence")}catch{}activeHighlightDoc=null}
- const rects=[...(range.getClientRects?.()||[])];
- const width=doc.documentElement.clientWidth||win?.innerWidth||0;
- const height=doc.documentElement.clientHeight||win?.innerHeight||0;
- if(!epubSentenceLayer||epubSentenceLayer.ownerDocument!==doc||!epubSentenceLayer.isConnected){
+ // Paint over the visible EPUB page rather than inside its iframe. iPhone
+ // WebKit may expose CSS Highlights yet fail to show them, while an absolutely
+ // positioned overlay in the parent reader stays visible across EPUB columns.
+ const node=range?.startContainer;
+ if(!node?.isConnected)return false;
+ const doc=node.ownerDocument,frame=[...epubHost.querySelectorAll("iframe")].find(f=>{
+  try{return f.contentDocument===doc}catch{return false}
+ });
+ const reader=$("reader");
+ if(!frame||!reader)return false;
+ const view=epubHost.getBoundingClientRect(),frameBox=frame.getBoundingClientRect(),readerBox=reader.getBoundingClientRect();
+ const scaleX=frame.clientWidth?frameBox.width/frame.clientWidth:1;
+ const scaleY=frame.clientHeight?frameBox.height/frame.clientHeight:1;
+ if(!view.width||!view.height||!frameBox.width)return false;
+ if(!epubSentenceLayer||epubSentenceLayer.ownerDocument!==document||!epubSentenceLayer.isConnected||epubSentenceLayer.parentElement!==reader){
   epubSentenceLayer?.remove();
-  epubSentenceLayer=doc.createElement("div");
+  epubSentenceLayer=document.createElement("div");
   epubSentenceLayer.className="lex-sentence-overlay";
   epubSentenceLayer.setAttribute("aria-hidden","true");
-  epubSentenceLayer.style.cssText="position:fixed;inset:0;z-index:2147483647;pointer-events:none;overflow:hidden";
-  doc.documentElement.appendChild(epubSentenceLayer);
+  epubSentenceLayer.style.cssText="position:absolute;inset:0;z-index:5;pointer-events:none;overflow:hidden";
+  reader.appendChild(epubSentenceLayer);
  }
- const fragment=doc.createDocumentFragment(),dark=$("reader").classList.contains("black");
- const fill=dark?"rgba(117,174,220,.45)":"rgba(225,170,68,.42)";
+ const fragment=document.createDocumentFragment(),dark=reader.classList.contains("black");
+ const fill=dark?"rgba(117,174,220,.47)":"rgba(225,170,68,.43)";
  let drawn=0;
- for(const rect of rects){
+ for(const rect of range.getClientRects?.()||[]){
   if(rect.width<2||rect.height<2)continue;
-  // The rects are relative to the iframe viewport, not the parent app.
-  if(width&&height&&(rect.right<=0||rect.left>=width||rect.bottom<=0||rect.top>=height))continue;
-  const mark=doc.createElement("span");
+  // Range coordinates are in iframe units. Convert to screen coordinates
+  // and clip them to the EPUB viewport (hide off-screen columns).
+  const left=frameBox.left+rect.left*scaleX,right=frameBox.left+rect.right*scaleX;
+  const top=frameBox.top+rect.top*scaleY,bottom=frameBox.top+rect.bottom*scaleY;
+  const visibleLeft=Math.max(left,view.left),visibleRight=Math.min(right,view.right);
+  const visibleTop=Math.max(top,view.top),visibleBottom=Math.min(bottom,view.bottom);
+  if(visibleRight-visibleLeft<2||visibleBottom-visibleTop<2)continue;
+  const mark=document.createElement("span");
   mark.style.cssText="position:absolute;display:block;pointer-events:none;border-radius:3px";
-  mark.style.left=rect.left+"px";mark.style.top=rect.top+"px";
-  mark.style.width=rect.width+"px";mark.style.height=rect.height+"px";
+  mark.style.left=(visibleLeft-readerBox.left-reader.clientLeft+reader.scrollLeft)+"px";
+  mark.style.top=(visibleTop-readerBox.top-reader.clientTop+reader.scrollTop)+"px";
+  mark.style.width=(visibleRight-visibleLeft)+"px";
+  mark.style.height=(visibleBottom-visibleTop)+"px";
   mark.style.backgroundColor=fill;
   fragment.appendChild(mark);
   if(++drawn>=120)break;
  }
  epubSentenceLayer.replaceChildren(fragment);
  if(drawn)return true;
- // Fallback, not a substitute for the visible rectangles above.
+ // Keep the API highlight as a fallback only, never as proof of visible paint.
+ applyEpubHighlightStyle(doc);
  try{
+  const win=doc.defaultView;
   if(win?.CSS?.highlights&&typeof win.Highlight==="function"){
    win.CSS.highlights.set("lexora-current-sentence",new win.Highlight(range));
    activeHighlightDoc=doc;
