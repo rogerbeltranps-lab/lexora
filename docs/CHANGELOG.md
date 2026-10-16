@@ -1,5 +1,12 @@
 # LumoUp changelog (repository: lexora)
 
+## 2026-10-16 · 44 — Reliable on-screen spoken-sentence tint
+- Place the exact sentence's translucent highlight in a non-interactive overlay above the EPUB reader, not inside the EPUB iframe. Older iPhone WebKit versions may fail to paint CSS Highlights or clip iframe-contained overlays.
+- Translate EPUB Range rectangles into the visible reader's coordinates, respecting iframe size and clipping other EPUB columns. Do not change EPUB DOM text, CFIs, bookmarks, page navigation, TTS or other functions.
+- Targeted mocked layout tests verified rectangle placement, reader attachment, pointer-events none, and clipping of offscreen text. This is **not** yet a successful real-iPhone visual test.
+- Update narration asset URL to v44, manual update version to 44 and shell cache to v43.
+
+
 
 ## 2026-10-16 · 43 — Restore spoken sentence highlighting and audio page following
 - Repair a page-following condition: guide pagination could remain active after changing to an EPUB and intercept narration-follow requests. EPUB following now takes precedence whenever the active sentence comes from its book iframe.
