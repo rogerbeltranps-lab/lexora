@@ -1,5 +1,11 @@
 # LumoUp changelog (repository: lexora)
 
+## 2026-10-16 · 41 — Resume reading and EPUB bookmarks
+- Restore each EPUB to its last saved text location (EPUB CFI) on reopening; continue saving when pages change, when switching books and when the app is backgrounded or closed. Guard against startup relocation overwriting the saved point before it is restored.
+- Add a compact bookmark icon to the existing reading controls. Bookmarks are **per EPUB**: save multiple locations, jump back to one, or remove it. They remain in local browser storage on the device; no Firestore, login or flashcard changes.
+- Keep the reader layout, native audio, highlighting, gestures, themes and other features unchanged. Update PWA shell cache to v40.
+- JavaScript syntax was checked; real Safari/iPhone PWA and EPUB-specific behavior still need user verification.
+
 ## 2026-10-16 · 40 — LumoUp user-facing rebrand
 - **LumoUp** is the chosen and implemented app brand; supersedes LooKitUp and the historical Lexora-facing UI.
 - Updated browser tab, SEO description, guide, navigation, menus, sign-in, Settings, narration labels and audio test, installable PWA name/description and favicon accessibility name. Existing blue L/RBP favicon artwork unchanged.
