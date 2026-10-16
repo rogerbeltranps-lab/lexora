@@ -1,5 +1,12 @@
 # Lexora changelog
 
+## 2026-10-16 · Working brand decision (documentation only)
+- Adopted **LooKitUp** (exact capitalization) as the working brand for the prototype, inspired by “look it up.”
+- Keep **Read. Discover. Remember.**, the existing rounded blue L/RBP favicon, and the goal of easy contextual word/idiom capture. Public-language support can expand to English, Spanish and other languages.
+- **No implementation rename:** the live app, repository, URLs, manifest, Firebase/data identifiers and user's saved content remain Lexora. Trademark/domain clearance is deferred until a possible public launch; similar lookup products already use this phrase.
+- Updated the consolidated README and documentation-agent guardrail; Lexitale is no longer the preferred candidate.
+
+
 ## 2026-10-16 · 39 — Remove blurred iPhone top status bar
 - Replace the installed iPhone app's `black-translucent` status-bar mode with an **opaque black** status bar. This avoids the grey-to-navy system translucency/scroll-edge gradient visible above the app's header in the user screenshot.
 - Set the PWA/browser `theme-color` to Lexora's header navy (light: `#122c42`, dark: `#15212c`) while outside immersive reading, rather than the pale content background; keep existing full-screen reader theme-color behavior.
