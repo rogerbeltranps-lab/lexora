@@ -12,7 +12,7 @@ jobs:
         run: |
           curl --fail --location --retry 3 --output /tmp/kaikki-phrase.jsonl \
             "https://kaikki.org/dictionary/English/pos-phrase/kaikki.org-dictionary-English-by-pos-phrase.jsonl"
-      - name: Convert to compact Lexora shards
+      - name: Convert to compact LumoUp shards
         run: python3 scripts/import_kaikki.py /tmp/kaikki-phrase.jsonl
       - name: Commit generated dictionary files
         run: |
