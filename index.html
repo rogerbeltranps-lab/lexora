@@ -186,7 +186,7 @@ function syncAppChrome(){
  if(meta)meta.content=resolvedReadingTheme()==="black"?"#15212c":"#122c42";
 }
 function updateReaderTheme(){readingTheme=resolvedReadingTheme();applyAppThemeRoot();$("reader").classList.remove("dark","black","white","sepia");$("reader").classList.add(readingTheme);syncAppChrome()}
-function setReaderMode(){const isGuide=currentBook==="guide";$("guide").hidden=!isGuide;$("epub-view").style.display=isGuide?"none":"block";$("chapter").hidden=!isGuide;$("reader").style.setProperty("--reader-size",size+"px");updateReaderTheme();if(isGuide)renderGuide();else{$("position").textContent="EPUB reader";$("prev").disabled=false;$("next").disabled=false}}
+function setReaderMode(){const isGuide=currentBook==="guide";$("guide").hidden=!isGuide;$("epub-view").style.display=isGuide?"none":"block";$("chapter").hidden=!isGuide;$("reader").style.setProperty("--reader-size",size+"px");updateReaderTheme();if(isGuide)renderGuide();else{$("position").textContent="EPUB reader";$("prev").disabled=false;$("next").disabled=false}window.dispatchEvent(new Event("lexora:book-selected"))}
 function openDB(){return new Promise((ok,no)=>{const req=indexedDB.open("lexora-books",1);req.onupgradeneeded=()=>req.result.createObjectStore("books");req.onsuccess=()=>ok(req.result);req.onerror=()=>no(req.error)})}
 async function putBook(id,file){const db=await openDB();return new Promise((ok,no)=>{const tx=db.transaction("books","readwrite");tx.objectStore("books").put(file,id);tx.oncomplete=()=>{db.close();ok()};tx.onerror=()=>no(tx.error)})}
 async function getBook(id){const db=await openDB();return new Promise((ok,no)=>{const tx=db.transaction("books","readonly"),r=tx.objectStore("books").get(id);r.onsuccess=()=>{db.close();ok(r.result)};r.onerror=()=>no(r.error)})}
@@ -194,7 +194,81 @@ function renderBookList(){$("booklist").innerHTML='<option value="guide">The Lum
 // Books from the cloud library are downloaded the first time they are opened here, then kept for offline reading.
 function bookCloud(){return window.lexoraBookCloud||window.lexoraAuthKnown?Promise.resolve(window.lexoraBookCloud||null):new Promise(ok=>{const t=setTimeout(()=>ok(null),10000);addEventListener("lexora:book-cloud",()=>{clearTimeout(t);ok(window.lexoraBookCloud||null)},{once:true})})}
 async function fetchCloudBook(id){const entry=bookNames.find(x=>x.id===id);if(!entry?.cloud)return null;const cloud=await bookCloud();if(cloud?.uid!==entry.cloud)throw Error("Sign in with the Google account that added this book to download it");$("position").textContent="Downloading book…";const file=await cloud.download(id);await putBook(id,file);return file}
-async function showBook(id){if(rendition){try{rendition.destroy()}catch{}rendition=null}if(ebook){try{ebook.destroy()}catch{}ebook=null}currentBook=id;store("book",id);renderBookList();setReaderMode();if(id==="guide")return;if(typeof ePub!=="function"){toast("EPUB engine unavailable. Check internet access.");return}try{const file=await getBook(id)||await fetchCloudBook(id);if(!file)throw Error("Book not found on this device");ebook=ePub(await file.arrayBuffer());ebook.spine.hooks.content.register(sanitizeChapter);rendition=ebook.renderTo("epub-view",{width:"100%",height:"100%",spread:"none",flow:"paginated",allowScriptedContent:true});applyEpubAppearance();const showPosition=location=>{const pct=ebook?.locations?.length()?ebook.locations.percentageFromCfi(location.start.cfi):null;$("position").textContent="Reading EPUB"+(pct!=null?" · "+Math.round(pct*100)+"%":"")};rendition.on("relocated",location=>{if(location?.start?.cfi){store("cfi-"+id,location.start.cfi);showPosition(location)}});await rendition.display(load("cfi-"+id,null)||undefined);const book=ebook;book.locations.generate(1600).then(()=>{if(ebook!==book||!rendition)return;const location=rendition.currentLocation();if(location?.start?.cfi)showPosition(location)}).catch(()=>{});return true}catch(e){toast("Could not open EPUB: "+e.message);currentBook="guide";store("book","guide");renderBookList();setReaderMode();return false}}
+// Store the EPUB CFI (precise text location) rather than a screen-dependent page number.
+let epubPositionReady=false,bookLoadToken=0;
+function rememberEpubPage(){
+ if(!epubPositionReady||currentBook==="guide"||!rendition)return;
+ try{const cfi=rendition.currentLocation()?.start?.cfi;if(cfi)store("cfi-"+currentBook,cfi)}catch{}
+}
+window.addEventListener("pagehide",rememberEpubPage);
+document.addEventListener("visibilitychange",()=>{if(document.hidden)rememberEpubPage()});
+window.lexoraReaderPosition={
+ current:()=>{
+  if(!epubPositionReady||currentBook==="guide"||!rendition)return null;
+  const cfi=rendition.currentLocation()?.start?.cfi;
+  if(!cfi)return null;
+  let percent=null;
+  try{if(ebook?.locations?.length())percent=ebook.locations.percentageFromCfi(cfi)}catch{}
+  return {bookId:currentBook,cfi,percent:Number.isFinite(percent)?percent:null};
+ },
+ jump:async cfi=>{
+  if(!epubPositionReady||currentBook==="guide"||!rendition||typeof cfi!=="string")throw Error("No open EPUB");
+  await rendition.display(cfi);
+  rememberEpubPage();
+ }
+};
+async function showBook(id){
+ rememberEpubPage();
+ epubPositionReady=false;
+ const token=++bookLoadToken;
+ if(rendition){try{rendition.destroy()}catch{}rendition=null}
+ if(ebook){try{ebook.destroy()}catch{}ebook=null}
+ currentBook=id;store("book",id);renderBookList();setReaderMode();
+ if(id==="guide")return;
+ if(typeof ePub!=="function"){toast("EPUB engine unavailable. Check internet access.");return}
+ try{
+  const file=await getBook(id)||await fetchCloudBook(id);
+  if(token!==bookLoadToken)return false;
+  if(!file)throw Error("Book not found on this device");
+  ebook=ePub(await file.arrayBuffer());
+  ebook.spine.hooks.content.register(sanitizeChapter);
+  rendition=ebook.renderTo("epub-view",{width:"100%",height:"100%",spread:"none",flow:"paginated",allowScriptedContent:true});
+  const openedRendition=rendition,openedBook=ebook;
+  applyEpubAppearance();
+  const showPosition=location=>{
+   let pct=null;
+   try{if(openedBook.locations.length())pct=openedBook.locations.percentageFromCfi(location.start.cfi)}catch{}
+   $("position").textContent="Reading EPUB"+(pct!=null?" · "+Math.round(pct*100)+"%":"");
+  };
+  openedRendition.on("relocated",location=>{
+   if(!epubPositionReady||token!==bookLoadToken||rendition!==openedRendition)return;
+   if(location?.start?.cfi){store("cfi-"+id,location.start.cfi);showPosition(location)}
+  });
+  const savedCfi=load("cfi-"+id,null);
+  try{await openedRendition.display(savedCfi||undefined)}
+  catch(error){
+   if(!savedCfi)throw error;
+   // A corrupt or outdated CFI must not block the book from opening.
+   await openedRendition.display();
+  }
+  if(token!==bookLoadToken||rendition!==openedRendition)return false;
+  epubPositionReady=true;
+  const visible=openedRendition.currentLocation();
+  if(visible?.start?.cfi){store("cfi-"+id,visible.start.cfi);showPosition(visible)}
+  window.dispatchEvent(new Event("lexora:book-selected"));
+  openedBook.locations.generate(1600).then(()=>{
+   if(token!==bookLoadToken||ebook!==openedBook||rendition!==openedRendition)return;
+   const location=openedRendition.currentLocation();
+   if(location?.start?.cfi)showPosition(location)
+  }).catch(()=>{});
+  return true;
+ }catch(e){
+  if(token!==bookLoadToken)return false;
+  toast("Could not open EPUB: "+e.message);
+  currentBook="guide";store("book","guide");renderBookList();setReaderMode();
+  return false;
+ }
+}
 // iOS Safari ignores every event listener inside a book page whose iframe may not run scripts (taps, swipes, selections),
 // so the book frame allows scripts and each chapter loses its own scripts, handlers and embeds before it is shown.
 function sanitizeChapter(doc){
@@ -233,9 +307,9 @@ function applyEpubAppearance(keepPlace=false){if(!rendition)return;const cfi=kee
 if(cfi){const r=rendition;setTimeout(()=>{if(rendition===r)r.display(cfi).catch(()=>{})},150)}}
 // The book is laid out in columns as wide as its box; when the box changes (full screen, rotation) the columns must be rebuilt or the next page shows at the edge.
 let epubResizeTimer;if(window.ResizeObserver)new ResizeObserver(()=>{clearTimeout(epubResizeTimer);epubResizeTimer=setTimeout(()=>{const view=$("epub-view");if(rendition&&view.clientWidth&&view.clientHeight){try{rendition.resize()}catch{}}},120)}).observe($("epub-view"));
-async function deleteBook(id){const entry=bookNames.find(x=>x.id===id);if(!entry||!confirm("Remove “"+entry.name+"” from "+(entry.cloud?"your cloud library and all your devices":"this device")+"? Your flashcards stay."))return;try{const db=await openDB();await new Promise((ok,no)=>{const tx=db.transaction("books","readwrite");tx.objectStore("books").delete(id);tx.oncomplete=()=>{db.close();ok()};tx.onerror=()=>no(tx.error)})}catch(err){toast("Could not remove the book: "+err.message);return}bookNames=bookNames.filter(x=>x.id!==id);store("booknames",bookNames);localStorage.removeItem("lexora-cfi-"+id);if(entry.cloud){store("book-deletions",[...load("book-deletions",[]),{id,uid:entry.cloud}]);dispatchEvent(new Event("lexora:books-changed"))}renderBookList();$("booklist").value="guide";$("booklist").dispatchEvent(new Event("change"));toast("Book removed")}
+async function deleteBook(id){const entry=bookNames.find(x=>x.id===id);if(!entry||!confirm("Remove “"+entry.name+"” from "+(entry.cloud?"your cloud library and all your devices":"this device")+"? Your flashcards stay."))return;try{const db=await openDB();await new Promise((ok,no)=>{const tx=db.transaction("books","readwrite");tx.objectStore("books").delete(id);tx.oncomplete=()=>{db.close();ok()};tx.onerror=()=>no(tx.error)})}catch(err){toast("Could not remove the book: "+err.message);return}bookNames=bookNames.filter(x=>x.id!==id);store("booknames",bookNames);localStorage.removeItem("lexora-cfi-"+id);localStorage.removeItem("lexora-bookmarks-"+id);if(entry.cloud){store("book-deletions",[...load("book-deletions",[]),{id,uid:entry.cloud}]);dispatchEvent(new Event("lexora:books-changed"))}renderBookList();$("booklist").value="guide";$("booklist").dispatchEvent(new Event("change"));toast("Book removed")}
 // Book list access for book-sync.js. An entry's cloud field names the account whose cloud library holds it.
-async function forgetBook(id){try{const db=await openDB();await new Promise((ok,no)=>{const tx=db.transaction("books","readwrite");tx.objectStore("books").delete(id);tx.oncomplete=()=>{db.close();ok()};tx.onerror=()=>no(tx.error)})}catch{}bookNames=bookNames.filter(x=>x.id!==id);store("booknames",bookNames);localStorage.removeItem("lexora-cfi-"+id);if(currentBook===id)showBook("guide");else renderBookList()}
+async function forgetBook(id){try{const db=await openDB();await new Promise((ok,no)=>{const tx=db.transaction("books","readwrite");tx.objectStore("books").delete(id);tx.oncomplete=()=>{db.close();ok()};tx.onerror=()=>no(tx.error)})}catch{}bookNames=bookNames.filter(x=>x.id!==id);store("booknames",bookNames);localStorage.removeItem("lexora-cfi-"+id);localStorage.removeItem("lexora-bookmarks-"+id);if(currentBook===id)showBook("guide");else renderBookList()}
 window.lexoraBookBridge={list:()=>bookNames.map(x=>({...x})),getLocal:getBook,addRemote:entry=>{if(bookNames.some(x=>x.id===entry.id))return;bookNames.push(entry);store("booknames",bookNames);renderBookList()},markCloud:(id,uid)=>{const entry=bookNames.find(x=>x.id===id);if(entry){entry.cloud=uid;store("booknames",bookNames)}},forget:forgetBook,deletions:uid=>load("book-deletions",[]).filter(x=>x.uid===uid).map(x=>x.id),clearDeletion:(uid,id)=>store("book-deletions",load("book-deletions",[]).filter(x=>!(x.uid===uid&&x.id===id)))};
 function choose(term,source=""){selected=term.trim().slice(0,500);context=source.trim().slice(0,1200);$("lookup").value=selected;renderDiscovery()}
 function findKnown(term){const needle=term.trim().toLowerCase().replace(/[.,!?;:]+$/,"");return cards.find(c=>c.term.toLowerCase()===needle)||glossary.find(c=>c.term.toLowerCase()===needle)||glossary.find(c=>needle.includes(c.term.toLowerCase())&&c.term.length>5)||null}
@@ -277,4 +351,4 @@ $("flash").onclick=()=>{if(current()){flipped=!flipped;renderReview()}};$("audio
 $("export").onclick=()=>{const b=new Blob([JSON.stringify({format:"lexora-v1",cards,reviews},null,2)],{type:"application/json"}),url=URL.createObjectURL(b),a=document.createElement("a");a.href=url;a.download="lumoup-backup.json";a.click();setTimeout(()=>URL.revokeObjectURL(url),1500)};$("import").onclick=()=>$("import-json").click();$("import-json").onchange=async e=>{try{const data=JSON.parse(await e.target.files[0].text());if(!Array.isArray(data.cards)||!data.cards.every(c=>c.id&&c.term&&c.definition))throw Error("Invalid format");let m=new Map(cards.map(c=>[c.id,c]));data.cards.forEach(c=>m.set(c.id,c));cards=[...m.values()];reviews={...reviews,...(data.reviews||{})};store("cards",cards);store("reviews",reviews);window.dispatchEvent(new Event("lexora:changed"));renderCards();toast("Backup imported")}catch(err){toast("Import failed: "+err.message)}e.target.value=""};
 window.lexoraSyncBridge={read:()=>({cards:cards.map(c=>({...c})),reviews:{...reviews}}),apply:merged=>{const map=new Map(cards.map(c=>[c.id,c]));for(const c of merged.cards||[])if(c?.id)map.set(c.id,c);cards=[...map.values()];reviews={...reviews,...merged.reviews};store("cards",cards);store("reviews",reviews);renderCards();}};
 setupChapterList();renderBookList();setReaderMode();renderStats();if(currentBook!=="guide")showBook(currentBook);if("serviceWorker"in navigator&&(location.protocol==="https:"||location.hostname==="localhost"))navigator.serviceWorker.register("./sw.js").catch(()=>{});
-</script><script src="./dictionary.js"></script><script src="./narration.js"></script><script src="./reader-selection.js"></script><script src="./reader-keys.js"></script><script src="./app-update.js"></script><script src="./audio-check.js"></script><script type="module" src="./firebase-sync.js"></script></body></html>
+</script><script src="./dictionary.js"></script><script src="./narration.js"></script><script src="./reader-bookmarks.js"></script><script src="./reader-selection.js"></script><script src="./reader-keys.js"></script><script src="./app-update.js"></script><script src="./audio-check.js"></script><script type="module" src="./firebase-sync.js"></script></body></html>
