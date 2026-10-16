@@ -616,18 +616,51 @@ function highlight(){
  }
  $("lex-status").textContent="Sentence "+(index+1)+" / "+items.length
 }
-// Turn the page with the narration instead of leaving the highlight on a page that is not shown.
+// Keep the current spoken sentence visible, including when EPUB text is several
+// columns ahead. A single next() per sentence leaves fast narration behind.
+let epubFollowTask=null,epubFollowSession=-1;
+function epubSentenceDirection(item){
+ const range=item?.range,doc=range?.startContainer?.ownerDocument||item?.el?.ownerDocument;
+ if(!doc||!item?.el?.isConnected)return null;
+ const frame=[...epubHost.querySelectorAll("iframe")].find(f=>{try{return f.contentDocument===doc}catch{return false}});
+ if(!frame)return null;
+ const rect=[...(range?.getClientRects?.()||[])].find(r=>r.width>1&&r.height>1)||item.el.getBoundingClientRect();
+ const frameRect=frame.getBoundingClientRect(),view=epubHost.getBoundingClientRect();
+ const left=frameRect.left+rect.left,right=frameRect.left+rect.right;
+ if(right<=view.left+4)return -1;
+ if(left>=view.right-4)return 1;
+ return 0;
+}
+function followEpubNarration(){
+ if(typeof rendition==="undefined"||!rendition)return;
+ if(epubFollowTask&&epubFollowSession===run)return;
+ const session=run,book=rendition;
+ epubFollowSession=session;
+ const task=(async()=>{
+  let stalled=0;
+  for(let turns=0;turns<40;turns++){
+   if(session!==run||!playing||!followingAudio||mode!=="both"||rendition!==book)break;
+   const item=items[index],direction=epubSentenceDirection(item);
+   if(direction===null)break;
+   if(!direction){drawEpubSentence(item.range);break}
+   const before=book.currentLocation?.()?.start?.cfi;
+   try{
+    if(direction>0)await book.next();else await book.prev();
+    // EPUB.js recalculates columns after the navigation promise resolves.
+    await new Promise(resolve=>setTimeout(resolve,110));
+   }catch{break}
+   if(session!==run||!playing||!followingAudio||rendition!==book)break;
+   const after=book.currentLocation?.()?.start?.cfi;
+   if(before&&after&&before===after){if(++stalled>=2)break}else stalled=0;
+  }
+  if(session===run&&playing&&followingAudio&&rendition===book)drawEpubSentence(items[index]?.range);
+ })();
+ epubFollowTask=task;
+ task.finally(()=>{if(epubFollowTask===task){epubFollowTask=null;epubFollowSession=-1}});
+}
 function followPage(el,range){
  if(guideEl.classList.contains("lex-paginated")){const page=el.closest(".lex-book-page"),i=page?Array.prototype.indexOf.call(guideEl.children,page):-1;if(i>=0&&i!==guidePageIndex){guidePageIndex=i;guideEl.scrollTo({left:i*guideEl.clientWidth,behavior:"smooth"})}return}
- if(el.ownerDocument!==document){try{
-  const frame=document.querySelector("#epub-view iframe"),view=$("epub-view").getBoundingClientRect();
-  const target=range?.getClientRects()?.[0]||el.getBoundingClientRect();
-  const x=frame.getBoundingClientRect().left+target.left;
-  if(Date.now()-lastAutoTurn>450&&typeof rendition!=="undefined"&&rendition){
-   if(x>=view.right-2){lastAutoTurn=Date.now();rendition.next()}
-   else if(x<view.left-2){lastAutoTurn=Date.now();rendition.prev()}
-  }
- }catch{}return}
+ if(el.ownerDocument!==document){followEpubNarration();return}
  el.scrollIntoView?.({block:"nearest",behavior:"smooth"})
 }
 // The system voice is the narrator. Begin in the user's gesture on iOS.
@@ -635,7 +668,10 @@ function play(auto=false){
  window.lexoraSpeech?.unlock();
  if(!items.length&&!prepare(true))return;
  if(!window.speechSynthesis||!window.lexoraSpeech){$("lex-status").textContent="Device voice unavailable. Try Settings → Audio check.";return}
- const session=++run;playing=true;inspect.hidden=true;syncPlaybackButtons();
+ const session=++run;playing=true;inspect.hidden=true;
+ if(!auto)followingAudio=true; // An explicit Play reattaches the text to narration.
+ syncPlaybackButtons();
+ window.dispatchEvent(new Event("lexora:narration-started"));
  // Start the hide timer after playback state changes. Keep bottom controls visible.
  if(!auto)showControls();
  const speed=()=>Math.max(.5,Math.min(2,Number(JSON.parse(localStorage.getItem("lexora-voice-speed")||"0.9"))||0.9));
