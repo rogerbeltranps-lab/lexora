@@ -453,22 +453,22 @@ if(typeof originalChoose==="function"){
 
 function sentences(s){return (s.match(/[^.!?]+(?:[.!?]+(?=\s|$)|$)/g)||[]).map(v=>v.trim()).filter(v=>/[a-z]/i.test(v))}
 function cancelSegmentTimers(){segmentTimers.forEach(clearTimeout);segmentTimers=[]}
-/* A native-voice utterance with two or three sentences keeps Apple's natural
-   punctuation without a full speechSynthesis restart at every full stop. */
+/* Keep native speech flowing across sentences and paragraphs, avoiding
+   repeated onend/onstart gaps. Preserve spoken character positions for highlighting. */
 function narrationChunk(from){
- const anchor=liveEl(from)?.closest?.("p,li,blockquote"),starts=[],words=[];
- let chars=0,end=from;
- while(end<items.length&&words.length<3){
-  const current=liveEl(end)?.closest?.("p,li,blockquote");
-  if(end>from&&current!==anchor)break;
+ const starts=[],phrases=[];let chars=0,end=from;
+ while(end<items.length&&phrases.length<7){
   const next=(end===from&&wordStartOffset>0?String(items[end]?.text||"").slice(wordStartOffset):String(items[end]?.text||"")).trim();
   if(!next){end++;continue}
-  if(words.length&&chars+next.length+1>320)break;
-  starts.push(chars+(words.length?1:0));
-  words.push(next);chars+=next.length+(words.length>1?1:0);end++;
+  if(phrases.length&&chars+next.length+1>450)break;
+  starts.push(chars+(phrases.length?1:0));
+  phrases.push(next);chars+=next.length+(phrases.length>1?1:0);end++;
  }
- if(end<=from){words.push(items[from].text);starts.push(0);end=from+1}
- return {text:words.join(" "),starts,end,from}
+ if(end<=from){phrases.push(items[from].text);starts.push(0);end=from+1}
+ // A one-character punctuation substitution shortens period pauses on iOS.
+ // The EPUB and the range offsets are not modified.
+ const text=phrases.map((part,i)=>i<phrases.length-1?part.replace(/\.(?=\s*$)/,","):part).join(" ");
+ return {text,starts,end,from}
 }
 function clear(){
  if(activeHighlightDoc){try{activeHighlightDoc.defaultView?.CSS?.highlights?.delete("lexora-current-sentence")}catch{}activeHighlightDoc=null}
@@ -661,7 +661,7 @@ function play(auto=false){
   cancelSegmentTimers();
   if(index>=items.length){continueReading();return}
   const chunk=narrationChunk(index);wordStartOffset=0;index=chunk.from;highlight();
-  let started=false,finished=false,hasBoundary=false;
+  let started=false,finished=false,lastBoundaryAt=0;
   function showSentence(i){
    if(session!==run||!playing||i===index||i<chunk.from||i>=chunk.end)return;
    index=i;highlight();
@@ -679,12 +679,12 @@ function play(auto=false){
     for(let i=chunk.from+1;i<chunk.end;i++){
      const words=items[i-1].text.trim().split(/\s+/).length;
      delay+=Math.max(600,words*60000/(165*speed())+200);
-     segmentTimers.push(setTimeout(()=>{if(!hasBoundary)showSentence(i)},delay));
+     segmentTimers.push(setTimeout(()=>{if(Date.now()-lastBoundaryAt>1100)showSentence(i)},delay));
     }
    },
    onboundary:e=>{
     if(session!==run||!playing||typeof e.charIndex!=="number"||e.charIndex<=0)return;
-    hasBoundary=true;let position=chunk.from;
+    lastBoundaryAt=Date.now();let position=chunk.from;
     for(let k=1;k<chunk.starts.length;k++)if(e.charIndex>=chunk.starts[k])position=chunk.from+k;
     showSentence(position);
    },
