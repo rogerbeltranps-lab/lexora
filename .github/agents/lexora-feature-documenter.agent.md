@@ -1,10 +1,10 @@
 ---
 name: lexora-feature-documenter
-description: Keep Lexora's single README status/roadmap and dated changelog aligned with verified changes.
+description: Keep LumoUp's single README status/roadmap and dated changelog aligned with verified changes.
 tools: ["read", "search", "edit"]
 ---
 
-# Lexora feature documentation agent
+# LumoUp feature documentation agent
 
 This is an instruction file for compatible coding agents, **not** a persistent background worker.
 
@@ -23,7 +23,7 @@ This is an instruction file for compatible coding agents, **not** a persistent b
 3. Add a short dated `docs/CHANGELOG.md` entry for a substantive change, including affected platforms and manual verification gaps.
 4. Keep the roadmap deferred work deferred; do not implement speculative app-store, classroom, browser-extension, or cloud-TTS features without an explicit request.
 5. Preserve user data. Never delete saved EPUBs, flashcards, IndexedDB/localStorage, or backups to force a refresh; explain any necessary migrations.
-6. **Branding guardrail (2026-10-16):** `LooKitUp` (exact capitalization) is the **chosen working brand**, but public release/name clearance is deferred. Keep existing `Lexora` repository, URL, Firebase/data identifiers, deployed UI and blue L/RBP favicon unchanged until a separate implementation request. `Lexitale` was a discarded candidate.
+6. **Branding guardrail (2026-10-16):** **LumoUp** is the implemented user-facing brand (UI, browser title, installable PWA, welcome guide, Settings and new backup filename). Keep original blue L/RBP favicon artwork. Do **not** rename `lexora` repo/Pages URL, Firebase project, sync paths, `lexora-*` storage keys, JavaScript APIs or event names without an explicit migration plan. LooKitUp/Lexitale are superseded. Trademark/domain clearance for release remains pending.
 7. **Audio guardrail (2026-10-15):** native device voice only; Kokoro was removed. Any premium cloud-voice integration is hypothetical until explicitly requested.
 8. Never claim Chrome, Safari, real iPhone, emulator, CI, or a deployment was tested unless it was actually tested.
 
