@@ -10,7 +10,7 @@ const provider=new GoogleAuthProvider();
 provider.setCustomParameters({prompt:"select_account"});
 const bridge=window.lexoraSyncBridge;
 const login=document.getElementById("lex-cloud-login"),logout=document.getElementById("lex-cloud-logout"),syncBtn=document.getElementById("lex-cloud-sync"),status=document.getElementById("lex-cloud-status");
-let uid=null,unsubscribe=null,stopBooks=null,busy=false,queued=false,queuedImmediate=false,clock=null,ready=false,loginFailure="";
+let uid=null,unsubscribe=null,stopBooks=null,busy=false,queued=false,queuedImmediate=false,clock=null,ready=false,loginFailure="",retryAfterConnection=false;
 const message=t=>{status.textContent=t};
 const booksStatus=document.getElementById("lex-cloud-books");
 const booksMessage=t=>{if(booksStatus)booksStatus.textContent=t};
@@ -77,6 +77,7 @@ async function synchronize(){
    return {merged,wrote};
   });
   if(uid===currentUid){
+   retryAfterConnection=false;
    // A flashcard may have been saved WHILE the transaction was in flight.
    // Re-merge the latest local state instead of replacing it with an older snapshot.
    const latest=bridge.read(),combined=merge(latest,result.merged);
@@ -89,6 +90,7 @@ async function synchronize(){
  }catch(e){
   console.error("Lexora cloud sync",e);
   const code=e.code||e.message;
+  if(["unavailable","deadline-exceeded","network-request-failed","failed-precondition"].includes(code))retryAfterConnection=true;
   const hint=code==="permission-denied"?" Revisa a Firebase → Firestore → Rules que la regla de users/{userId} estigui publicada, i que App Check no estigui en mode «Enforce» per a Firestore.":code==="unavailable"?" Sense connexió; es tornarà a provar quan canviïs alguna targeta.":"";
   message("No s'ha pogut desar a Firestore: "+code+"."+hint+" Les dades locals es conserven.");setBadge("⚠ Sense sincronitzar");
  }
@@ -147,6 +149,8 @@ window.addEventListener("lexora:changed",event=>{
  // Reviews and bulk imports still use a short 650 ms debounce.
  queueSync(event?.detail?.kind==="flashcard");
 });
+// Retry a failed offline save as soon as the device reconnects; no polling.
+window.addEventListener("online",()=>{if(retryAfterConnection)queueSync(true)});
 onAuthStateChanged(auth,async user=>{
  if(unsubscribe){unsubscribe();unsubscribe=null}
  if(stopBooks){stopBooks();stopBooks=null}
@@ -154,7 +158,7 @@ onAuthStateChanged(auth,async user=>{
  // The reader waits for this before deciding whether a cloud book can be downloaded.
  window.lexoraAuthKnown=true;
  if(user)stopBooks=startBookSync(db,user.uid,booksMessage);else{booksMessage("");dispatchEvent(new Event("lexora:book-cloud"))}
-ready=false;queued=false;queuedImmediate=false;showGate(!user&&!skipped());clearTimeout(clock);clock=null;if(user){loginFailure="";authMessage("Google: connectat · "+(user.email||"usuari autenticat"))}else if(!loginFailure){authMessage("Google: sessió no iniciada")}
+ready=false;queued=false;queuedImmediate=false;retryAfterConnection=false;showGate(!user&&!skipped());clearTimeout(clock);clock=null;if(user){loginFailure="";authMessage("Google: connectat · "+(user.email||"usuari autenticat"))}else if(!loginFailure){authMessage("Google: sessió no iniciada")}
  login.hidden=!!user;logout.hidden=!user;syncBtn.hidden=!user;
  if(!user){message("Firestore: sense sincronització; les targetes es desen localment.");setBadge("Personal · local mode");return}
  message("Connectat com "+(user.email||"Google")+". Fusionant dades...");
