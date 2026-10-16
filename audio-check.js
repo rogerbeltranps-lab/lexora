@@ -1,8 +1,8 @@
-/* Lexora audio check: on-device diagnostics for when the iPhone stays silent. Writes nothing to storage. */
+/* LumoUp audio check: on-device diagnostics for when the iPhone stays silent. Writes nothing to storage. */
 (()=>{"use strict";
 const anchor=document.getElementById("test-voice")?.closest(".buttonrow");if(!anchor)return;
 const box=document.createElement("div");box.className="panel";box.style.cssText="margin:12px 0;padding:12px";
-box.innerHTML='<b>Audio check</b><p class="small muted">If you hear nothing, tap each test, then “Copy report” and paste it to Claude.</p><div class="buttonrow"><button class="btn" type="button" id="ac-beep">1 · Beep</button><button class="btn" type="button" id="ac-plain">2 · Plain voice</button><button class="btn" type="button" id="ac-lexora">3 · Lexora voice</button><button class="btn" type="button" id="ac-copy">Copy report</button></div><pre id="ac-log" style="white-space:pre-wrap;font-size:11px;max-height:260px;overflow:auto;margin-top:8px"></pre>';
+box.innerHTML='<b>Audio check</b><p class="small muted">If you hear nothing, tap each test, then “Copy report” and paste it to Claude.</p><div class="buttonrow"><button class="btn" type="button" id="ac-beep">1 · Beep</button><button class="btn" type="button" id="ac-plain">2 · Plain voice</button><button class="btn" type="button" id="ac-lexora">3 · LumoUp voice</button><button class="btn" type="button" id="ac-copy">Copy report</button></div><pre id="ac-log" style="white-space:pre-wrap;font-size:11px;max-height:260px;overflow:auto;margin-top:8px"></pre>';
 anchor.after(box);
 const out=box.querySelector("#ac-log"),t0=Date.now(),synth=window.speechSynthesis;
 const log=m=>{out.textContent+="["+((Date.now()-t0)/1000).toFixed(1)+"s] "+m+"\n"};
@@ -30,7 +30,7 @@ box.querySelector("#ac-plain").onclick=()=>{
 box.querySelector("#ac-lexora").onclick=()=>{
  if(!window.lexoraSpeech){log("lexora: speech.js not loaded");return}
  log("lexora: speak, before "+state());
- lexoraSpeech.speak("This is the Lexora voice test.",{voiceURI:JSON.parse(localStorage.getItem("lexora-voice-choice")||'""'),onstart:()=>log("lexora: start"),onend:()=>log("lexora: end"),onerror:e=>log("lexora: error "+e)});watch("lexora");
+ lexoraSpeech.speak("This is the LumoUp voice test.",{voiceURI:JSON.parse(localStorage.getItem("lexora-voice-choice")||'""'),onstart:()=>log("lexora: start"),onend:()=>log("lexora: end"),onerror:e=>log("lexora: error "+e)});watch("lexora");
 };
 box.querySelector("#ac-copy").onclick=async()=>{try{await navigator.clipboard.writeText(out.textContent);log("report copied")}catch{const r=document.createRange();r.selectNodeContents(out);const s=getSelection();s.removeAllRanges();s.addRange(r);log("select the text above and copy it")}};
 })();
