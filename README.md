@@ -162,3 +162,10 @@ The old standalone `ROADMAP.md` and `docs/FEATURES.md` were consolidated into th
 - The flashcard editor avoids Safari's zoom-on-focus by using inputs of at least 16px and a keyboard-friendly scrollable modal; pinch zoom remains enabled.
 - **Settings → Appearance → App theme:** **Match my device** (default), **Light** or **Dark**. The preference applies to the library, editor, settings, reader, menus and EPUB and persists across sessions.
 - Version 37 / PWA shell v36. Changes have passed static and logic checks but must still be verified on a physical iPhone (cover page, keyboard/editor, selected word, voice behavior and theme switching). No clearing of personal EPUBs, flashcards or review history.
+
+## Firestore sync efficiency (October 16, 2026)
+
+- Flashcards are **saved locally first**, then an immediate Firestore synchronization is requested after each successful create/edit. The UI confirms the write when Firebase responds; offline changes remain locally saved and will sync when the connection comes back.
+- No-op checks are **read-only**: Lexora compares canonical card and review content and does not write again merely because Firestore reordered fields/cards or updated its timestamp. Other-device changes still arrive through Firestore's realtime listener.
+- Review ratings and bulk imports still use the 650 ms debounce; synchronization calls already in flight are coalesced and preserve cards saved during a pending transaction.
+- Version 38 (PWA shell v37). Mocked Firestore tests cover unchanged reads, a newly saved card, and avoiding duplicate writes; the exact behavior on physical iPhone and on multiple active browsers still needs live verification.

@@ -10,7 +10,7 @@ const provider=new GoogleAuthProvider();
 provider.setCustomParameters({prompt:"select_account"});
 const bridge=window.lexoraSyncBridge;
 const login=document.getElementById("lex-cloud-login"),logout=document.getElementById("lex-cloud-logout"),syncBtn=document.getElementById("lex-cloud-sync"),status=document.getElementById("lex-cloud-status");
-let uid=null,unsubscribe=null,stopBooks=null,busy=false,queued=false,clock=null,ready=false,loginFailure="";
+let uid=null,unsubscribe=null,stopBooks=null,busy=false,queued=false,queuedImmediate=false,clock=null,ready=false,loginFailure="",retryAfterConnection=false;
 const message=t=>{status.textContent=t};
 const booksStatus=document.getElementById("lex-cloud-books");
 const booksMessage=t=>{if(booksStatus)booksStatus.textContent=t};
@@ -43,32 +43,75 @@ function merge(local,remote){
  }
  return {cards:[...map.values()],reviews};
 }
-const same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
+/* Firestore can reorder card arrays and object keys. Those are NOT user edits.
+   Compare only actual card/review content, ignoring server updatedAt metadata. */
+function canonical(value){
+ if(Array.isArray(value))return value.map(canonical);
+ if(value&&typeof value==="object"){
+  const out={};for(const key of Object.keys(value).sort())out[key]=canonical(value[key]);return out;
+ }
+ return value;
+}
+function signature(data){
+ const cards=(Array.isArray(data?.cards)?data.cards:[])
+   .filter(validCard).slice().sort((a,b)=>a.id.localeCompare(b.id));
+ return JSON.stringify(canonical({cards,reviews:data?.reviews||{}}));
+}
+const same=(a,b)=>signature(a)===signature(b);
 async function synchronize(){
  if(!uid||!bridge)return;
  if(busy){queued=true;return}
+ clearTimeout(clock);clock=null;
  busy=true;message("Firestore: sincronitzant...");setBadge("☁ Sincronitzant…");
  const currentUid=uid;
  try{
   const reference=doc(db,"users",currentUid,"state","lexora");
-  // Transaction ensures we never replace the remote collection with only one device's cards.
+  // Merge under a transaction so concurrent devices cannot overwrite each other.
+  // Crucially, a read-only sync does not issue tx.set and costs ZERO writes.
   const result=await runTransaction(db,async tx=>{
-   const remoteSnap=await tx.get(reference);
-   const local=bridge.read();
-   const merged=merge(local,remoteSnap.exists()?remoteSnap.data():null);
-   tx.set(reference,{...merged,updatedAt:new Date().toISOString()});
-   return merged;
+   const snap=await tx.get(reference);
+   const remote=snap.exists()?snap.data():null;
+   const merged=merge(bridge.read(),remote);
+   const wrote=!snap.exists()||!same(merged,remote);
+   if(wrote)tx.set(reference,{...merged,updatedAt:new Date().toISOString()});
+   return {merged,wrote};
   });
-  if(uid===currentUid){bridge.apply(result);message("Desat a Firestore · "+result.cards.length+" flashcards · "+new Date().toLocaleTimeString());setBadge("☁ Desat al núvol")}
+  if(uid===currentUid){
+   retryAfterConnection=false;
+   // A flashcard may have been saved WHILE the transaction was in flight.
+   // Re-merge the latest local state instead of replacing it with an older snapshot.
+   const latest=bridge.read(),combined=merge(latest,result.merged);
+   if(!same(latest,combined))bridge.apply(combined);
+   if(!same(combined,result.merged)){queued=true;queuedImmediate=true}
+   message((result.wrote?"Desat a Firestore":"Sincronitzat · sense canvis")+" · "+
+     combined.cards.length+" flashcards"+(result.wrote?" · "+new Date().toLocaleTimeString():""));
+   setBadge(result.wrote?"☁ Desat al núvol":"☁ Sincronitzat");
+  }
  }catch(e){
   console.error("Lexora cloud sync",e);
   const code=e.code||e.message;
+  if(["unavailable","deadline-exceeded","network-request-failed","failed-precondition"].includes(code))retryAfterConnection=true;
   const hint=code==="permission-denied"?" Revisa a Firebase → Firestore → Rules que la regla de users/{userId} estigui publicada, i que App Check no estigui en mode «Enforce» per a Firestore.":code==="unavailable"?" Sense connexió; es tornarà a provar quan canviïs alguna targeta.":"";
   message("No s'ha pogut desar a Firestore: "+code+"."+hint+" Les dades locals es conserven.");setBadge("⚠ Sense sincronitzar");
  }
- finally{busy=false;if(queued){queued=false;queueSync()}}
+ finally{
+  busy=false;
+  if(queued){
+   const immediate=queuedImmediate;queued=false;queuedImmediate=false;
+   queueSync(immediate);
+  }
+ }
 }
-function queueSync(){if(!uid||!ready)return;clearTimeout(clock);clock=setTimeout(synchronize,650)}
+function queueSync(immediate=false){
+ if(!uid)return;
+ if(!ready||busy){
+  queued=true;queuedImmediate=queuedImmediate||immediate;
+  return;
+ }
+ clearTimeout(clock);clock=null;
+ if(immediate)void synchronize();
+ else clock=setTimeout(()=>{clock=null;void synchronize()},650);
+}
 function authError(e){
  console.error("Lexora Google Sign-In:",e);
  const code=e?.code||"unknown";
@@ -100,8 +143,14 @@ if(gateLogin)gateLogin.onclick=()=>signIn(gateLogin);
 getRedirectResult(auth).then(result=>{if(result?.user)authMessage("Google: sessió iniciada per redirecció · "+(result.user.email||"usuari autenticat"))}).catch(authError);
 
 logout.onclick=async()=>{await signOut(auth);message("Sessió tancada. Les targetes locals es mantenen.")};
-syncBtn.onclick=()=>synchronize();
-window.addEventListener("lexora:changed",queueSync);
+syncBtn.onclick=()=>{queueSync(true)};
+window.addEventListener("lexora:changed",event=>{
+ // Creating/editing a flashcard uploads immediately after the local save.
+ // Reviews and bulk imports still use a short 650 ms debounce.
+ queueSync(event?.detail?.kind==="flashcard");
+});
+// Retry a failed offline save as soon as the device reconnects; no polling.
+window.addEventListener("online",()=>{if(retryAfterConnection)queueSync(true)});
 onAuthStateChanged(auth,async user=>{
  if(unsubscribe){unsubscribe();unsubscribe=null}
  if(stopBooks){stopBooks();stopBooks=null}
@@ -109,18 +158,21 @@ onAuthStateChanged(auth,async user=>{
  // The reader waits for this before deciding whether a cloud book can be downloaded.
  window.lexoraAuthKnown=true;
  if(user)stopBooks=startBookSync(db,user.uid,booksMessage);else{booksMessage("");dispatchEvent(new Event("lexora:book-cloud"))}
-ready=false;showGate(!user&&!skipped());clearTimeout(clock);if(user){loginFailure="";authMessage("Google: connectat · "+(user.email||"usuari autenticat"))}else if(!loginFailure){authMessage("Google: sessió no iniciada")}
+ready=false;queued=false;queuedImmediate=false;retryAfterConnection=false;showGate(!user&&!skipped());clearTimeout(clock);clock=null;if(user){loginFailure="";authMessage("Google: connectat · "+(user.email||"usuari autenticat"))}else if(!loginFailure){authMessage("Google: sessió no iniciada")}
  login.hidden=!!user;logout.hidden=!user;syncBtn.hidden=!user;
  if(!user){message("Firestore: sense sincronització; les targetes es desen localment.");setBadge("Personal · local mode");return}
  message("Connectat com "+(user.email||"Google")+". Fusionant dades...");
  await synchronize();
  if(!uid||uid!==user.uid)return;
  ready=true;
+ if(queued){const immediate=queuedImmediate;queued=false;queuedImmediate=false;queueSync(immediate)}
  const reference=doc(db,"users",uid,"state","lexora");
  unsubscribe=onSnapshot(reference,snap=>{
   if(!snap.exists()||snap.metadata.hasPendingWrites||busy)return;
   const local=bridge.read(),merged=merge(local,snap.data());
   if(!same(local,merged))bridge.apply(merged);
-  if(!same(merged,merge(snap.data(),snap.data())))queueSync();
+  // Only upload if this device has genuinely newer/local-only data.
+  // Remote reordering or metadata timestamps must never trigger write loops.
+  if(!same(merged,snap.data()))queueSync();
  },err=>message("Error en rebre canvis: "+(err.code||err.message)));
 });
