@@ -27,13 +27,15 @@ let tappedWord=null;
 wordActions.addEventListener("click",e=>{
  const mode=e.target.closest("button")?.dataset.action,entry=tappedWord;
  if(!mode||!entry)return;
- wordActions.hidden=true;tappedWord=null;
+ hide();
  if(mode==="read"){
   if(!window.lexoraStartReadingAt?.(entry.doc,entry.node,entry.offset))entry.lookup(entry.term,entry.context);
  }else entry.lookup(entry.term,entry.context);
 });
-let current=null,buttonHeld=false,hideTimer=null;
-function hide(){clearTimeout(hideTimer);current=null;action.hidden=true;wordActions.hidden=true;tappedWord=null}
+let current=null,buttonHeld=false,hideTimer=null,wordActionTimer=null;
+function hide(){clearTimeout(hideTimer);clearTimeout(wordActionTimer);current=null;action.hidden=true;wordActions.hidden=true;tappedWord=null}
+function showWordActions(){wordActions.hidden=false;clearTimeout(wordActionTimer);wordActionTimer=setTimeout(hide,3500)}
+window.addEventListener("lexora:narration-started",hide);
 function selectionOf(doc,root,lookup){
  const sel=doc.getSelection?.();
  if(!sel||sel.isCollapsed||!sel.rangeCount)return null;
@@ -50,7 +52,7 @@ function update(doc,root,lookup){
  if(buttonHeld)return;
  const selected=selectionOf(doc,root,lookup);
  clearTimeout(hideTimer);
- if(selected){current=selected;action.hidden=false;wordActions.hidden=true;tappedWord=null}
+ if(selected){current=selected;action.hidden=false;clearTimeout(wordActionTimer);wordActions.hidden=true;tappedWord=null}
  else if(current?.doc===doc)hideTimer=setTimeout(()=>{if(!buttonHeld)hide()},900);
 }
 for(const event of ["pointerdown","touchstart"])action.addEventListener(event,()=>{buttonHeld=true},{passive:true});
@@ -126,6 +128,8 @@ function bind(doc,root,lookup){
  root.addEventListener("pointermove",e=>{
   if(e.pointerType==="mouse"&&start&&Math.hypot(e.clientX-start.x,e.clientY-start.y)>8)dragged=true
  },true);
+ // Dismiss transient word actions on any new interaction, including EPUB iframe taps.
+ doc.addEventListener("pointerdown",()=>{if(!wordActions.hidden)hide()},{passive:true});
  root.addEventListener("click",e=>{
   if(e.detail>1||dragged||Date.now()<suppressTapUntil||e.target.closest?.("a,button,input,select"))return;
   if(Date.now()-lastTouch<700&&(selectionOf(doc,root,lookup)||!doc.getSelection()?.isCollapsed))return;
@@ -145,7 +149,7 @@ function bind(doc,root,lookup){
   hide();
   if(window.lexoraNarrationIsActive?.()){
    tappedWord={doc,node:pos.node,offset:a,term:word,context,lookup};
-   wordActions.hidden=false;
+   showWordActions();
   }else lookup(word,context);
  },true);
 }
