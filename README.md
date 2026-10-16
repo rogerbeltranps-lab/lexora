@@ -29,7 +29,7 @@ The learner owns **one unified flashcard deck**; vocabulary, phrasal verbs, idio
 
 | Area | Status | Important limitation or next check |
 | --- | --- | --- |
-| In-app guide and EPUB reader | Implemented; device QA pending | Save/restore the last EPUB text location (CFI) and add multiple local bookmarks per EPUB; verify both on a physical iPhone/PWA. |
+| In-app guide and EPUB reader | Implemented; device QA pending | Save/restore EPUB text locations (CFI), resume the built-in guide page, and add bookmarks to either. The bookmark icon remains visible while reading; verify on a physical iPhone/PWA. |
 | Immersive reader, themes, font sizes, swipe navigation | Implemented; **physical iPhone QA pending** | Choose System, Light or Dark under Settings; color selection covers every app surface and EPUB. Image-only EPUB pages have edge navigation when swipes fail. On-device testing is still needed. |
 | Dictionary, contextual lookup and phrase matching | Initial implementation | Coverage is incomplete. The starter lexicon and Kaikki-derived indexes exist; verify matches and sense selection in diverse EPUBs. |
 | Unified flashcards, local review, JSON import/export | Implemented locally | Preserve local data. Source sentences and optional source metadata exist on newly captured cards. |
