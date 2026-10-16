@@ -240,7 +240,7 @@ applyReaderFont();
 const guideEl=$("guide");
 let paginating=false,guideSource="",lastPageMarkup="",guidePageIndex=0,guidePageTotal=1;
 const themeMeta=document.querySelector('meta[name="theme-color"]'),originalTheme=themeMeta?.content||"#152d42";
-function syncStatusBar(){if(themeMeta)themeMeta.content=document.body.classList.contains("lex-reader-fullscreen")?($("reader").classList.contains("black")?"#000000":$("reader").classList.contains("white")?"#ffffff":"#fffaf1"):($("reader").classList.contains("black")?"#10171e":"#f4f6f8")}
+function syncStatusBar(){if(themeMeta)themeMeta.content=document.body.classList.contains("lex-reader-fullscreen")?($("reader").classList.contains("black")?"#000000":$("reader").classList.contains("white")?"#ffffff":"#fffaf1"):($("reader").classList.contains("black")?"#15212c":"#122c42")}
 function makeBookPage(){const p=document.createElement("div");p.className="lex-book-page";return p}
 function bookPageOverflow(page){return page.scrollHeight>page.clientHeight+2}
 function paginateGuide(reset=false){
