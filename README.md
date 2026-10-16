@@ -1,4 +1,4 @@
-# Lexora
+# LooKitUp — working brand (repository: Lexora)
 
 **Read. Discover. Remember.**
 
@@ -6,7 +6,17 @@ Lexora is a personal web app for learning natural American English from reading 
 
 **Current stage:** personal web/PWA prototype (v0.1). Some features are implemented in code but have **not** been verified on a physical phone or all browsers. The live app is [rogerbeltranps-lab.github.io/lexora](https://rogerbeltranps-lab.github.io/lexora/). This README is the **single source of truth** for project direction, current status, known issues, and future plans.
 
-> **Naming decision (2026-10-15):** **Lexitale** is the preferred *candidate* for a future rebrand, **not an approved rename**. Keep the application name, repository, URLs, code identifiers, manifest, and existing favicon **unchanged** until an explicit decision to switch.
+> **Branding decision (2026-10-16):** **LooKitUp** is the chosen **working brand**, with this exact capitalization. It is not a legally cleared or registered trademark. The published prototype and technical repository remain **Lexora** for now; do not change its URL, repo name, app identifiers, existing blue L/RBP favicon, or saved user data just to adopt the brand. If the app is publicly launched or commercialized, revisit trademark clearance, domains, and final naming before release.
+
+## Working brand — 2026-10-16
+
+- **Name:** **LooKitUp** (preserve capital **L**, **K**, and **U**).
+- **Meaning:** a play on the natural English expression *look it up*; capture, understand and remember unfamiliar vocabulary and idiomatic language without interrupting reading.
+- **Existing slogan:** **Read. Discover. Remember.** Keep this simple product promise.
+- **Favicon:** keep the existing blue rounded **L** icon with the small **RBP** signature. No redesign.
+- **Scope:** the current prototype is oriented toward English with Catalan support, but the intended public product could support English, Spanish and additional languages. The brand must not imply English-only or Catalan-only use.
+- **Availability:** other “LookItUp”/“Look it up” dictionary and browser-extension products already exist. This choice is **for prototyping and internal branding only**, not a statement of uniqueness, market exclusivity, domain availability or legal clearance.
+- **Implementation boundary:** this is a documentation/branding decision, not an instruction to rename the GitHub repository, URL, Firebase identifiers, app manifest, existing user data, or public UI automatically. Decide on user-visible renaming separately.
 
 ## What the app is for
 
@@ -33,7 +43,7 @@ The learner owns **one unified flashcard deck**; vocabulary, phrasal verbs, idio
 
 ## Decisions made on October 15, 2026
 
-- **Branding exploration, no rename:** **Lexitale** (lexicon + tale) is the favored candidate. Potential brand line: **“Every word has a story.”** It remains a proposal, not finalized branding. **Lexora** remains the product name everywhere for now.
+- **Earlier naming exploration (superseded on 2026-10-16):** Lexitale was previously considered, but an existing closely related language-learning product was found. **LooKitUp** is now the selected working brand. The currently deployed Lexora app and underlying repository have **not** been renamed.
 - **Keep the favicon:** retain the **existing rounded blue icon with the stylized L and discreet RBP signature exactly as it is**. No new logo/favicon work is authorized by this decision.
 - **Voice simplification:** use **only the device's native voice** for narration, dictionary audio, and flashcards. **Kokoro has been removed** along with its heavy model-loading / worker / isolation logic. Optional high-quality cloud voices (e.g. Chirp 3 HD) are a **later possibility**, not part of the current implementation or an approved paid dependency.
 - **Stability before expansion:** current priority is reliable audio, mobile layout, text selection by long-press/drag, swipe navigation, and sign-in/sync. Oct 15 code changes target these problems; real iPhone 13 Pro and desktop browser testing remains outstanding.
