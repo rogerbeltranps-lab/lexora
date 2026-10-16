@@ -129,7 +129,18 @@ function bookmarksFor(bookId) {
   } catch { return []; }
 }
 function writeBookmarks(bookId, value) {
+  const before = bookmarksFor(bookId);
+  const remaining = new Set(value.map(x => x.id));
+  const deleted = before.filter(x => !remaining.has(x.id));
+  if (deleted.length) {
+    try {
+      const removed = JSON.parse(localStorage.getItem("lexora-bookmark-deletions") || "{}");
+      for (const item of deleted) removed[item.id] = {bookId, modifiedAt: new Date().toISOString(), deleted: true};
+      localStorage.setItem("lexora-bookmark-deletions", JSON.stringify(removed));
+    } catch (e) { console.warn("Could not record bookmark deletions", e); }
+  }
   localStorage.setItem("lexora-bookmarks-" + bookId, JSON.stringify(value));
+  window.dispatchEvent(new Event("lexora:bookmarks-changed"));
 }
 function close() {
   sheet.hidden = true;
@@ -203,7 +214,7 @@ saveButton.onclick = () => {
     return;
   }
   const label = position.label || "Bookmark " + (saved.length + 1) + (position.percent == null ? "" : " · " + Math.round(position.percent * 100) + "%");
-  saved.push({id: String(Date.now()) + "-" + Math.random().toString(36).slice(2), cfi: position.cfi, label});
+  saved.push({id: String(Date.now()) + "-" + Math.random().toString(36).slice(2), cfi: position.cfi, label, modifiedAt: new Date().toISOString()});
   writeBookmarks(position.bookId, saved);
   render("Bookmark saved.");
 };
@@ -212,5 +223,6 @@ document.addEventListener("keydown", e => {
 });
 document.getElementById("booklist")?.addEventListener("change", () => { close(); refreshTrigger(); });
 window.addEventListener("lexora:book-selected", () => { close(); refreshTrigger(); });
+window.addEventListener("lexora:bookmarks-refreshed", () => { if (!sheet.hidden) render(); });
 refreshTrigger();
 })();
