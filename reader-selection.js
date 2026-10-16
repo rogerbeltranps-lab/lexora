@@ -9,6 +9,10 @@ style.textContent=`
 .lex-selection-lookup{position:fixed;bottom:calc(22px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);z-index:1200;max-width:calc(100vw - 28px);min-height:48px;padding:11px 20px!important;border-radius:24px!important;box-shadow:0 5px 24px #0005;white-space:nowrap}
 body.lex-reader-fullscreen.lex-audio-mode .lex-selection-lookup{bottom:calc(102px + env(safe-area-inset-bottom,0px))}
 .lex-selection-lookup[hidden]{display:none!important}
+.lex-word-actions[hidden]{display:none!important}
+.lex-word-actions{position:fixed;left:50%;bottom:calc(102px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);max-width:calc(100vw - 24px);z-index:1210;display:flex;align-items:center;gap:8px;padding:8px;border:1px solid #667b895a;border-radius:18px;background:#f3f5f7f5;box-shadow:0 12px 30px #0004}
+.lex-word-actions .btn{font-size:14px;white-space:nowrap;min-height:44px}
+html[data-lexora-theme="dark"] .lex-word-actions{background:#1b2935f5;color:#edf3f6;border-color:#4f6674}
 `;
 document.head.appendChild(style);
 const action=document.createElement("button");
@@ -16,8 +20,20 @@ action.id="lex-explore-selection";action.type="button";action.className="btn pri
 action.textContent="Explore selection";action.hidden=true;
 action.setAttribute("aria-label","Look up the selected phrase in Lexora");
 panel.appendChild(action);
+const wordActions=document.createElement("div");wordActions.className="lex-word-actions";wordActions.hidden=true;wordActions.setAttribute("role","group");wordActions.setAttribute("aria-label","Word actions");
+wordActions.innerHTML='<button class="btn primary" type="button" data-action="read">▶ Read from here</button><button class="btn" type="button" data-action="lookup">Look up</button>';
+panel.appendChild(wordActions);
+let tappedWord=null;
+wordActions.addEventListener("click",e=>{
+ const mode=e.target.closest("button")?.dataset.action,entry=tappedWord;
+ if(!mode||!entry)return;
+ wordActions.hidden=true;tappedWord=null;
+ if(mode==="read"){
+  if(!window.lexoraStartReadingAt?.(entry.doc,entry.node,entry.offset))entry.lookup(entry.term,entry.context);
+ }else entry.lookup(entry.term,entry.context);
+});
 let current=null,buttonHeld=false,hideTimer=null;
-function hide(){clearTimeout(hideTimer);current=null;action.hidden=true}
+function hide(){clearTimeout(hideTimer);current=null;action.hidden=true;wordActions.hidden=true;tappedWord=null}
 function selectionOf(doc,root,lookup){
  const sel=doc.getSelection?.();
  if(!sel||sel.isCollapsed||!sel.rangeCount)return null;
@@ -34,7 +50,7 @@ function update(doc,root,lookup){
  if(buttonHeld)return;
  const selected=selectionOf(doc,root,lookup);
  clearTimeout(hideTimer);
- if(selected){current=selected;action.hidden=false}
+ if(selected){current=selected;action.hidden=false;wordActions.hidden=true;tappedWord=null}
  else if(current?.doc===doc)hideTimer=setTimeout(()=>{if(!buttonHeld)hide()},900);
 }
 for(const event of ["pointerdown","touchstart"])action.addEventListener(event,()=>{buttonHeld=true},{passive:true});
@@ -126,7 +142,11 @@ function bind(doc,root,lookup){
   const word=text.slice(a,b).replace(/^['-]+|['-]+$/g,"");
   if(!word)return;
   const context=pos.node.parentElement?.closest?.("p,li,blockquote")?.textContent||word;
-  hide();lookup(word,context);
+  hide();
+  if(window.lexoraNarrationIsActive?.()){
+   tappedWord={doc,node:pos.node,offset:a,term:word,context,lookup};
+   wordActions.hidden=false;
+  }else lookup(word,context);
  },true);
 }
 const guide=document.getElementById("guide");
@@ -142,6 +162,7 @@ if(host){
  host.addEventListener("load",()=>setTimeout(bindEpub,60),true);
 }
 document.getElementById("booklist")?.addEventListener("change",hide);
+document.getElementById("lex-results-close")?.addEventListener("click",hide);
 document.querySelectorAll(".nav button").forEach(b=>b.addEventListener("click",hide));
 bindEpub();
 })();
