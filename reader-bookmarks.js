@@ -23,7 +23,14 @@ style.textContent = [
   "html[data-lexora-theme='dark'] #lex-bookmark-sheet{background:#1b2935;color:#f0f5f8;border-color:#4f6472}",
   "html[data-lexora-theme='dark'] .lex-bookmark-item{border-color:#4f6472}",
   "html[data-lexora-theme='dark'] .lex-bookmark-note{color:#b5c5d0}",
-  "html[data-lexora-theme='dark'] .lex-bookmark-remove{color:#efb6af}"
+  "html[data-lexora-theme='dark'] .lex-bookmark-remove{color:#efb6af}",
+  ".lex-bookmark-floating{display:none!important}",
+  "body.lex-reader-fullscreen #lex-bookmark-trigger{display:none!important}",
+  "body.lex-reader-fullscreen .lex-bookmark-floating:not([hidden]){display:inline-flex!important;position:absolute;top:calc(14px + env(safe-area-inset-top,0px));left:calc(12px + env(safe-area-inset-left,0px));z-index:12;width:44px;height:44px;border:0;border-radius:50%;background:transparent;color:#92929a;opacity:.8;box-shadow:none;padding:10px;align-items:center;justify-content:center}",
+  "body.lex-reader-fullscreen .lex-bookmark-floating:not([hidden]):focus-visible,body.lex-reader-fullscreen .lex-bookmark-floating:not([hidden]):hover{opacity:1;background:#84949f20}",
+  "html[data-lexora-theme='dark'] body.lex-reader-fullscreen .lex-bookmark-floating{color:#b5bfca}",
+  "body.lex-reader-fullscreen #lex-bookmark-sheet{top:50%;left:50%;z-index:1800}",
+  "@media(max-width:650px){#lex-bookmark-sheet{max-height:calc(100dvh - 95px)}}"
 ].join("\n");
 document.head.appendChild(style);
 
@@ -36,6 +43,12 @@ trigger.setAttribute("title", "Bookmarks");
 trigger.setAttribute("aria-expanded", "false");
 trigger.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h12v17l-6-4-6 4z"/></svg>';
 controls.insertBefore(trigger, controls.querySelector("#lex-options"));
+// Keep a separate, unobtrusive icon visible beside the book title in immersive mode.
+// The primary toolbar auto-hides; bookmarks must remain discoverable.
+const floating = trigger.cloneNode(true);
+floating.id = "lex-bookmark-floating";
+floating.classList.add("lex-bookmark-floating");
+panel.appendChild(floating);
 
 const sheet = document.createElement("section");
 sheet.id = "lex-bookmark-sheet";
@@ -47,6 +60,67 @@ panel.appendChild(sheet);
 const saveButton = sheet.querySelector("#lex-bookmark-save");
 const note = sheet.querySelector("#lex-bookmark-note");
 const list = sheet.querySelector("#lex-bookmark-list");
+const guide = window.lexoraGuidePosition;
+const guideEl = document.getElementById("guide");
+const chapterSelect = document.getElementById("chapter");
+const GUIDE_POSITION_KEY = "lexora-guide-last-page";
+let pendingGuide = null;
+let knownChapter = Number(chapterSelect?.value) || 0;
+try {
+  const position = JSON.parse(localStorage.getItem(GUIDE_POSITION_KEY));
+  if (position && position.chapter === knownChapter && Number.isInteger(position.page) && position.page >= 0)
+    pendingGuide = position;
+} catch {}
+function saveGuidePage() {
+  if (selectedBook() !== "guide" || pendingGuide) return;
+  const place = guide?.current();
+  if (!place?.ready) return;
+  try { localStorage.setItem(GUIDE_POSITION_KEY, JSON.stringify({chapter:place.chapter,page:place.page})); } catch {}
+}
+function restoreGuidePage() {
+  if (!pendingGuide || selectedBook() !== "guide" || !document.body.classList.contains("lex-reader-fullscreen")) return;
+  const place = guide?.current();
+  if (!place?.ready || place.chapter !== pendingGuide.chapter || !guideEl?.firstElementChild?.classList.contains("lex-book-page")) return;
+  if (guide.jump(pendingGuide.page)) {
+    pendingGuide = null;
+    saveGuidePage();
+  }
+}
+if (guideEl) {
+  guideEl.addEventListener("scroll", saveGuidePage, {passive:true});
+  new MutationObserver(() => {
+    const chapter = Number(chapterSelect?.value) || 0;
+    if (knownChapter !== chapter) {
+      knownChapter = chapter;
+      if (!pendingGuide || pendingGuide.chapter !== chapter) pendingGuide = {chapter,page:0};
+    }
+    setTimeout(restoreGuidePage, 0);
+  }).observe(guideEl, {childList:true});
+}
+window.addEventListener("pagehide", saveGuidePage);
+document.addEventListener("visibilitychange", () => {if (document.hidden) saveGuidePage();});
+function currentPosition() {
+  if (selectedBook() !== "guide") return bridge.current();
+  const place = guide?.current();
+  if (!place) return null;
+  return {bookId:"guide", cfi:"guide:" + place.chapter + ":" + (place.ready ? place.page : 0),
+    label:"Chapter " + (place.chapter + 1) + " · page " + ((place.ready ? place.page : 0) + 1),
+    percent:null};
+}
+function jumpToGuide(cfi) {
+  const found = /^guide:(\d+):(\d+)$/.exec(cfi);
+  if (!found) throw Error("Invalid guide bookmark");
+  const chapter = Number(found[1]),page = Number(found[2]);
+  if (!Number.isSafeInteger(chapter) || !Number.isSafeInteger(page) ||
+      chapter < 0 || chapter >= chapterSelect.options.length || page < 0) throw Error("Invalid guide bookmark");
+  pendingGuide = {chapter,page};
+  if (Number(chapterSelect.value) !== chapter) {
+    chapterSelect.value = String(chapter);
+    chapterSelect.dispatchEvent(new Event("change", {bubbles:true}));
+  }
+  restoreGuidePage();
+  return true;
+}
 
 function bookmarksFor(bookId) {
   try {
@@ -60,13 +134,15 @@ function writeBookmarks(bookId, value) {
 function close() {
   sheet.hidden = true;
   trigger.setAttribute("aria-expanded", "false");
+  floating.setAttribute("aria-expanded", "false");
 }
 function selectedBook() {
   return document.getElementById("booklist")?.value || "guide";
 }
 function refreshTrigger() {
-  const available = selectedBook() !== "guide";
+  const available = selectedBook() === "guide" ? Boolean(guide) : Boolean(bridge);
   trigger.hidden = !available;
+  floating.hidden = !available;
   if (!available) close();
 }
 function render(message) {
@@ -86,7 +162,8 @@ function render(message) {
     jump.onclick = async () => {
       if (selectedBook() !== bookId) return;
       try {
-        await bridge.jump(item.cfi);
+        if (bookId === "guide") jumpToGuide(item.cfi);
+        else await bridge.jump(item.cfi);
         close();
       } catch { render("This bookmark could not be opened."); }
     };
@@ -103,17 +180,20 @@ function render(message) {
     list.append(li);
   }
 }
-trigger.onclick = () => {
+function toggleSheet() {
   if (sheet.hidden) {
     render();
     sheet.hidden = false;
     trigger.setAttribute("aria-expanded", "true");
+    floating.setAttribute("aria-expanded", "true");
     sheet.querySelector("#lex-bookmark-close").focus();
   } else close();
-};
+}
+trigger.onclick = toggleSheet;
+floating.onclick = toggleSheet;
 sheet.querySelector("#lex-bookmark-close").onclick = close;
 saveButton.onclick = () => {
-  const position = bridge.current();
+  const position = currentPosition();
   if (!position || position.bookId !== selectedBook() || !position.cfi) {
     render("Open a book page before adding a bookmark.");
     return;
@@ -123,7 +203,7 @@ saveButton.onclick = () => {
     render("This page is already bookmarked.");
     return;
   }
-  const label = "Bookmark " + (saved.length + 1) + (position.percent == null ? "" : " · " + Math.round(position.percent * 100) + "%");
+  const label = position.label || "Bookmark " + (saved.length + 1) + (position.percent == null ? "" : " · " + Math.round(position.percent * 100) + "%");
   saved.push({id: String(Date.now()) + "-" + Math.random().toString(36).slice(2), cfi: position.cfi, label});
   writeBookmarks(position.bookId, saved);
   render("Bookmark saved.");
