@@ -23,7 +23,7 @@ This is an instruction file for compatible coding agents, **not** a persistent b
 3. Add a short dated `docs/CHANGELOG.md` entry for a substantive change, including affected platforms and manual verification gaps.
 4. Keep the roadmap deferred work deferred; do not implement speculative app-store, classroom, browser-extension, or cloud-TTS features without an explicit request.
 5. Preserve user data. Never delete saved EPUBs, flashcards, IndexedDB/localStorage, or backups to force a refresh; explain any necessary migrations.
-6. **Branding guardrail (2026-10-15):** `Lexitale` is **only a name under consideration**; keep all `Lexora` identifiers and the existing blue L/RBP favicon unchanged until approved.
+6. **Branding guardrail (2026-10-16):** `LooKitUp` (exact capitalization) is the **chosen working brand**, but public release/name clearance is deferred. Keep existing `Lexora` repository, URL, Firebase/data identifiers, deployed UI and blue L/RBP favicon unchanged until a separate implementation request. `Lexitale` was a discarded candidate.
 7. **Audio guardrail (2026-10-15):** native device voice only; Kokoro was removed. Any premium cloud-voice integration is hypothetical until explicitly requested.
 8. Never claim Chrome, Safari, real iPhone, emulator, CI, or a deployment was tested unless it was actually tested.
 
