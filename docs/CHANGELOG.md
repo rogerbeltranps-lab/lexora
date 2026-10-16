@@ -1,5 +1,15 @@
 # Lexora changelog
 
+## 2026-10-16 · 37 — EPUB navigation, playback and preferences
+- **Image-only EPUB pages**: add subtle previous/next edge buttons outside the embedded EPUB frame, and attach touch-swipe handling at the chapter document root to support covers and publisher-logo pages whose embedded images intercept gestures.
+- **Flashcard editor on iPhone**: all editable inputs/selects/textarea now use at least 16px text, preventing Safari's automatic focus zoom; dialog dimensions are constrained to the dynamic viewport, without disabling pinch zoom.
+- **Read & Listen word start**: a single word tap opens "Read from here" and "Look up" actions. "Read from here" starts speech at that exact word (not the start of the sentence). Native long-press phrase selection and dictionary access remain separate.
+- **Speech reliability**: speechSynthesis gets a duration/boundary watchdog, detecting cases where iOS reports speaking indefinitely without progressing. Playback stops with a clear **Tap Play to resume** message rather than being stuck; the current sentence is retained.
+- **Appearance setting**: System (default), Light or Dark now controls the **entire app and EPUB**. Overrides persist; System updates on iPhone appearance changes. No theme icon reinstated.
+- Static parsing and regression checks completed; this change is **not yet physically verified** on iPhone. Existing books, flashcards, settings other than theme, favicon, and native voice remain intact.
+- App v37; PWA shell cache v36.
+
+
 ## 2026-10-15 · 36 — System dark mode throughout Lexora and player icons
 - **Entire Lexora UI follows the device appearance automatically**, not only the EPUB: app background, navigation, library, vocabulary lookup, flashcards, practice, settings, controls, inputs, login gate and flashcard editor now receive coordinated dark colors.
 - Dark reader overlays and menus (appearance, narration toolbar, exploration/dictionary sheet) use readable dark surfaces; immersive EPUB text keeps its existing device-following black/white presentation. OS changes switch CSS in real time, with the iPhone theme-color refreshed when the app is visible.

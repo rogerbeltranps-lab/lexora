@@ -27,15 +27,30 @@ function speak(text,options={}){
   const u=new SpeechSynthesisUtterance(text);u.lang="en-US";u.rate=Number(options.rate)||0.9;u.volume=1;
   // With no saved choice, leave the voice unset so iOS uses its own American default.
   const chosen=voiceURI&&voices().find(v=>v.voiceURI===voiceURI);if(chosen)u.voice=chosen;
-  let started=false;current=u;
-  u.onstart=()=>{started=true;if(current===u)options.onstart?.()};
+  let started=false,currentStartedAt=0,lastBoundary=0,hadBoundary=false;current=u;
+  const estimated=60000*Math.max(1,text.trim().split(/\s+/).length)/(130*Math.max(.5,u.rate));
+  const maxDuration=Math.max(18000,Math.min(90000,estimated*1.9+8500));
+  const failStall=()=>{if(current!==u)return;current=null;generation++;try{synth.cancel();cancelledAt=Date.now()}catch{}options.onerror?.("speech-stalled")};
+  u.onstart=()=>{started=true;currentStartedAt=Date.now();lastBoundary=currentStartedAt;if(current===u)options.onstart?.()};
   // One utterance can contain several sentences; boundary offsets let the reader follow without restarting speech after every period.
-  u.onboundary=e=>{if(current===u)options.onboundary?.({charIndex:e.charIndex,elapsedTime:e.elapsedTime,name:e.name})};
+  u.onboundary=e=>{if(current===u){lastBoundary=Date.now();hadBoundary=true;options.onboundary?.({charIndex:e.charIndex,elapsedTime:e.elapsedTime,name:e.name})}};
   u.onend=()=>{if(current===u){current=null;options.onend?.()}};
   u.onerror=e=>{if(current!==u)return;current=null;options.onerror?.(e.error||"error")};
   synth.speak(u);if(synth.paused)synth.resume();
   // Chrome and Safari sometimes never fire onend (long text, remote voices); finish the sentence ourselves once speech has gone quiet.
-  let quiet=0;const watch=setInterval(()=>{if(current!==u){clearInterval(watch);return}if(started&&!synth.speaking&&!synth.pending){if(++quiet>=3){clearInterval(watch);current=null;options.onend?.()}}else quiet=0},500);
+  let quiet=0;const watch=setInterval(()=>{
+   if(current!==u){clearInterval(watch);return}
+   if(started&&!synth.speaking&&!synth.pending){
+    if(++quiet>=3){clearInterval(watch);current=null;options.onend?.()}return
+   }
+   quiet=0;
+   // iOS can permanently report "speaking" without boundaries or onend.
+   // Fail once and let Play resume from the last highlighted sentence.
+   const now=Date.now();
+   if(started&&((now-currentStartedAt>maxDuration)||(hadBoundary&&now-lastBoundary>16000))){
+    clearInterval(watch);failStall();
+   }
+  },500);
   // A downloaded-then-removed or enhanced voice can stay silent on iPhone: fall back once to the default voice.
   if(chosen&&retry)setTimeout(()=>{
    if(current===u&&!started&&!synth.speaking){
