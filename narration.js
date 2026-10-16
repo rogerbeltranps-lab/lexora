@@ -239,6 +239,17 @@ applyReaderFont();
 
 const guideEl=$("guide");
 let paginating=false,guideSource="",lastPageMarkup="",guidePageIndex=0,guidePageTotal=1;
+// Small location-only bridge for remembering and bookmarking pages in the built-in guide.
+// This does not alter speech, highlighting or page turning.
+window.lexoraGuidePosition={
+ current:()=>({chapter:Number($("chapter")?.value)||0,page:guidePageIndex,total:guidePageTotal,ready:guideEl.classList.contains("lex-paginated")}),
+ jump:page=>{
+  if($("booklist")?.value!=="guide"||!guideEl.classList.contains("lex-paginated"))return false;
+  guidePageIndex=Math.max(0,Math.min(Number(page)||0,guidePageTotal-1));
+  guideEl.scrollTo({left:guidePageIndex*guideEl.clientWidth,behavior:"instant"});
+  return true;
+ }
+};
 const themeMeta=document.querySelector('meta[name="theme-color"]'),originalTheme=themeMeta?.content||"#152d42";
 function syncStatusBar(){if(themeMeta)themeMeta.content=document.body.classList.contains("lex-reader-fullscreen")?($("reader").classList.contains("black")?"#000000":$("reader").classList.contains("white")?"#ffffff":"#fffaf1"):($("reader").classList.contains("black")?"#15212c":"#122c42")}
 function makeBookPage(){const p=document.createElement("div");p.className="lex-book-page";return p}
