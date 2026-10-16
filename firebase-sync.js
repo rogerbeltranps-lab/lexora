@@ -15,6 +15,8 @@ let uid=null,unsubscribe=null,stopBooks=null,stopBookmarks=null,busy=false,queue
 const message=t=>{status.textContent=t};
 const booksStatus=document.getElementById("lex-cloud-books");
 const booksMessage=t=>{if(booksStatus)booksStatus.textContent=t};
+const bookmarksStatus=document.getElementById("lex-cloud-bookmarks");
+const bookmarksMessage=t=>{if(bookmarksStatus)bookmarksStatus.textContent=t};
 // Header badge, so it is visible everywhere whether cards are reaching Firestore.
 const badge=document.getElementById("account-label");
 const setBadge=t=>{if(badge)badge.textContent=t};
@@ -159,7 +161,7 @@ onAuthStateChanged(auth,async user=>{
  uid=user?.uid||null;
  // The reader waits for this before deciding whether a cloud book can be downloaded.
  window.lexoraAuthKnown=true;
- if(user){stopBooks=startBookSync(db,user.uid,booksMessage);stopBookmarks=startBookmarkSync(db,user.uid)}else{booksMessage("");dispatchEvent(new Event("lexora:book-cloud"))}
+ if(user){stopBooks=startBookSync(db,user.uid,booksMessage);stopBookmarks=startBookmarkSync(db,user.uid,bookmarksMessage)}else{booksMessage("");dispatchEvent(new Event("lexora:book-cloud"))}
 ready=false;queued=false;queuedImmediate=false;retryAfterConnection=false;showGate(!user&&!skipped());clearTimeout(clock);clock=null;if(user){loginFailure="";authMessage("Google: connectat · "+(user.email||"usuari autenticat"))}else if(!loginFailure){authMessage("Google: sessió no iniciada")}
  login.hidden=!!user;logout.hidden=!user;syncBtn.hidden=!user;
  if(!user){message("Firestore: sense sincronització; les targetes es desen localment.");setBadge("Personal · local mode");return}

@@ -1,5 +1,14 @@
 # LumoUp changelog (repository: lexora)
 
+## 2026-10-16 · 45 — Narration highlight that actually shows, exact reopen page, bookmark sync status
+- Fix the spoken-sentence highlight and page following doing nothing in Read & Listen. Entering the full-screen reader (or rotating, or changing text size) makes epub.js rebuild the chapter in a new iframe, but the sentence ranges still pointed at the old one; a node in a discarded iframe still reports `isConnected`, so the earlier detached-range check never fired. Sentences are now rebuilt from the iframe on screen before each highlight and on Play, keeping the same sentence.
+- The highlight blends with the page (multiply on light, screen on dark) so words stay crisp, and fades in as narration moves to the next sentence.
+- Fix reopening a book a page or more before where reading stopped. The saved place is now an anchor that only changes when the reader turns a page (buttons, swipe, narration, bookmark). Opening the book and layout changes (entering full screen, rotation, text size) no longer overwrite it, and after a resize the reader returns to the anchor page, retrying while epub.js columns settle.
+- Bookmark sync: a change from another device that arrives mid-sync is merged instead of dropped, the app re-syncs when it returns to the foreground, and Settings → Compte LumoUp shows a "Marcadors" line with the last cloud sync or the exact error.
+- Tested in Chromium (iPhone 13 Pro and desktop sizes) with a generated EPUB, a simulated voice and a simulated Firestore shared by two devices. Not yet tested on a real iPhone.
+- Narration, updater and Firebase script URLs to v45; shell cache v45; the manual updater now also refreshes bookmark-sync.js.
+
+
 ## 2026-10-16 · 44 — Reliable on-screen spoken-sentence tint
 - Place the exact sentence's translucent highlight in a non-interactive overlay above the EPUB reader, not inside the EPUB iframe. Older iPhone WebKit versions may fail to paint CSS Highlights or clip iframe-contained overlays.
 - Translate EPUB Range rectangles into the visible reader's coordinates, respecting iframe size and clipping other EPUB columns. Do not change EPUB DOM text, CFIs, bookmarks, page navigation, TTS or other functions.
