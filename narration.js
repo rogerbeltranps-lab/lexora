@@ -221,7 +221,7 @@ function syncPlaybackButtons(){
 function detachNarration(){if(playing&&followingAudio){followingAudio=false;syncPlaybackButtons()}}
 const runningTitle=document.createElement("div");runningTitle.className="lex-running-title";runningTitle.setAttribute("aria-live","polite");
 document.querySelector("#read .grid>.panel:first-child").appendChild(runningTitle);
-function refreshRunningTitle(){const sel=$("booklist"),name=sel?.selectedOptions?.[0]?.textContent?.trim()||"Lexora";runningTitle.textContent=name}
+function refreshRunningTitle(){const sel=$("booklist"),name=sel?.selectedOptions?.[0]?.textContent?.trim()||"LumoUp";runningTitle.textContent=name}
 $("booklist").addEventListener("change",()=>setTimeout(refreshRunningTitle,0));
 refreshRunningTitle();
 const fontFamilyChoices={classic:'Georgia,"Times New Roman",serif',newyork:'ui-serif,"New York","Iowan Old Style",Palatino,serif',modern:'-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif'};
@@ -429,7 +429,7 @@ $("lex-appearance-button").onclick=()=>{appearance.hidden=!appearance.hidden;upd
 $("lex-options").onclick=()=>{const opening=appearance.hidden;appearance.hidden=!opening;controls.classList.toggle("lex-show-advanced",opening&&mode==="both");updateAppearance();showControls()};
 const inspect=document.createElement("div");inspect.className="lex-inspect";inspect.hidden=true;controls.insertAdjacentElement("afterend",inspect);
 // Show the existing dictionary results INSIDE the full-screen reader.
-const discovery=$("discovery"),home=discovery.parentNode,placeholder=document.createComment("Lexora dictionary home");
+const discovery=$("discovery"),home=discovery.parentNode,placeholder=document.createComment("LumoUp dictionary home");
 home.insertBefore(placeholder,discovery);
 const results=document.createElement("section");
 results.id="lex-reader-results";results.hidden=true;
@@ -438,7 +438,7 @@ document.querySelector("#read .grid>.panel:first-child").appendChild(results);
 function closeResults(){if(discovery.parentNode!==home)placeholder.after(discovery);results.hidden=true}
 function openResults(term,source){inspect.hidden=true;results.hidden=false;results.querySelector("#lex-results-content").appendChild(discovery);results.scrollTop=0;$("lookup").value=term;
  if(typeof window.lexoraAnalyze==="function")window.lexoraAnalyze(term,source);
- else discovery.textContent="Dictionary is unavailable. Try reopening Lexora.";
+ else discovery.textContent="Dictionary is unavailable. Try reopening LumoUp.";
 }
 $("lex-results-close").onclick=closeResults;
 // Both guide and EPUB selections call choose(). Route them to the visible reader sheet.
