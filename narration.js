@@ -1,6 +1,6 @@
 (()=>{"use strict";
 const $=id=>document.getElementById(id);
-let mode="read",playing=false,items=[],index=0,run=0,marker=null,followingAudio=true,activeHighlightDoc=null,epubSentenceLayer=null,highlightRendition=null,lastAutoTurn=0,segmentTimers=[];
+let mode="read",playing=false,items=[],index=0,run=0,marker=null,followingAudio=true,activeHighlightDoc=null,epubSentenceLayer=null,highlightRendition=null,lastAutoTurn=0,segmentTimers=[],wordStartOffset=0;
 const css=document.createElement("style");css.textContent=".lex-narr{display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:#eaf4f7;padding:10px;border-radius:12px;margin-bottom:12px}.lex-narr select{padding:9px;border:1px solid #cbd8df;border-radius:8px}.lex-narr-status{font-size:12px;color:#617589}.lex-tappable{cursor:pointer;border-radius:3px;-webkit-user-select:text;user-select:text}.lex-tappable:focus-visible{outline:2px solid #297eaa}.lex-active{background:rgba(229,195,123,.28)!important;color:inherit!important;border-radius:3px;-webkit-box-decoration-break:clone;box-decoration-break:clone}.reader.lex-audio-only .prose,.reader.lex-audio-only #epub-view{visibility:hidden}.lex-inspect{background:#edf6f9;padding:15px;border-radius:12px;margin:0 0 12px;border:1px solid #cbdfe6}.lex-inspect p{line-height:1.6}";
 css.textContent+=`
 body.lex-reader-fullscreen{overflow:hidden}
@@ -308,7 +308,7 @@ new MutationObserver(()=>{if(paginating)return;if(document.body.classList.contai
  requestAnimationFrame(()=>paginateGuide(true));
 }}).observe(guideEl,{childList:true});
 let bookResizeTimer;window.addEventListener("resize",()=>{clearTimeout(bookResizeTimer);bookResizeTimer=setTimeout(()=>{if(guideEl.classList.contains("lex-paginated")){paginating=true;guideEl.classList.remove("lex-paginated");paginating=false;paginateGuide()}},160)});
-function moveReadingPage(direction){
+function moveReadingPage(direction){wordStartOffset=0;
  if(!$("lex-reader-results")?.hidden||!document.querySelector(".lex-inspect")?.hidden)return;
  detachNarration();
  coverNav.hidden=true;
@@ -461,7 +461,7 @@ function narrationChunk(from){
  while(end<items.length&&words.length<3){
   const current=liveEl(end)?.closest?.("p,li,blockquote");
   if(end>from&&current!==anchor)break;
-  const next=String(items[end]?.text||"").trim();
+  const next=(end===from&&wordStartOffset>0?String(items[end]?.text||"").slice(wordStartOffset):String(items[end]?.text||"")).trim();
   if(!next){end++;continue}
   if(words.length&&chars+next.length+1>320)break;
   starts.push(chars+(words.length?1:0));
@@ -643,7 +643,7 @@ function play(auto=false){
   if(session!==run||!playing)return;
   cancelSegmentTimers();
   if(index>=items.length){continueReading();return}
-  const chunk=narrationChunk(index);index=chunk.from;highlight();
+  const chunk=narrationChunk(index);wordStartOffset=0;index=chunk.from;highlight();
   let started=false,finished=false,hasBoundary=false;
   function showSentence(i){
    if(session!==run||!playing||i===index||i<chunk.from||i>=chunk.end)return;
@@ -684,8 +684,34 @@ function examine(i){const item=items[i];if(!item)return;inspect.hidden=false;sho
  function send(){const chosen=window.getSelection()?.toString().trim()||item.text;openResults(chosen,item.text)}
  $("lex-analyze").onclick=()=>{window.getSelection()?.removeAllRanges();send()};$("lex-sentence").addEventListener("mouseup",()=>{if(window.getSelection()?.toString().trim())send()})
 }
+/* Tap any word in Read & Listen to set the exact narration start point. */
+window.lexoraNarrationIsActive=()=>mode==="both"&&document.body.classList.contains("lex-reader-fullscreen");
+window.lexoraStartReadingAt=(doc,node,offset)=>{
+ if(mode!=="both"||!doc||!node||!items.length)return false;
+ let found=-1,characters=0;
+ for(let k=0;k<items.length;k++){
+  const item=items[k];if(!item?.el?.isConnected||item.el.ownerDocument!==doc)continue;
+  const range=item.range;
+  try{
+   if(range){
+    if(!range.isPointInRange(node,offset))continue;
+    const before=doc.createRange();before.setStart(range.startContainer,range.startOffset);before.setEnd(node,offset);
+    characters=before.toString().length;found=k;break;
+   }
+   if(!item.el.contains(node))continue;
+   const before=doc.createRange();before.selectNodeContents(item.el);before.setEnd(node,offset);
+   characters=before.toString().length;found=k;break;
+  }catch{}
+ }
+ if(found<0)return false;
+ const text=items[found].text;
+ characters=Math.min(Math.max(0,characters),Math.max(0,text.length-1));
+ while(characters>0&&/[\p{L}'’-]/u.test(text[characters-1]))characters--;
+ stop();index=found;wordStartOffset=characters;followingAudio=true;syncPlaybackButtons();play();
+ return true;
+};
 function pause(){showControls();stop();clear();inspect.hidden=true}
-function chooseMode(next){appearance.hidden=true;closeResults();showControls();controls.classList.remove("lex-show-advanced");mode=next;followingAudio=true;stop();inspect.hidden=true;clear();document.body.classList.toggle("lex-audio-mode",mode==="both");$("lex-read").classList.toggle("primary",mode==="read");$("lex-listen").classList.toggle("primary",mode==="both");$("lex-play").hidden=mode==="read";$("lex-back").hidden=mode==="read";$("lex-forward").hidden=mode==="read";$("lex-status").hidden=mode==="read";syncPlaybackButtons();enterReader()}
+function chooseMode(next){wordStartOffset=0;appearance.hidden=true;closeResults();showControls();controls.classList.remove("lex-show-advanced");mode=next;followingAudio=true;stop();inspect.hidden=true;clear();document.body.classList.toggle("lex-audio-mode",mode==="both");$("lex-read").classList.toggle("primary",mode==="read");$("lex-listen").classList.toggle("primary",mode==="both");$("lex-play").hidden=mode==="read";$("lex-back").hidden=mode==="read";$("lex-forward").hidden=mode==="read";$("lex-status").hidden=mode==="read";syncPlaybackButtons();enterReader()}
 $("lex-read").onclick=()=>chooseMode("read");$("lex-listen").onclick=()=>chooseMode("both");
 function togglePlayback(){if(playing)pause();else if(mode==="read")chooseMode("both");else play()}
 $("lex-play").onclick=togglePlayback;$("lex-player-play").onclick=togglePlayback;
@@ -695,7 +721,7 @@ function sentenceSeconds(i){
 }
 function seekBy(seconds){
  if(!items.length&&!prepare(true))return;
- const wasPlaying=playing;let remaining=Math.abs(seconds),next=index;
+ const wasPlaying=playing;wordStartOffset=0;let remaining=Math.abs(seconds),next=index;
  if(seconds>0){do{remaining-=sentenceSeconds(next);if(next>=items.length-1)break;next++}while(remaining>0)}
  else{do{if(next===0)break;next--;remaining-=sentenceSeconds(next)}while(remaining>0)}
  if(wasPlaying)stop();index=next;
