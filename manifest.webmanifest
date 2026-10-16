@@ -1,12 +1,12 @@
 {
-  "name": "Lexora — Read. Discover. Remember.",
-  "short_name": "Lexora",
+  "name": "LumoUp — Read. Discover. Remember.",
+  "short_name": "LumoUp",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#fffaf1",
   "theme_color": "#122c42",
-  "description": "An English-reading and flashcard app.",
+  "description": "Discover words and idiomatic expressions while reading, listen in context, and remember them with flashcards.",
   "icons": [
     {
       "src": "./favicon.svg",
