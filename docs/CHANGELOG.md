@@ -1,5 +1,15 @@
 # LumoUp changelog (repository: lexora)
 
+
+## 2026-10-16 · 43 — Restore spoken sentence highlighting and audio page following
+- Repair a page-following condition: guide pagination could remain active after changing to an EPUB and intercept narration-follow requests. EPUB following now takes precedence whenever the active sentence comes from its book iframe.
+- In EPUB Read & Listen, highlight the currently spoken sentence using non-interactive Range rectangles in the embedded book frame. This avoids depending first on iPhone WebKit CSS Highlights, which can report API support but fail to paint the sentence.
+- Verify whether a sentence is on the visible book page using its actual position, then navigate by EPUB CFI (with page-direction fallback when CFI is unavailable). Refresh detached ranges after EPUB iframe changes without restarting speech.
+- Do not change device voice, narration timing, playback controls, bookmarks, reading-position persistence, flashcards or account data.
+- Targeted simulated tests passed for EPUB guide-interception regression, before/visible/after-page geometry, visible fallback overlays, and page relocation during narration. No real-device claim until tested on the user's iPhone.
+- Refresh narration script URL to v43; update PWA shell cache v42.
+
+
 ## 2026-10-16 · 42 — Make bookmarks visible and cover the built-in guide
 - Fix the bookmark control being hard to find because it sat inside the auto-hiding toolbar. A compact bookmark icon is now always visible at the top-left while reading in immersive mode; the normal toolbar also keeps its button.
 - Enable bookmarking in the built-in LumoUp Guide too. Save and reopen chapter/page positions in the guide, in addition to EPUB CFI bookmarks.
