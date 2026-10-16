@@ -672,7 +672,12 @@ function play(auto=false){
     showSentence(position);
    },
    onend:()=>{finished=true;if(session===run&&playing){cancelSegmentTimers();index=chunk.end;next()}},
-   onerror:error=>{finished=true;if(session!==run)return;stop();$("lex-status").textContent="Device voice failed ("+error+"). Try Settings → Audio check."}
+   onerror:error=>{
+    finished=true;if(session!==run)return;
+    stop();$("lex-status").textContent=error==="speech-stalled"
+     ?"Audio paused because the device voice stopped responding. Tap Play to resume."
+     :"Device voice failed ("+error+"). Try Settings → Audio check.";
+   }
   });
   if(ok===false){finished=true;return}
   setTimeout(()=>{if(session===run&&playing&&!started&&!finished&&!window.speechSynthesis.speaking)$("lex-status").textContent="Speech did not start. Try Settings → Audio check."},4500);
