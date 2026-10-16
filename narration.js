@@ -177,25 +177,30 @@ body.lex-reader-fullscreen:has(#reader.black) .lex-player-return{background:#394
 @media(max-width:400px){.lex-audio-player{gap:4px!important;padding:6px 8px!important}.lex-player-seek{flex-basis:48px!important;width:48px;height:48px;min-width:48px!important;min-height:48px!important}.lex-player-play{min-width:50px!important;width:50px;height:50px}}
 
 /* Dark system appearance includes popovers and discovery sheets, not only the EPUB. */
-@media (prefers-color-scheme: dark) {
- .lex-narr,.lex-inspect{background:#233542;color:#e7edf2;border-color:#3f5360}
- body.lex-reader-fullscreen #read .grid>.panel:first-child>.lex-narr{background:#202d38ed!important;border-color:#435463!important;box-shadow:0 8px 22px #0008}
- body.lex-reader-fullscreen #read .grid>.panel:first-child>.lex-inspect:not([hidden]){background:#1d2b35;color:#e4ecf1;border-color:#425767;box-shadow:0 10px 30px #0009}
- body.lex-reader-fullscreen #lex-appearance:not([hidden]){background:#1d2b35;color:#ecf0f3;border-color:#485967;box-shadow:0 10px 35px #0009}
- #lex-appearance .lex-appearance-label{color:#cad5df}
- #lex-reader-results{background:#1c2934!important;color:#e5edf2;border-color:#465866!important;box-shadow:0 15px 40px #000b}
- #lex-reader-results .lex-results-top,.lex-results-top,#lex-reader-results .lex-dictionary-heading{background:#1c2934!important;color:#edf2f5;border-color:#465866!important}
- #lex-reader-results .lex-selected-word{color:#eef2f5!important}
- #lex-reader-results .word,#lex-reader-results .detail,#lex-reader-results .detail h4{color:#edf2f5!important}
- #lex-reader-results .chip{background:#304a5b!important;color:#d5edf8!important}
- #discovery .lex-sense-copy,#lex-reader-results #discovery .lex-sense-copy{color:#e2eaf0!important}
- #discovery .sense-entry{border-color:#445463!important}
- #lex-reader-results .quote{color:#b9cad7!important;border-color:#769aaa!important}
- #lex-reader-results .muted{color:#b5c7d2!important}
- body.lex-reader-fullscreen .lex-reader-reveal{color:#bccbd7!important}
- body.lex-reader-fullscreen:has(#reader.black) .lex-audio-player{background:#1c242bdf!important;border-color:#35414a!important}
- body.lex-reader-fullscreen .lex-player-return{background:#344a57;color:#e8f1f5}
-}
+html[data-lexora-theme="dark"] .lex-narr, html[data-lexora-theme="dark"] .lex-inspect{background:#233542;color:#e7edf2;border-color:#3f5360}
+html[data-lexora-theme="dark"] body.lex-reader-fullscreen #read .grid>.panel:first-child>.lex-narr{background:#202d38ed!important;border-color:#435463!important;box-shadow:0 8px 22px #0008}
+html[data-lexora-theme="dark"] body.lex-reader-fullscreen #read .grid>.panel:first-child>.lex-inspect:not([hidden]){background:#1d2b35;color:#e4ecf1;border-color:#425767;box-shadow:0 10px 30px #0009}
+html[data-lexora-theme="dark"] body.lex-reader-fullscreen #lex-appearance:not([hidden]){background:#1d2b35;color:#ecf0f3;border-color:#485967;box-shadow:0 10px 35px #0009}
+html[data-lexora-theme="dark"] #lex-appearance .lex-appearance-label{color:#cad5df}
+html[data-lexora-theme="dark"] #lex-reader-results{background:#1c2934!important;color:#e5edf2;border-color:#465866!important;box-shadow:0 15px 40px #000b}
+html[data-lexora-theme="dark"] #lex-reader-results .lex-results-top, html[data-lexora-theme="dark"] .lex-results-top, html[data-lexora-theme="dark"] #lex-reader-results .lex-dictionary-heading{background:#1c2934!important;color:#edf2f5;border-color:#465866!important}
+html[data-lexora-theme="dark"] #lex-reader-results .lex-selected-word{color:#eef2f5!important}
+html[data-lexora-theme="dark"] #lex-reader-results .word, html[data-lexora-theme="dark"] #lex-reader-results .detail, html[data-lexora-theme="dark"] #lex-reader-results .detail h4{color:#edf2f5!important}
+html[data-lexora-theme="dark"] #lex-reader-results .chip{background:#304a5b!important;color:#d5edf8!important}
+html[data-lexora-theme="dark"] #discovery .lex-sense-copy, html[data-lexora-theme="dark"] #lex-reader-results #discovery .lex-sense-copy{color:#e2eaf0!important}
+html[data-lexora-theme="dark"] #discovery .sense-entry{border-color:#445463!important}
+html[data-lexora-theme="dark"] #lex-reader-results .quote{color:#b9cad7!important;border-color:#769aaa!important}
+html[data-lexora-theme="dark"] #lex-reader-results .muted{color:#b5c7d2!important}
+html[data-lexora-theme="dark"] body.lex-reader-fullscreen .lex-reader-reveal{color:#bccbd7!important}
+html[data-lexora-theme="dark"] body.lex-reader-fullscreen:has(#reader.black) .lex-audio-player{background:#1c242bdf!important;border-color:#35414a!important}
+html[data-lexora-theme="dark"] body.lex-reader-fullscreen .lex-player-return{background:#344a57;color:#e8f1f5}
+
+.lex-cover-navigation[hidden]{display:none!important}
+body.lex-reader-fullscreen .lex-cover-navigation:not([hidden]){display:contents}
+.lex-cover-navigation button{position:fixed;top:48%;transform:translateY(-50%);z-index:10;min-width:46px;height:84px;border:0;border-radius:14px;background:#52667630;color:#b0bdc8;font-size:34px;opacity:.75;touch-action:manipulation}
+.lex-cover-navigation .lex-cover-prev{left:6px}
+.lex-cover-navigation .lex-cover-next{right:6px}
+.lex-cover-navigation button:focus-visible,.lex-cover-navigation button:hover{opacity:1;background:#617b8b55}
 `;document.head.appendChild(css);
 const controls=document.createElement("div");controls.className="lex-narr";controls.innerHTML='<button class="btn" type="button" id="lex-read">Read</button><button class="btn" type="button" id="lex-listen">Read &amp; Listen</button><button class="btn primary" id="lex-play">▶ Play</button><button class="btn lex-advanced" id="lex-back">← Sentence</button><button class="btn lex-advanced" id="lex-forward">Sentence →</button><span class="lex-narr-status lex-advanced" id="lex-status">Ready</span><button class="btn lex-advanced" id="lex-enter" type="button">⛶ Full screen</button><button class="btn" id="lex-appearance-button" type="button" aria-label="Reader appearance" hidden>Aa</button><button class="btn" id="lex-options" type="button" aria-label="More reading controls">⋯</button><button class="btn lex-reader-exit" id="lex-exit" type="button">✕ Exit</button>';
 document.querySelector(".reader-toolbar").insertAdjacentElement("afterend",controls);
@@ -235,7 +240,7 @@ applyReaderFont();
 const guideEl=$("guide");
 let paginating=false,guideSource="",lastPageMarkup="",guidePageIndex=0,guidePageTotal=1;
 const themeMeta=document.querySelector('meta[name="theme-color"]'),originalTheme=themeMeta?.content||"#152d42";
-function syncStatusBar(){if(themeMeta)themeMeta.content=document.body.classList.contains("lex-reader-fullscreen")?($("reader").classList.contains("black")?"#000000":$("reader").classList.contains("white")?"#ffffff":"#fffaf1"):(matchMedia("(prefers-color-scheme: dark)").matches?"#10171e":"#f4f6f8")}
+function syncStatusBar(){if(themeMeta)themeMeta.content=document.body.classList.contains("lex-reader-fullscreen")?($("reader").classList.contains("black")?"#000000":$("reader").classList.contains("white")?"#ffffff":"#fffaf1"):($("reader").classList.contains("black")?"#10171e":"#f4f6f8")}
 function makeBookPage(){const p=document.createElement("div");p.className="lex-book-page";return p}
 function bookPageOverflow(page){return page.scrollHeight>page.clientHeight+2}
 function paginateGuide(reset=false){
@@ -306,6 +311,7 @@ let bookResizeTimer;window.addEventListener("resize",()=>{clearTimeout(bookResiz
 function moveReadingPage(direction){
  if(!$("lex-reader-results")?.hidden||!document.querySelector(".lex-inspect")?.hidden)return;
  detachNarration();
+ coverNav.hidden=true;
  if($("booklist").value==="guide"){
  if(!guideEl.classList.contains("lex-paginated"))paginateGuide();
  const next=guidePageIndex+(direction>0?1:-1);
@@ -319,6 +325,27 @@ function moveReadingPage(direction){
   if(!playing)Promise.resolve(movement).then(()=>setTimeout(()=>{if(!playing)prepare(true)},180)).catch(()=>{});
  }
 }
+// Image-only EPUB pages can swallow iOS iframe swipes. Subtle edge buttons stay outside the iframe.
+const coverNav=document.createElement("div");coverNav.className="lex-cover-navigation";coverNav.hidden=true;
+coverNav.innerHTML='<button type="button" class="lex-cover-prev" aria-label="Previous book page">‹</button><button type="button" class="lex-cover-next" aria-label="Next book page">›</button>';
+document.querySelector("#read .grid>.panel:first-child").appendChild(coverNav);
+function updateCoverNavigation(){
+ const frame=epubHost.querySelector("iframe");
+ let graphic=false;
+ try{
+  const body=frame?.contentDocument?.body;
+  if(body){const prose=(body.innerText||body.textContent||"").trim().replace(/\s+/g," ");graphic=!!body.querySelector("img,svg,picture,figure")&&prose.length<55}
+ }catch{}
+ coverNav.hidden=!document.body.classList.contains("lex-reader-fullscreen")||$("booklist").value==="guide"||!graphic;
+ if(typeof rendition!=="undefined"&&rendition&&rendition!==updateCoverNavigation.boundRendition){
+  updateCoverNavigation.boundRendition=rendition;
+  rendition.on("relocated",()=>setTimeout(updateCoverNavigation,140));
+ }
+}
+coverNav.querySelector(".lex-cover-prev").onclick=()=>moveReadingPage(-1);
+coverNav.querySelector(".lex-cover-next").onclick=()=>moveReadingPage(1);
+epubHost.addEventListener("load",()=>setTimeout(updateCoverNavigation,120),true);
+new MutationObserver(()=>setTimeout(updateCoverNavigation,100)).observe(epubHost,{childList:true});
 // Page buttons and arrow keys (reader-keys.js) turn pages the same way as a swipe.
 window.lexoraTurnPage=moveReadingPage;
 function attachSwipe(surface,doc){
@@ -356,7 +383,7 @@ function attachSwipe(surface,doc){
  surface.addEventListener("touchcancel",finish,{passive:true});
 }
 attachSwipe($("reader"),document);
-function attachEpubSwipe(){const frame=epubHost.querySelector("iframe");try{if(frame?.contentDocument?.body)attachSwipe(frame.contentDocument.body,frame.contentDocument)}catch{}}
+function attachEpubSwipe(){const frame=epubHost.querySelector("iframe");try{if(frame?.contentDocument?.documentElement)attachSwipe(frame.contentDocument.documentElement,frame.contentDocument)}catch{}}
 new MutationObserver(attachEpubSwipe).observe(epubHost,{childList:true,subtree:true});epubHost.addEventListener("load",attachEpubSwipe,true);
 
 const appearance=document.createElement("div");
@@ -375,8 +402,8 @@ $("lex-appearance-close").onclick=()=>{appearance.hidden=true;controls.classList
 function updateAppearance(){syncStatusBar();applyEpubHighlightStyle()}
 window.addEventListener("lexora:reader-theme-changed",updateAppearance);
 
-async function enterReader(){if(document.body.classList.contains("lex-reader-fullscreen"))return;document.body.classList.add("lex-reader-fullscreen");document.body.classList.remove("lex-controls-hidden");refreshRunningTitle();syncStatusBar();requestAnimationFrame(()=>paginateGuide(false));showControls();$("lex-enter").hidden=true;const panel=document.querySelector("#read .grid>.panel:first-child");if(panel.requestFullscreen&&!document.fullscreenElement){try{await panel.requestFullscreen({navigationUI:"hide"})}catch(e){console.info("Using screen-filling reader layout",e)}}requestAnimationFrame(()=>{try{window.rendition?.resize?.()}catch{}})}
-function exitReader(){clearGuidePagination();appearance.hidden=true;closeResults();clearTimeout(fadeTimer);document.body.classList.remove("lex-reader-fullscreen","lex-controls-hidden");syncStatusBar();$("lex-enter").hidden=false;stop();if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});requestAnimationFrame(()=>{try{window.rendition?.resize?.()}catch{}})}
+async function enterReader(){if(document.body.classList.contains("lex-reader-fullscreen"))return;document.body.classList.add("lex-reader-fullscreen");document.body.classList.remove("lex-controls-hidden");refreshRunningTitle();syncStatusBar();requestAnimationFrame(()=>paginateGuide(false));showControls();$("lex-enter").hidden=true;const panel=document.querySelector("#read .grid>.panel:first-child");if(panel.requestFullscreen&&!document.fullscreenElement){try{await panel.requestFullscreen({navigationUI:"hide"})}catch(e){console.info("Using screen-filling reader layout",e)}}requestAnimationFrame(()=>{try{window.rendition?.resize?.()}catch{}setTimeout(updateCoverNavigation,180)})}
+function exitReader(){coverNav.hidden=true;clearGuidePagination();appearance.hidden=true;closeResults();clearTimeout(fadeTimer);document.body.classList.remove("lex-reader-fullscreen","lex-controls-hidden");syncStatusBar();$("lex-enter").hidden=false;stop();if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});requestAnimationFrame(()=>{try{window.rendition?.resize?.()}catch{}})}
 $("lex-enter").onclick=enterReader;$("lex-exit").onclick=exitReader;
 document.addEventListener("fullscreenchange",()=>{if(!document.fullscreenElement&&document.body.classList.contains("lex-reader-fullscreen"))exitReader()});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&document.body.classList.contains("lex-reader-fullscreen"))exitReader()});
