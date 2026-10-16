@@ -1,22 +1,21 @@
-# LooKitUp — working brand (repository: Lexora)
+# LumoUp — Read. Discover. Remember.
 
 **Read. Discover. Remember.**
 
-Lexora is a personal web app for learning natural American English from reading and real-life encounters: discover a word or expression, understand it in context, save its original sentence, and remember it in one flashcard collection. It begins with an EPUB reader and can eventually accept vocabulary from ChatGPT, websites, videos, and other apps.
+LumoUp is a reading-first language-learning web app: discover words and idiomatic expressions in their original context, save useful examples, and remember them with flashcards. The current prototype focuses on English with Catalan translations and American English pronunciation; a future public release could support English, Spanish, and other languages. It begins with an EPUB reader and could eventually capture vocabulary from ChatGPT, websites, videos, and other apps.
 
 **Current stage:** personal web/PWA prototype (v0.1). Some features are implemented in code but have **not** been verified on a physical phone or all browsers. The live app is [rogerbeltranps-lab.github.io/lexora](https://rogerbeltranps-lab.github.io/lexora/). This README is the **single source of truth** for project direction, current status, known issues, and future plans.
 
-> **Branding decision (2026-10-16):** **LooKitUp** is the chosen **working brand**, with this exact capitalization. It is not a legally cleared or registered trademark. The published prototype and technical repository remain **Lexora** for now; do not change its URL, repo name, app identifiers, existing blue L/RBP favicon, or saved user data just to adopt the brand. If the app is publicly launched or commercialized, revisit trademark clearance, domains, and final naming before release.
+> **Brand decision (2026-10-16):** **LumoUp** (capital L and U) is the selected and implemented **user-facing brand**. The browser, web app, welcome guide, sign-in, Settings, PWA manifest and documentation show LumoUp. Keep the original blue rounded L icon and subtle RBP signature. The **technical** GitHub repository and URL, Firebase project, user data, and internal keys still use `lexora` to preserve existing functionality. Earlier candidates LooKitUp and Lexitale are superseded. Trademark and domain availability are **not legally cleared**; revisit before public or commercial launch.
 
-## Working brand — 2026-10-16
+## Brand — 2026-10-16
 
-- **Name:** **LooKitUp** (preserve capital **L**, **K**, and **U**).
-- **Meaning:** a play on the natural English expression *look it up*; capture, understand and remember unfamiliar vocabulary and idiomatic language without interrupting reading.
-- **Existing slogan:** **Read. Discover. Remember.** Keep this simple product promise.
-- **Favicon:** keep the existing blue rounded **L** icon with the small **RBP** signature. No redesign.
-- **Scope:** the current prototype is oriented toward English with Catalan support, but the intended public product could support English, Spanish and additional languages. The brand must not imply English-only or Catalan-only use.
-- **Availability:** other “LookItUp”/“Look it up” dictionary and browser-extension products already exist. This choice is **for prototyping and internal branding only**, not a statement of uniqueness, market exclusivity, domain availability or legal clearance.
-- **Implementation boundary:** this is a documentation/branding decision, not an instruction to rename the GitHub repository, URL, Firebase identifiers, app manifest, existing user data, or public UI automatically. Decide on user-visible renaming separately.
+- **Name:** **LumoUp**. Suggested AmE pronunciation: /ˈluː.moʊˌʌp/. Invented name evoking *lumo* (light) and the uplifting feeling of *light up*.
+- **Product line:** **Read. Discover. Remember.**
+- **Visual identity:** retain the existing blue L/RBP favicon artwork; no redesign.
+- **Languages:** current English/Catalan prototype; English, Spanish and other languages are potential future support, not a functionality claim.
+- **Migration protection:** keep `rogerbeltranps-lab/lexora`, GitHub Pages URL, Firebase configuration, sync document IDs, IndexedDB, localStorage, event names and the `lexora-v1` backup format unchanged. These technical strings are *not* user-facing branding and must not be mass-renamed.
+- **Name availability:** preliminary searches are not a trademark clearance; investigate before investing in a public launch.
 
 ## What the app is for
 
@@ -43,7 +42,7 @@ The learner owns **one unified flashcard deck**; vocabulary, phrasal verbs, idio
 
 ## Decisions made on October 15, 2026
 
-- **Earlier naming exploration (superseded on 2026-10-16):** Lexitale was previously considered, but an existing closely related language-learning product was found. **LooKitUp** is now the selected working brand. The currently deployed Lexora app and underlying repository have **not** been renamed.
+- **Naming history:** Lexitale and LooKitUp were explored earlier; **LumoUp** became the selected user-facing brand on 2026-10-16. The technical repo retains its original `lexora` name to avoid disruption.
 - **Keep the favicon:** retain the **existing rounded blue icon with the stylized L and discreet RBP signature exactly as it is**. No new logo/favicon work is authorized by this decision.
 - **Voice simplification:** use **only the device's native voice** for narration, dictionary audio, and flashcards. **Kokoro has been removed** along with its heavy model-loading / worker / isolation logic. Optional high-quality cloud voices (e.g. Chirp 3 HD) are a **later possibility**, not part of the current implementation or an approved paid dependency.
 - **Stability before expansion:** current priority is reliable audio, mobile layout, text selection by long-press/drag, swipe navigation, and sign-in/sync. Oct 15 code changes target these problems; real iPhone 13 Pro and desktop browser testing remains outstanding.
@@ -75,7 +74,7 @@ Firebase project: `lexora-2d1f4`; Google Authentication enabled; authorized GitH
 
 **Important but deferred; do not begin in the current stabilization phase.**
 
-- [ ] Authorized **ChatGPT → Lexora** command such as “Add this to Lexora,” storing the expression, context and source in the **same** collection.
+- [ ] Authorized **ChatGPT → LumoUp** command such as “Add this to LumoUp,” storing the expression, context and source in the **same** collection.
 - [ ] Browser extension to select text on webpages and add it from the context menu.
 - [ ] iOS/iPadOS and Android sharing workflows (try simple system sharing/Shortcuts before considering native extensions).
 - [ ] Secure, common capture/sync pipeline with duplicate detection and user review.
@@ -160,7 +159,7 @@ The old standalone `ROADMAP.md` and `docs/FEATURES.md` were consolidated into th
 
 ## Whole-app appearance and audio controls (October 15, 2026)
 
-- The operating system controls light/dark mode across **all Lexora screens**, not only EPUB content. This includes navigation, flashcards, practice, Settings, forms, sign-in and dictionary/reader overlays. No manual theme toggle is introduced.
+- The operating system controls light/dark mode across **all LumoUp screens**, not only EPUB content. This includes navigation, flashcards, practice, Settings, forms, sign-in and dictionary/reader overlays. No manual theme toggle is introduced.
 - The reader audio controls use bold, mirrored circular-arrow icons for **back 15s** and **forward 15s**, with a matching Play/Pause symbol, based on the supplied reference. These remain estimated 15-second jumps with native speech.
 - App version 36, PWA shell v35. Code has been checked, but iPhone Safari/PWA and desktop visual inspection are still pending. No reading data or saved typeface preferences have been modified.
 
@@ -176,11 +175,19 @@ The old standalone `ROADMAP.md` and `docs/FEATURES.md` were consolidated into th
 ## Firestore sync efficiency (October 16, 2026)
 
 - Flashcards are **saved locally first**, then an immediate Firestore synchronization is requested after each successful create/edit. The UI confirms the write when Firebase responds; offline changes remain locally saved and will sync when the connection comes back.
-- No-op checks are **read-only**: Lexora compares canonical card and review content and does not write again merely because Firestore reordered fields/cards or updated its timestamp. Other-device changes still arrive through Firestore's realtime listener.
+- No-op checks are **read-only**: LumoUp compares canonical card and review content and does not write again merely because Firestore reordered fields/cards or updated its timestamp. Other-device changes still arrive through Firestore's realtime listener.
 - Review ratings and bulk imports still use the 650 ms debounce; synchronization calls already in flight are coalesced and preserve cards saved during a pending transaction.
 - Version 38 (PWA shell v37). Mocked Firestore tests cover unchanged reads, a newly saved card, and avoiding duplicate writes; the exact behavior on physical iPhone and on multiple active browsers still needs live verification.
 
 ## iPhone status bar (October 16, 2026)
 
-- On the installed iPhone PWA, the status bar uses opaque black rather than `black-translucent` to eliminate the faded grey overlay above the Lexora navy header. Browser/PWA theme color now uses the matching navy header color in each app theme. The immersive reader retains its existing document background and theme handling.
+- On the installed iPhone PWA, the status bar uses opaque black rather than `black-translucent` to eliminate the faded grey overlay above the LumoUp navy header. Browser/PWA theme color now uses the matching navy header color in each app theme. The immersive reader retains its existing document background and theme handling.
 - App v39, shell cache v38. Physical iPhone visual verification is still required: Apple controls this part of the standalone UI, and these native effects can vary across iOS versions.
+
+## Visible rebrand — 2026-10-16 (v40)
+
+- [x] Brand user-visible website text, browser title, PWA manifest, sign-in, Settings, built-in guide, voice test and accessibility descriptions **LumoUp**.
+- [x] Keep the original blue L/RBP icon art and all local/cloud data identifiers unchanged.
+- [x] Name new backups `lumoup-backup.json` without changing the importable legacy `lexora-v1` JSON format.
+- [ ] Verify the interface and web install on a real iPhone and browser. The installed iPhone Home Screen label may be cached; **do not remove/reinstall the existing PWA just to refresh its label until local-only EPUBs and cards are safely backed up or synced**.
+- [ ] Before a public launch, check trademarks/domains/stores and plan any requested repo/URL migration separately.
