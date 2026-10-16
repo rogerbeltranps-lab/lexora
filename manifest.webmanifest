@@ -5,7 +5,7 @@
   "scope": "./",
   "display": "standalone",
   "background_color": "#fffaf1",
-  "theme_color": "#fffaf1",
+  "theme_color": "#122c42",
   "description": "An English-reading and flashcard app.",
   "icons": [
     {

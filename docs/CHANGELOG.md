@@ -1,5 +1,12 @@
 # Lexora changelog
 
+## 2026-10-16 · 39 — Remove blurred iPhone top status bar
+- Replace the installed iPhone app's `black-translucent` status-bar mode with an **opaque black** status bar. This avoids the grey-to-navy system translucency/scroll-edge gradient visible above the app's header in the user screenshot.
+- Set the PWA/browser `theme-color` to Lexora's header navy (light: `#122c42`, dark: `#15212c`) while outside immersive reading, rather than the pale content background; keep existing full-screen reader theme-color behavior.
+- No changes to tab navigation, appearance setting, reading flow, EPUBs, flashcards, login, syncing or audio.
+- App v39; PWA shell cache v38. Syntax and static checks passed; exact rendering must be verified on the installed iPhone because iOS controls native status-bar appearance.
+
+
 ## 2026-10-16 · 38 — Efficient Firestore synchronization
 - Stop repeated Firestore writes when cards/reviews are unchanged. Compare canonical card IDs and content regardless of array/object field order; ignore the server's `updatedAt` metadata when checking whether a write is needed.
 - On initial sign-in, a manual Sync click and remote snapshot events, only `tx.set` when the merged card/review content actually differs from Firestore (or the document doesn't exist). An unchanged synchronization is read-only.

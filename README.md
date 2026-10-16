@@ -169,3 +169,8 @@ The old standalone `ROADMAP.md` and `docs/FEATURES.md` were consolidated into th
 - No-op checks are **read-only**: Lexora compares canonical card and review content and does not write again merely because Firestore reordered fields/cards or updated its timestamp. Other-device changes still arrive through Firestore's realtime listener.
 - Review ratings and bulk imports still use the 650 ms debounce; synchronization calls already in flight are coalesced and preserve cards saved during a pending transaction.
 - Version 38 (PWA shell v37). Mocked Firestore tests cover unchanged reads, a newly saved card, and avoiding duplicate writes; the exact behavior on physical iPhone and on multiple active browsers still needs live verification.
+
+## iPhone status bar (October 16, 2026)
+
+- On the installed iPhone PWA, the status bar uses opaque black rather than `black-translucent` to eliminate the faded grey overlay above the Lexora navy header. Browser/PWA theme color now uses the matching navy header color in each app theme. The immersive reader retains its existing document background and theme handling.
+- App v39, shell cache v38. Physical iPhone visual verification is still required: Apple controls this part of the standalone UI, and these native effects can vary across iOS versions.
