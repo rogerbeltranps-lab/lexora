@@ -496,6 +496,7 @@ function applyEpubHighlightStyle(targetDoc){
  if(!style){style=doc.createElement("style");style.id="lexora-sentence-highlight";doc.head.appendChild(style)}
  style.textContent='html body .lex-active{background:'+fill+'!important;color:inherit!important;-webkit-box-decoration-break:clone;box-decoration-break:clone;border-radius:3px}::highlight(lexora-current-sentence){background-color:'+fill+'}';
 }
+css.textContent+="\n@keyframes lex-sentence-in{from{opacity:0}to{opacity:1}}";
 /* Highlight the sentence's actual Range inside its EPUB iframe, with no DOM edits. */
 function drawEpubSentence(range){
  // Paint over the visible EPUB page rather than inside its iframe. iPhone
@@ -533,7 +534,8 @@ function drawEpubSentence(range){
   const visibleTop=Math.max(top,view.top),visibleBottom=Math.min(bottom,view.bottom);
   if(visibleRight-visibleLeft<2||visibleBottom-visibleTop<2)continue;
   const mark=document.createElement("span");
-  mark.style.cssText="position:absolute;display:block;pointer-events:none;border-radius:3px";
+  // Blend instead of covering the words, so the text stays crisp under the soft shade; fade in as narration moves on.
+  mark.style.cssText="position:absolute;display:block;pointer-events:none;border-radius:3px;mix-blend-mode:"+(dark?"screen":"multiply")+";animation:lex-sentence-in .25s ease-out";
   mark.style.left=(visibleLeft-readerBox.left-reader.clientLeft+reader.scrollLeft)+"px";
   mark.style.top=(visibleTop-readerBox.top-reader.clientTop+reader.scrollTop)+"px";
   mark.style.width=(visibleRight-visibleLeft)+"px";
@@ -630,7 +632,21 @@ function enableTap(item,number){
  el.addEventListener("dblclick",replay);
  el.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();replay()}});
 }
+// epub.js replaces a chapter's iframe when the layout changes (entering the full-screen reader, rotating,
+// a new text size). Ranges from the old iframe still report isConnected, so the highlight and page
+// following silently did nothing. Rebuild them from the iframe on screen, keeping the same sentence.
+function refreshEpubItems(){
+ if($("booklist").value==="guide"||!items.length)return;
+ const body=epubBody(),doc=items[0].range?.startContainer?.ownerDocument;
+ if(!body||!doc||doc===body.ownerDocument)return;
+ const spoken=items[index]?.text,previous=index;
+ if(!prepare(false))return;
+ let best=-1;
+ items.forEach((x,i)=>{if(x.text===spoken&&(best<0||Math.abs(i-previous)<Math.abs(best-previous)))best=i});
+ index=best>=0?best:Math.min(previous,items.length-1);
+}
 function highlight(){
+ refreshEpubItems();
  clear();const item=items[index],el=liveEl(index);if(!item)return;
  if(mode==="both"&&el){
   if(playing&&followingAudio)followPage(el,item.range);
@@ -720,6 +736,7 @@ function followPage(el,range){
 // The system voice is the narrator. Begin in the user's gesture on iOS.
 function play(auto=false){
  window.lexoraSpeech?.unlock();
+ refreshEpubItems();
  if(!items.length&&!prepare(true))return;
  if(!window.speechSynthesis||!window.lexoraSpeech){$("lex-status").textContent="Device voice unavailable. Try Settings → Audio check.";return}
  const session=++run;playing=true;inspect.hidden=true;

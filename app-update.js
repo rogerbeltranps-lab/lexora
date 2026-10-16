@@ -2,8 +2,8 @@
 (()=>{"use strict";
 const button=document.getElementById("lex-update-check"),status=document.getElementById("lex-update-status");
 if(!button||!status)return;
-const VERSION="2026-10-16 · 44";
-const FILES=["index.html","narration.js","reader-bookmarks.js","firebase-sync.js","book-sync.js","dictionary.js","speech.js","reader-selection.js","reader-keys.js","app-update.js","audio-check.js","sw.js","manifest.webmanifest"];
+const VERSION="2026-10-16 · 45";
+const FILES=["index.html","narration.js","reader-bookmarks.js","firebase-sync.js","book-sync.js","bookmark-sync.js","dictionary.js","speech.js","reader-selection.js","reader-keys.js","app-update.js","audio-check.js","sw.js","manifest.webmanifest"];
 // Show which version is running, so it is clear whether an update arrived.
 status.textContent="Versió instal·lada: "+VERSION+". "+status.textContent;
 button.addEventListener("click",async()=>{

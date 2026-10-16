@@ -71,7 +71,7 @@ function apply(records){
  }catch(e){console.warn("LumoUp: could not apply cloud bookmarks",e)}
 }
 
-export function startBookmarkSync(db,uid){
+export function startBookmarkSync(db,uid,report=()=>{}){
  const reference=doc(db,"users",uid,"state","bookmarks");
  let stopped=false,busy=false,again=false,retry=false;
  async function synchronize(){
@@ -90,25 +90,36 @@ export function startBookmarkSync(db,uid){
    if(signature(latest)!==signature(merged))apply(merged);
    if(signature(merged)!==signature(saved))again=true;
    retry=false;
+   synced(merged);
   }catch(e){
    retry=true;
    console.warn("LumoUp bookmark sync pending; bookmarks remain saved on this device",e);
+   report("Marcadors: no s'han pogut desar al núvol ("+(e.code||e.message)+"). Es conserven en aquest dispositiu i es tornarà a provar.");
   }finally{
    busy=false;
    if(again&&!stopped){again=false;void synchronize()}
   }
  }
+ function synced(records){
+  const count=Object.values(records).filter(x=>!x.deleted).length;
+  report("Marcadors: sincronitzats al núvol · "+count+" · "+new Date().toLocaleTimeString());
+ }
  const changed=()=>{void synchronize()};
  const online=()=>{if(retry)void synchronize()};
  addEventListener("lexora:bookmarks-changed",changed);
  addEventListener("online",online);
+ // iOS suspends the live listener while the app is in the background; catch up on return.
+ const visible=()=>{if(!document.hidden)void synchronize()};
+ document.addEventListener("visibilitychange",visible);
  const unsubscribe=onSnapshot(reference,snap=>{
-  if(stopped||busy||snap.metadata.fromCache||snap.metadata.hasPendingWrites)return;
+  if(stopped||snap.metadata.fromCache||snap.metadata.hasPendingWrites)return;
+  // A change from another device that lands mid-sync must not be dropped: merge it once this sync ends.
+  if(busy){again=true;return}
   const remote=snap.exists()?snap.data().entries||{}:{},local=localRecords();
   const merged=merge(remote,local);
   if(signature(merged)!==signature(local))apply(merged);
-  if(signature(merged)!==signature(remote))void synchronize();
+  if(signature(merged)!==signature(remote))void synchronize();else synced(merged);
  },e=>{retry=true;console.warn("LumoUp bookmark listener",e)});
  void synchronize();
- return()=>{stopped=true;unsubscribe();removeEventListener("lexora:bookmarks-changed",changed);removeEventListener("online",online)};
+ return()=>{stopped=true;unsubscribe();removeEventListener("lexora:bookmarks-changed",changed);removeEventListener("online",online);document.removeEventListener("visibilitychange",visible);report("")};
 }
