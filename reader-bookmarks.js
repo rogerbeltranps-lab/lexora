@@ -147,7 +147,6 @@ function refreshTrigger() {
 }
 function render(message) {
   const bookId = selectedBook();
-  if (bookId === "guide") { close(); return; }
   list.replaceChildren();
   const saved = bookmarksFor(bookId);
   note.textContent = message || (saved.length ? "Select a bookmark to return to that location." : "No bookmarks in this book yet.");
