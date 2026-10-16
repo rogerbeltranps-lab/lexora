@@ -1,5 +1,15 @@
 # Lexora changelog
 
+## 2026-10-16 · 38 — Efficient Firestore synchronization
+- Stop repeated Firestore writes when cards/reviews are unchanged. Compare canonical card IDs and content regardless of array/object field order; ignore the server's `updatedAt` metadata when checking whether a write is needed.
+- On initial sign-in, a manual Sync click and remote snapshot events, only `tx.set` when the merged card/review content actually differs from Firestore (or the document doesn't exist). An unchanged synchronization is read-only.
+- **Saving or editing a flashcard immediately requests cloud synchronization**, with no 650 ms timer. Reviews and backup imports retain the short 650 ms debounce to group rapid changes.
+- Preserve cards created during an in-flight transaction; queue an immediate follow-up write instead of overwriting the new local save. Keep the real-time snapshot listener for changes from other devices.
+- Retry transient network failures when the device comes back online without background polling. Current Firestore status distinguishes saved changes from already-synchronized, no-change checks.
+- No change to account configuration, EPUB storage, login, cards/reviews or the native reader. Code and mocked Firestore transaction tests pass; real-device sync testing pending.
+- App v38; PWA shell v37.
+
+
 ## 2026-10-16 · 37 — EPUB navigation, playback and preferences
 - **Image-only EPUB pages**: add subtle previous/next edge buttons outside the embedded EPUB frame, and attach touch-swipe handling at the chapter document root to support covers and publisher-logo pages whose embedded images intercept gestures.
 - **Flashcard editor on iPhone**: all editable inputs/selects/textarea now use at least 16px text, preventing Safari's automatic focus zoom; dialog dimensions are constrained to the dynamic viewport, without disabling pinch zoom.
