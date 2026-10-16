@@ -1,4 +1,4 @@
-/* Lexora speech: every Listen / Play button goes through here so iPhone quirks are handled in one place. */
+/* LumoUp speech: every Listen / Play button goes through here so iPhone quirks are handled in one place. */
 (()=>{"use strict";
 const synth=window.speechSynthesis;
 const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
