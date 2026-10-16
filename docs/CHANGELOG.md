@@ -1,4 +1,13 @@
-# Lexora changelog
+# LumoUp changelog (repository: lexora)
+
+## 2026-10-16 · 40 — LumoUp user-facing rebrand
+- **LumoUp** is the chosen and implemented app brand; supersedes LooKitUp and the historical Lexora-facing UI.
+- Updated browser tab, SEO description, guide, navigation, menus, sign-in, Settings, narration labels and audio test, installable PWA name/description and favicon accessibility name. Existing blue L/RBP favicon artwork unchanged.
+- Flashcard exports now download as `lumoup-backup.json`; legacy `lexora-v1` format is retained for data compatibility.
+- GitHub repository/Pages URL, Firebase, offline/cloud document paths, local data keys, DOM identifiers, APIs and cache prefixes remain unchanged. This was a visual/wording rebrand only, with **no personal-data migration or deletion**.
+- App version 40, service worker shell v39. Real-device PWA title/icon-label behavior still needs verification; do not uninstall the iPhone PWA before securing local backups.
+- Trademark and domain legal clearance have not been completed.
+
 
 ## 2026-10-16 · Working brand decision (documentation only)
 - Adopted **LooKitUp** (exact capitalization) as the working brand for the prototype, inspired by “look it up.”
