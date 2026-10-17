@@ -1,12 +1,12 @@
-/* LumoUp on a computer: Kokoro natural voices for Read & Listen, the dictionary and flashcards. Kokoro runs in the
+/* Lexora on a computer: Kokoro natural voices for Read & Listen, the dictionary and flashcards. Kokoro runs in the
    browser (kokoro-worker.js). Phones and tablets keep the device voice: Kokoro was too slow in iPhone Safari, and the
-   iPhone app has its own native Kokoro. Loaded before speech.js; the device voice stays in Settings and is the fallback. */
+   LumoUp iPhone app has its own native Kokoro. Loaded before speech.js; the device voice stays in Settings and is the fallback. */
 (()=>{"use strict";
 const mobile=/iPad|iPhone|iPod|Android/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
 const AudioCtx=window.AudioContext||window.webkitAudioContext;
 if(mobile||!window.Worker||!AudioCtx)return;
 const PREFIX="kokoro:",DEFAULT="af_heart";
-// The voices Roger chose for the iPhone app: the two best of each kind first, then the rest, best first.
+// The voices Roger chose for the LumoUp iPhone app: the two best of each kind first, then the rest, best first.
 const VOICES=[["af_heart","Heart","US woman"],["af_bella","Bella","US woman"],["am_michael","Michael","US man"],["am_fenrir","Fenrir","US man"],
  ["bf_emma","Emma","UK woman"],["bf_isabella","Isabella","UK woman"],["bm_george","George","UK man"],["bm_fable","Fable","UK man"],
  ["af_aoede","Aoede","US woman"],["af_kore","Kore","US woman"],["af_nova","Nova","US woman"],["af_alloy","Alloy","US woman"],
@@ -21,11 +21,11 @@ const voiceId=uri=>{const id=String(uri||"").slice(PREFIX.length);return VOICES.
 function status(text){try{onStatus?.(text)}catch{}}
 
 // One-time switch: the web app speaks with Kokoro Heart unless the person picks another voice afterwards.
-try{if(!localStorage.getItem("lumoup-kokoro-default")){localStorage.setItem("lexora-voice-choice",JSON.stringify(PREFIX+DEFAULT));localStorage.setItem("lumoup-kokoro-default","1")}}catch{}
+try{if(!localStorage.getItem("lexora-kokoro-default")){localStorage.setItem("lexora-voice-choice",JSON.stringify(PREFIX+DEFAULT));localStorage.setItem("lexora-kokoro-default","1")}}catch{}
 
 function start(gpu){
  return new Promise((ok,no)=>{
-  worker=new Worker(new URL("kokoro-worker.js?v=46",document.baseURI),{type:"module"});
+  worker=new Worker(new URL("kokoro-worker.js?v=47",document.baseURI),{type:"module"});
   worker.onmessage=e=>{
    const m=e.data;
    if(m.type==="progress"){status("Downloading natural voice… "+Math.round(m.progress)+"%");return}
@@ -41,11 +41,11 @@ function start(gpu){
 function load(){
  if(!engine){
   state="loading";status("Loading natural voice…");
-  let gpu=true;try{gpu=localStorage.getItem("lumoup-kokoro-wasm")!=="1"}catch{}
+  let gpu=true;try{gpu=localStorage.getItem("lexora-kokoro-wasm")!=="1"}catch{}
   engine=start(gpu).catch(error=>{
    worker?.terminate();
    if(!error.gpu)throw error;
-   try{localStorage.setItem("lumoup-kokoro-wasm","1")}catch{}
+   try{localStorage.setItem("lexora-kokoro-wasm","1")}catch{}
    return start(false);
   }).then(kind=>{state="ready";return kind},error=>{
    console.warn("Kokoro unavailable; using the device voice",error);

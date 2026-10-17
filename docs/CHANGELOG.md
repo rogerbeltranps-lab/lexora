@@ -1,4 +1,11 @@
-# LumoUp changelog (repository: lexora)
+# Lexora changelog (repository: lexora)
+
+## 2026-10-17 · 47 — Lexora again, laptops only
+- Plan: Lexora is the laptop web app for Roger's students; LumoUp is now only the native iPhone app (`rogerbeltranps-lab/lumoup`). README → *Two apps, one plan* and the agent guidance file say so.
+- The web app's visible name is **Lexora** again (title, install name, sign-in, Settings, guide, messages); new backups are named `lexora-backup.json`. Data identifiers were never renamed, so nothing moves. The Kokoro first-run switch to Heart uses a new key, so it applies once more.
+- Removed iPhone-only code: the silent audio element that unlocked iPhone sound, the Apple home-screen meta tags and `viewport-fit=cover`, and iPhone wording in Settings, sign-in and error messages. Touch swipes, touch selection and narrow-window layouts stay for touchscreen laptops and small windows.
+- README: laptop-focused status and active work; the dated iPhone-era notes were removed from the README (their history stays below).
+- Tested in desktop Chromium with a simulated Kokoro worker. Version 47; shell cache v47.
 
 ## 2026-10-17 · 46 — Kokoro natural voices on computers
 - The web app is for laptops, so on a computer Read & Listen, the dictionary and flashcards speak with Kokoro again, running in the browser (`kokoro.js`, `kokoro-worker.js`). It uses the GPU (WebGPU) when the computer has one and the 8-bit model on the CPU otherwise.

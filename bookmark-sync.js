@@ -34,7 +34,7 @@ function localRecords(){
   }
   const removed=JSON.parse(localStorage.getItem(DELETIONS)||"{}");
   for(const [id,data] of Object.entries(clean(removed)))items[id]=data;
- }catch(e){console.warn("LumoUp: could not read local bookmarks",e)}
+ }catch(e){console.warn("Lexora: could not read local bookmarks",e)}
  return clean(items);
 }
 function merge(a,b){
@@ -68,7 +68,7 @@ function apply(records){
   const removedValue=JSON.stringify(removed);
   if(localStorage.getItem(DELETIONS)!==removedValue)localStorage.setItem(DELETIONS,removedValue);
   dispatchEvent(new Event("lexora:bookmarks-refreshed"));
- }catch(e){console.warn("LumoUp: could not apply cloud bookmarks",e)}
+ }catch(e){console.warn("Lexora: could not apply cloud bookmarks",e)}
 }
 
 export function startBookmarkSync(db,uid,report=()=>{}){
@@ -93,7 +93,7 @@ export function startBookmarkSync(db,uid,report=()=>{}){
    synced(merged);
   }catch(e){
    retry=true;
-   console.warn("LumoUp bookmark sync pending; bookmarks remain saved on this device",e);
+   console.warn("Lexora bookmark sync pending; bookmarks remain saved on this device",e);
    report("Marcadors: no s'han pogut desar al núvol ("+(e.code||e.message)+"). Es conserven en aquest dispositiu i es tornarà a provar.");
   }finally{
    busy=false;
@@ -119,7 +119,7 @@ export function startBookmarkSync(db,uid,report=()=>{}){
   const merged=merge(remote,local);
   if(signature(merged)!==signature(local))apply(merged);
   if(signature(merged)!==signature(remote))void synchronize();else synced(merged);
- },e=>{retry=true;console.warn("LumoUp bookmark listener",e)});
+ },e=>{retry=true;console.warn("Lexora bookmark listener",e)});
  void synchronize();
  return()=>{stopped=true;unsubscribe();removeEventListener("lexora:bookmarks-changed",changed);removeEventListener("online",online);document.removeEventListener("visibilitychange",visible);report("")};
 }

@@ -1,4 +1,4 @@
-/* LumoUp EPUB library in Firestore, per signed-in user. The Spark plan has no Cloud Storage bucket, so each book is split
+/* Lexora EPUB library in Firestore, per signed-in user. The Spark plan has no Cloud Storage bucket, so each book is split
    into chunks under users/{uid}/books/{bookId}/chunks, and users/{uid}/books/{bookId} holds its name and chunk count.
    The published users/{userId}/{document=**} rule already limits each person to their own books. A book is downloaded
    the first time it is opened on a device and kept in IndexedDB for offline reading. */
@@ -69,7 +69,7 @@ export function startBookSync(db,uid,report){
    }
    if(pending.length)report("EPUB desats al núvol · "+bridge.list().filter(x=>x.cloud===uid).length+" llibres");
   }catch(e){
-   console.error("LumoUp book sync",e);
+   console.error("Lexora book sync",e);
    report("No s'han pogut sincronitzar els EPUB: "+(e.code||e.message)+". Els llibres d'aquest dispositiu es conserven i es tornarà a provar.");
   }finally{running=false;if(again&&!stopped){again=false;reconcile()}}
  }
