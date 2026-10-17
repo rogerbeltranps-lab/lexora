@@ -26,7 +26,8 @@ This is an instruction file for compatible coding agents, **not** a persistent b
 6. **Product guardrail (2026-10-17):** Lexora (this repo) is the **laptop-only web app for Roger's students**. Do not add iPhone, iPad or phone-specific code or fixes; phone work belongs in the separate LumoUp iPhone app (`rogerbeltranps-lab/lumoup`). Keep what laptops need, including touchscreen laptops and narrow browser windows. See README → *Two apps, one plan*.
 7. **Name and identifiers:** **Lexora** is the user-facing name; LumoUp is only the iPhone app. Keep the original blue L/RBP favicon. Do not rename the repo, Pages URL, Firebase project, sync paths, `lexora-*` storage keys, JavaScript APIs or event names without an explicit migration plan. Trademark/domain clearance for any public release remains pending.
 8. **Audio guardrail (2026-10-17):** Kokoro natural voices in the browser (`kokoro.js`, `kokoro-worker.js`), with the computer's own voice as fallback. Any paid cloud voice is hypothetical until explicitly requested.
-9. **Going live:** merging to `main` publishes the app on GitHub Pages. Open a pull request and wait for Roger's approval before merging.
-10. Never claim Chrome, Safari, a real laptop, emulator, CI, or a deployment was tested unless it was actually tested.
+9. **Books:** students cannot import EPUBs; they read the class library in `library/` (see README → *Class library*). Do not bring EPUB import back without Roger asking.
+10. **Going live:** merging to `main` publishes the app on GitHub Pages. Open a pull request and wait for Roger's approval before merging.
+11. Never claim Chrome, Safari, a real laptop, emulator, CI, or a deployment was tested unless it was actually tested.
 
 Repository boundary: work only in `rogerbeltranps-lab/lexora` unless explicitly authorized otherwise.

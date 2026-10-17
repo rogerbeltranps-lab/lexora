@@ -18,6 +18,16 @@ The live app is [rogerbeltranps-lab.github.io/lexora](https://rogerbeltranps-lab
 - **Shared code.** The LumoUp app started from a copy of this web app (its `LumoUpWeb/` folder). The two now evolve separately; port a fix across only when it applies to both.
 - **Technical identifiers** keep the `lexora` name: repository, Pages URL, Firebase project, sync document IDs, IndexedDB, `lexora-*` localStorage keys, event names and the `lexora-v1` backup format. Keep the original blue rounded L icon with the subtle RBP signature.
 
+## Class library — Roger chooses the books (2026-10-17)
+
+Students **cannot import EPUBs**. They read the books Roger puts in the class library, plus the built-in Lexora guide.
+
+**To add a book:** on GitHub, open the repository's `library` folder → **Add file → Upload files** → drop the `.epub` files → **Commit changes**. About a minute later the *Update class library list* action rebuilds `library/books.json` (title from the EPUB's metadata) and the book appears in every student's book list. **To remove a book:** delete its file in the same folder. Replacing a file with a new version makes laptops download the new copy.
+
+- Each laptop downloads a book the first time it is opened and keeps it for offline reading. Books are not uploaded to Firebase, so they cost nothing there.
+- **The repository is public:** anyone who knows a book's address can download it. Only add books you are allowed to share with your class (your own, public domain, or licensed for it). A private class library would need Firebase Storage with sign-in, which is not built.
+- Books Roger imported himself before this change still open on his laptop under *My books*.
+
 ## What the app is for
 
 1. **Read:** import EPUBs and read in a comfortable, paginated interface.
@@ -30,12 +40,12 @@ The learner owns **one unified flashcard deck**; vocabulary, phrasal verbs, idio
 
 | Area | Status | Important limitation or next check |
 | --- | --- | --- |
-| In-app guide and EPUB reader | Implemented | Saves and restores the reading position, with bookmarks. Check on a laptop with real EPUBs. |
+| In-app guide, class library and EPUB reader | Implemented | Students read Roger's class library (no EPUB import). Saves and restores the reading position, with bookmarks. Check on a laptop with real EPUBs. |
 | Immersive reader, themes, font sizes, page turning | Implemented | Arrow keys, page buttons, and swipes on touchscreen laptops. System, Light or Dark theme in Settings. |
 | Dictionary, contextual lookup and phrase matching | Initial implementation | Coverage is incomplete. The starter lexicon and Kaikki-derived indexes exist; verify matches and sense selection in diverse EPUBs. |
 | Unified flashcards, local review, JSON import/export | Implemented locally | Preserve local data. Source sentences and optional source metadata exist on newly captured cards. |
 | Google sign-in and Firestore sync | Implemented in code; **real-browser reliability unresolved** | Earlier blank OAuth popups and `permission-denied` reports; emulator tests are not proof the browser sign-in flow works. |
-| Cloud EPUB library | Implemented in code; emulator tested | Verify end to end after real Google sign-in succeeds. Reading position remains per browser. |
+| Cloud EPUB library (personal) | Implemented in code; no longer used for new books | Without EPUB import, only books Roger imported earlier sync this way. The class library replaces it. |
 | Read & Listen, dictionary and flashcard pronunciation | **Kokoro natural voices** (2026-10-17) | Kokoro runs in the browser (WebGPU, or the CPU), with the same 15 voices as the LumoUp app; it falls back to the computer's voice if the model cannot load. Real-laptop listening test pending. |
 | Install as an app, service worker, temporary manual update button | Implemented | Settings → **Comprova i actualitza** updates app files without deleting books or cards. Remove the button once automatic updates are proven reliable. |
 
@@ -44,6 +54,7 @@ The learner owns **one unified flashcard deck**; vocabulary, phrasal verbs, idio
 ## Decisions
 
 - **2026-10-17:** Lexora is the laptop web app for students, with Kokoro voices; LumoUp is the iPhone app (see *Two apps, one plan*).
+- **2026-10-17:** students cannot import EPUBs; they read the class library Roger fills.
 - **No data loss during debugging:** never delete localStorage, IndexedDB, EPUBs, flashcards or backups to force a refresh.
 - **Stability before expansion:** reliable audio, reading, text selection and sign-in/sync come before new features.
 
