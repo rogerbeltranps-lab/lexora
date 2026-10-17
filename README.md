@@ -35,7 +35,7 @@ The learner owns **one unified flashcard deck**; vocabulary, phrasal verbs, idio
 | Unified flashcards, local review, JSON import/export | Implemented locally | Preserve local data. Source sentences and optional source metadata exist on newly captured cards. |
 | Google sign-in and Firestore sync | Implemented in code; **real-device reliability unresolved** | Earlier blank OAuth popups and `permission-denied` reports; emulator tests are not proof the browser sign-in flow works for the user. |
 | Cloud EPUB library | Implemented in code; emulator tested | Firestore book chunking / multi-device exchange were tested in emulator; verify end to end after real Google sign-in succeeds. Reading position remains per-device. |
-| Read & Listen, dictionary and flashcard pronunciation | **Native device voice only** (Oct 15) | Read & Listen starts paused. Version 32 groups up to three sentences per utterance to reduce sentence-gap delays; rounded ±15s controls and soft highlighting remain. On-device playback/selection verification pending. |
+| Read & Listen, dictionary and flashcard pronunciation | **Kokoro natural voices on computers; device voice on iPhone/iPad** (Oct 17) | Kokoro runs in the browser (WebGPU, or the CPU), with the same 15 voices as the iPhone app; it falls back to the device voice if the model cannot load. Real-laptop listening test pending. |
 | PWA install, service worker, temporary manual update button | Implemented; device QA pending | Settings → **Comprova i actualitza** updates app assets without deleting user books/cards. Remove button only when automatic PWA updates are proven reliable. |
 
 **Verification rule:** “Implemented” means present in code, not necessarily functioning on every device. Do not report a bug as fixed until the relevant user flow is tested.
@@ -44,6 +44,7 @@ The learner owns **one unified flashcard deck**; vocabulary, phrasal verbs, idio
 
 - **Naming history:** Lexitale and LooKitUp were explored earlier; **LumoUp** became the selected user-facing brand on 2026-10-16. The technical repo retains its original `lexora` name to avoid disruption.
 - **Keep the favicon:** retain the **existing rounded blue icon with the stylized L and discreet RBP signature exactly as it is**. No new logo/favicon work is authorized by this decision.
+- **Voice update (2026-10-17):** the web app is for laptops, and on computers it speaks with **Kokoro** again (see the changelog, v46); the iPhone app in `rogerbeltranps-lab/lumoup` has native Kokoro. The Oct 15 decision that follows applied to phones:
 - **Voice simplification:** use **only the device's native voice** for narration, dictionary audio, and flashcards. **Kokoro has been removed** along with its heavy model-loading / worker / isolation logic. Optional high-quality cloud voices (e.g. Chirp 3 HD) are a **later possibility**, not part of the current implementation or an approved paid dependency.
 - **Stability before expansion:** current priority is reliable audio, mobile layout, text selection by long-press/drag, swipe navigation, and sign-in/sync. Oct 15 code changes target these problems; real iPhone 13 Pro and desktop browser testing remains outstanding.
 - **No data loss during debugging:** avoid deleting localStorage, IndexedDB, EPUBs, flashcards or backups to force a refresh.

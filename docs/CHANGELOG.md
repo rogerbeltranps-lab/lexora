@@ -1,5 +1,13 @@
 # LumoUp changelog (repository: lexora)
 
+## 2026-10-17 · 46 — Kokoro natural voices on computers
+- The web app is for laptops, so on a computer Read & Listen, the dictionary and flashcards speak with Kokoro again, running in the browser (`kokoro.js`, `kokoro-worker.js`). It uses the GPU (WebGPU) when the computer has one and the 8-bit model on the CPU otherwise.
+- Settings lists the same 15 Kokoro voices as the iPhone app: Heart, Bella, Michael, Fenrir, Emma, Isabella, George and Fable first, then Aoede, Kore, Nova, Alloy, Puck, Nicole and Sarah. Kokoro Heart becomes the chosen voice once; the device voices stay in the list.
+- Narration sends Kokoro whole sentences plus the next chunk, so it prepares speech ahead and plays without gaps; the highlight and EPUB page turns follow the audio Kokoro is actually playing.
+- If the model cannot load, the device voice reads instead. iPhone and iPad keep the device voice (the iPhone app has native Kokoro).
+- Tested in desktop Chromium with a simulated Kokoro worker (model downloads are not reachable from the test machine). Not yet heard with the real model on a laptop.
+- Narration and updater script URLs to v46; shell cache v46; the manual updater also refreshes the two Kokoro files.
+
 ## 2026-10-16 · 45 — Narration highlight that actually shows, exact reopen page, bookmark sync status
 - Fix the spoken-sentence highlight and page following doing nothing in Read & Listen. Entering the full-screen reader (or rotating, or changing text size) makes epub.js rebuild the chapter in a new iframe, but the sentence ranges still pointed at the old one; a node in a discarded iframe still reports `isConnected`, so the earlier detached-range check never fired. Sentences are now rebuilt from the iframe on screen before each highlight and on Play, keeping the same sentence.
 - The highlight blends with the page (multiply on light, screen on dark) so words stay crisp, and fades in as narration moves to the next sentence.

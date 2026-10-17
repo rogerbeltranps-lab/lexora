@@ -15,6 +15,7 @@ function info(){
  log("audioSession: "+(navigator.audioSession?navigator.audioSession.type:"none"));
  log("speechSynthesis: "+!!synth+", voices: "+vs.length+", en-US: "+us.length+(us.length?" ("+us.slice(0,6).map(v=>v.name+(v.default?"*":"")).join(", ")+")":""));
  log("saved voice: "+(localStorage.getItem("lexora-voice-choice")||"none"));
+ log("kokoro: "+(window.lexoraSpeech?.kokoro?window.lexoraSpeech.engine():"not used on this device"));
 }
 info();if(synth)synth.addEventListener?.("voiceschanged",()=>log("voiceschanged: "+synth.getVoices().length+" voices, en-US: "+synth.getVoices().filter(v=>/^en[-_]us$/i.test(v.lang)).length));
 const watch=label=>[300,1500,4000].forEach(ms=>setTimeout(()=>log(label+" after "+ms+"ms: "+state()),ms));

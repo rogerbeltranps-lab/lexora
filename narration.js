@@ -463,14 +463,72 @@ if(typeof originalChoose==="function"){
 }
 
 function sentences(s){return (s.match(/[^.!?]+(?:[.!?]+(?=\s|$)|$)/g)||[]).map(v=>v.trim()).filter(v=>/[a-z]/i.test(v))}
-function cancelSegmentTimers(){segmentTimers.forEach(clearTimeout);segmentTimers=[]}
+function cancelSegmentTimers(){segmentTimers.forEach(clearTimeout);segmentTimers=[];cancelPageTurn()}
+/* Kokoro: a sentence that continues on the next EPUB page turns the page when the voice
+   reaches the page break, not when the next sentence starts. */
+let pageTurnTimer=0,pagePlan=null;
+function cancelPageTurn(){clearTimeout(pageTurnTimer);pageTurnTimer=0;pagePlan=null}
+// Offset in the sentence of its first character to the right of the visible page, or -1 if the rest fits.
+function offPageCharacter(item){
+ const range=item?.range,doc=range?.startContainer?.ownerDocument;
+ if(!range?.startContainer?.isConnected||!doc)return -1;
+ const frame=[...epubHost.querySelectorAll("iframe")].find(f=>{try{return f.contentDocument===doc}catch{return false}});
+ if(!frame)return -1;
+ const right=epubHost.getBoundingClientRect().right-2,offset=frame.getBoundingClientRect().left,root=range.commonAncestorContainer;
+ const nodes=[];let total=0;
+ const add=n=>{if(!range.intersectsNode(n))return;const start=n===range.startContainer?range.startOffset:0,end=n===range.endContainer?range.endOffset:n.length;if(end>start){nodes.push({n,start,base:total});total+=end-start}};
+ if(root.nodeType===3)add(root);else{const walker=doc.createTreeWalker(root,NodeFilter.SHOW_TEXT);let n;while((n=walker.nextNode()))add(n)}
+ if(!total)return -1;
+ const probe=doc.createRange();
+ function x(k){
+  let at=nodes[0];for(const e of nodes){if(e.base>k)break;at=e}
+  const o=at.start+k-at.base;probe.setStart(at.n,o);probe.setEnd(at.n,o+1);
+  const r=[...probe.getClientRects()].find(r=>r.width>0||r.height>0)||probe.getBoundingClientRect();
+  return offset+r.left;
+ }
+ if(x(total-1)<right)return -1;
+ let lo=0,hi=total-1;
+ while(lo<hi){const mid=(lo+hi)>>1;if(x(mid)>=right)hi=mid;else lo=mid+1}
+ return lo;
+}
+// Sentence i plays its characters from..to over seconds, of which elapsed already played.
+function planPageTurn(i,from,to,seconds,elapsed=0){
+ cancelPageTurn();
+ if(mode!=="both"||!items[i]?.range||!(seconds>0)||to<=from||typeof rendition==="undefined"||!rendition)return;
+ const plan={i,from,to,ms:seconds*1000,t0:performance.now()-elapsed*1000,session:run};pagePlan=plan;
+ const live=()=>pagePlan===plan&&plan.session===run&&playing&&followingAudio&&index===plan.i&&mode==="both";
+ function schedule(){
+  if(!live())return;
+  const k=offPageCharacter(items[plan.i]);
+  if(k<0||k>=plan.to)return;
+  const wait=k<=plan.from?0:plan.t0+(k-plan.from)/(plan.to-plan.from)*plan.ms-performance.now();
+  pageTurnTimer=setTimeout(turn,Math.max(0,wait));
+ }
+ async function turn(){
+  if(!live()||epubFollowTask)return;
+  const book=rendition;
+  try{await book.next()}catch{return}
+  await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+  if(!live()||rendition!==book)return;
+  if(!items[index]?.range?.startContainer?.isConnected){
+   const spoken=items[index]?.text,previous=index;
+   if(!prepare(false))return;
+   const match=items.findIndex((x,j)=>j>=Math.max(0,previous-3)&&j<=previous+3&&x.text===spoken);
+   index=plan.i=match>=0?match:Math.min(previous,items.length-1);
+  }
+  drawEpubSentence(items[index]?.range);
+  schedule();
+ }
+ schedule();
+}
 /* Keep native speech flowing across sentences and paragraphs, avoiding
    repeated onend/onstart gaps. Preserve spoken character positions for highlighting. */
 function narrationChunk(from){
- const starts=[],phrases=[];let chars=0,end=from;
+ const starts=[],phrases=[];let chars=0,end=from,skip=0;
  while(end<items.length&&phrases.length<7){
-  const next=(end===from&&wordStartOffset>0?String(items[end]?.text||"").slice(wordStartOffset):String(items[end]?.text||"")).trim();
+  const whole=String(items[end]?.text||""),cut=end===from&&wordStartOffset>0?whole.slice(wordStartOffset):whole,next=cut.trim();
   if(!next){end++;continue}
+  if(!phrases.length)skip=whole.length-cut.trimStart().length;
   if(phrases.length&&chars+next.length+1>450)break;
   starts.push(chars+(phrases.length?1:0));
   phrases.push(next);chars+=next.length+(phrases.length>1?1:0);end++;
@@ -479,7 +537,8 @@ function narrationChunk(from){
  // A one-character punctuation substitution shortens period pauses on iOS.
  // The EPUB and the range offsets are not modified.
  const text=phrases.map((part,i)=>i<phrases.length-1?part.replace(/\.(?=\s*$)/,","):part).join(" ");
- return {text,starts,end,from}
+ // The original sentences let Kokoro keep its period pauses.
+ return {text,starts,end,from,parts:phrases,skip}
 }
 function clear(){
  if(activeHighlightDoc){try{activeHighlightDoc.defaultView?.CSS?.highlights?.delete("lexora-current-sentence")}catch{}activeHighlightDoc=null}
@@ -733,7 +792,7 @@ function followPage(el,range){
  }
  el.scrollIntoView?.({block:"nearest",behavior:"smooth"})
 }
-// The system voice is the narrator. Begin in the user's gesture on iOS.
+// Kokoro (on a computer) or the device voice is the narrator. Begin in the user's gesture.
 function play(auto=false){
  window.lexoraSpeech?.unlock();
  refreshEpubItems();
@@ -755,16 +814,24 @@ function play(auto=false){
   function showSentence(i){
    if(session!==run||!playing||i===index||i<chunk.from||i>=chunk.end)return;
    index=i;highlight();
+   planPageTurn(i,0,items[i].text.length,sentenceSeconds(i));
   }
+  // Give Kokoro the sentences and the next chunk so it can prepare it during playback.
+  const upcoming=chunk.end<items.length?narrationChunk(chunk.end).parts.slice(0,2):[];
+  const voiceURI=JSON.parse(localStorage.getItem("lexora-voice-choice")||'""'),kokoro=!!lexoraSpeech.kokoro&&(!voiceURI||String(voiceURI).startsWith("kokoro:"));
   const ok=lexoraSpeech.speak(chunk.text,{
+   parts:chunk.parts,starts:chunk.starts,upcoming,
    rate:speed(),
-   voiceURI:JSON.parse(localStorage.getItem("lexora-voice-choice")||'""'),
+   voiceURI,
+   onstatus:message=>{if(session===run&&playing&&!started)$("lex-status").textContent=message},
    onstart:()=>{
     started=true;
     if(session!==run||!playing)return;
     $("lex-status").textContent="Speaking…";
+    planPageTurn(index,0,items[index]?.text.length||0,sentenceSeconds(index));
     // Safari can omit speech boundaries: approximate sentence progress visually
-    // while retaining one uninterrupted utterance.
+    // while retaining one uninterrupted utterance. Kokoro reports every sentence itself.
+    if(kokoro)return;
     let delay=0;
     for(let i=chunk.from+1;i<chunk.end;i++){
      const words=items[i-1].text.trim().split(/\s+/).length;
@@ -778,16 +845,24 @@ function play(auto=false){
     for(let k=1;k<chunk.starts.length;k++)if(e.charIndex>=chunk.starts[k])position=chunk.from+k;
     showSentence(position);
    },
+   // Kokoro reports each piece of audio as it starts, a better clock than the estimate above.
+   onsegment:e=>{
+    if(session!==run||!playing)return;
+    let k=0;while(k+1<chunk.starts.length&&e.charIndex>=chunk.starts[k+1])k++;
+    const i=chunk.from+k,from=e.charIndex-chunk.starts[k]+(k===0?chunk.skip:0);
+    if(i!==index)showSentence(i);
+    planPageTurn(i,from,from+e.length,e.seconds,e.elapsed);
+   },
    onend:()=>{finished=true;if(session===run&&playing){cancelSegmentTimers();index=chunk.end;next()}},
    onerror:error=>{
     finished=true;if(session!==run)return;
-    stop();$("lex-status").textContent=error==="speech-stalled"
+    stop();$("lex-status").textContent=error==="interrupted"?"Paused":error==="speech-stalled"
      ?"Audio paused because the device voice stopped responding. Tap Play to resume."
-     :"Device voice failed ("+error+"). Try Settings → Audio check.";
+     :(kokoro?"Voice failed (":"Device voice failed (")+error+"). Try Settings → Audio check.";
    }
   });
   if(ok===false){finished=true;return}
-  setTimeout(()=>{if(session===run&&playing&&!started&&!finished&&!window.speechSynthesis.speaking)$("lex-status").textContent="Speech did not start. Try Settings → Audio check."},4500);
+  setTimeout(()=>{if(session===run&&playing&&!started&&!finished&&!window.speechSynthesis.speaking&&!lexoraSpeech.preparing?.())$("lex-status").textContent="Speech did not start. Try Settings → Audio check."},4500);
  }
  next();
 }
