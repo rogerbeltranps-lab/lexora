@@ -58,15 +58,40 @@ The learner owns **one unified flashcard deck**; vocabulary, phrasal verbs, idio
 - **No data loss during debugging:** never delete localStorage, IndexedDB, EPUBs, flashcards or backups to force a refresh.
 - **Stability before expansion:** reliable audio, reading, text selection and sign-in/sync come before new features.
 
-## Active work
+## Roadmap (agreed with Roger, 2026-10-17)
 
+### Lexora (this repository): the laptop web app for students
+
+**Done**
+- [x] Kokoro natural voices in the browser on laptops (v46).
+- [x] Laptop-only app, named Lexora again; iPhone-only code removed (v47).
+- [x] Class library: students read only the books Roger adds to `library/`; no EPUB import (v47).
+
+**Now: get it ready for the class**
 - [ ] **Listen to Kokoro on a real laptop** (Chrome and Safari): first model download, Read & Listen, dictionary and flashcards, and the device-voice fallback.
-- [ ] **Verify the reader on a laptop** with real EPUBs: layout, sentence highlighting and page following during narration, text selection, **Explore selection**, one-word lookup, bookmarks and reopening at the right page.
-- [ ] **Verify Google sign-in and Firestore sync** on real browsers; preserve local cards and books throughout.
-- [ ] **Prepare for students:** privacy-appropriate accounts and data, and how Roger links Lexora from the English Lab.
+- [ ] **Roger adds the first class books** to `library/` and checks them on a laptop: layout, sentence highlighting and page following during narration, text selection, **Explore selection**, one-word lookup, bookmarks and reopening at the right page.
+- [ ] **Verify Google sign-in and Firestore sync** on real browsers; preserve local cards throughout.
+- [ ] **Check Firebase before students sign in:** the project is on the free Spark plan, and the Firestore rules let each person read and write only `users/{their uid}`.
+- [ ] **Roger links Lexora from the English Lab** (his decision; nothing to build yet).
+
+**Next**
+- [ ] **Split flashcard storage** before students reach the 1 MB Firestore document limit (roughly 500 to 800 cards each): today all of a student's cards and reviews live in one document, `users/{uid}/state/lexora`.
+- [ ] Student accounts and privacy appropriate for a school (what is stored, who can see it, how to delete it).
 - [ ] Expand dictionary coverage, lemmatization/idiom matching, accuracy and licensing checks.
 - [ ] Remove the temporary Settings update button once automatic updates are reliable.
 - [ ] Review accessibility, privacy, synchronization rules, error reporting, EPUB robustness and any security-scanning warnings. Treat publicly embedded Firebase client configuration differently from genuinely private credentials.
+
+**Later (only if needed)**
+- [ ] A **private class library** (Firebase Storage readable only by signed-in students) if the books must not be public.
+- [ ] The teacher and student features in *Future roadmap* below.
+
+### LumoUp (`rogerbeltranps-lab/lumoup`): the iPhone app, for reference
+
+LumoUp's own README is the source of truth for its roadmap. Agreed on 2026-10-17:
+- Redesign the iPhone app one change at a time, trying each on the phone.
+- **A separate Firebase project for LumoUp**, never Lexora's `lexora-2d1f4`, so App Store users and students never share data, rules or limits.
+- Sign-in built into the app itself (Google sign-in does not work inside an app's built-in browser), with **Sign in with Apple**, which the App Store requires next to Google sign-in. Both need the paid Apple Developer account.
+- Publishing on the App Store later is Roger's decision.
 
 ### Known sign-in incident (first reported 2026-10-11)
 
