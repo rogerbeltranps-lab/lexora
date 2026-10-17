@@ -1,4 +1,4 @@
-/* LumoUp Kokoro worker: synthesizes off the main thread so the reader, highlight and audio timing stay responsive. */
+/* Lexora Kokoro worker: synthesizes off the main thread so the reader, highlight and audio timing stay responsive. */
 const MODEL="onnx-community/Kokoro-82M-v1.0-ONNX";
 let tts=null,serial=Promise.resolve();
 const progress=e=>{if(e?.status==="progress"&&e.total>1e6)self.postMessage({type:"progress",progress:e.progress||0})};

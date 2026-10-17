@@ -2,7 +2,7 @@
 (()=>{"use strict";
 const button=document.getElementById("lex-update-check"),status=document.getElementById("lex-update-status");
 if(!button||!status)return;
-const VERSION="2026-10-17 · 46";
+const VERSION="2026-10-17 · 47";
 const FILES=["index.html","narration.js","reader-bookmarks.js","firebase-sync.js","book-sync.js","bookmark-sync.js","dictionary.js","kokoro.js","kokoro-worker.js","speech.js","reader-selection.js","reader-keys.js","app-update.js","audio-check.js","sw.js","manifest.webmanifest"];
 // Show which version is running, so it is clear whether an update arrived.
 status.textContent="Versió instal·lada: "+VERSION+". "+status.textContent;
@@ -24,12 +24,12 @@ button.addEventListener("click",async()=>{
     if(registration.waiting)registration.waiting.postMessage({type:"SKIP_WAITING"});
    }
   }
-  // Only clear LumoUp's application-shell Cache Storage entries, never personal data.
+  // Only clear Lexora's application-shell Cache Storage entries, never personal data.
   if("caches"in window){
    const keys=await caches.keys();
    await Promise.all(keys.filter(k=>k.startsWith("lexora-shell-")).map(k=>caches.delete(k)));
   }
-  status.textContent="Versió comprovada. Obrint LumoUp actualitzada…";
+  status.textContent="Versió comprovada. Obrint Lexora actualitzada…";
   location.replace(target.href);
  }catch(e){
   status.textContent="No s'ha pogut actualitzar. Comprova la connexió i torna-ho a provar. ("+String(e.message||e)+")";

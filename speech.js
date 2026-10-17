@@ -1,18 +1,11 @@
-/* LumoUp speech: every Listen / Play button goes through here so iPhone quirks are handled in one place. */
+/* Lexora speech: the device voice. Every Listen / Play button goes through here (kokoro.js answers first on computers). */
 (()=>{"use strict";
 const synth=window.speechSynthesis;
-const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
-// iOS 17+ lists Apple's novelty voices as en-US. Some of them speak nothing in Safari, and one of them was often voices[0].
+// Apple lists its novelty voices as en-US; some speak nothing in Safari, and one of them was often voices[0].
 const NOVELTY=/^(Albert|Bad News|Bahh|Bells|Boing|Bubbles|Cellos|Deranged|Fred|Good News|Hysterical|Jester|Junior|Kathy|Organ|Pipe Organ|Princess|Ralph|Superstar|Trinoids|Whisper|Wobble|Zarvox)\b/i;
-let primer=null,current=null,cancelledAt=0,generation=0;
-// 0.1 s of 8-bit silence, built here so no audio file has to be cached.
-function silentWav(){const n=800,d=new DataView(new ArrayBuffer(44+n)),s=(o,t)=>[...t].forEach((c,i)=>d.setUint8(o+i,c.charCodeAt(0)));s(0,"RIFF");d.setUint32(4,36+n,true);s(8,"WAVEfmt ");d.setUint32(16,16,true);d.setUint16(20,1,true);d.setUint16(22,1,true);d.setUint32(24,8000,true);d.setUint32(28,8000,true);d.setUint16(32,1,true);d.setUint16(34,8,true);s(36,"data");d.setUint32(40,n,true);for(let i=0;i<n;i++)d.setUint8(44+i,128);return URL.createObjectURL(new Blob([d],{type:"audio/wav"}))}
-// Call inside the tap handler. The iPhone ring/silent switch mutes web audio unless the page holds the media playback session.
-function unlock(){
- try{if(navigator.audioSession&&navigator.audioSession.type!=="playback")navigator.audioSession.type="playback"}catch{}
- // Older iOS has no audioSession API; starting an <audio> element during a tap moves the page to the playback session.
- if(isIOS)try{if(!primer){primer=new Audio(silentWav());primer.setAttribute("playsinline","");primer.preload="auto"}primer.currentTime=0;primer.play()?.catch?.(()=>{})}catch{}
-}
+let current=null,cancelledAt=0,generation=0;
+// Kept for callers that unlock audio inside a click; laptop browsers need nothing extra for the device voice.
+function unlock(){}
 // Apple puts the quality in the voice id (com.apple.voice.premium.en-US.Ava); the name alone is the same for every quality.
 function quality(v){const id=String(v?.voiceURI||"");return /premium/i.test(id)?"Premium":/enhanced/i.test(id)?"Enhanced":/compact/i.test(id)?"Basic":""}
 const rank=v=>({Premium:0,Enhanced:1}[quality(v)]??2);
@@ -20,7 +13,7 @@ function voices(){return synth?synth.getVoices().filter(v=>/^en[-_]us$/i.test(v.
 function speak(text,options={}){
  text=String(text||"").trim();if(!text)return false;
  if(!synth||!("SpeechSynthesisUtterance"in window)){options.onerror?.("unsupported");return false}
- unlock();
+
  cancel();const busy=Date.now()-cancelledAt<150,mine=generation;
  const say=(voiceURI,retry)=>{
   if(mine!==generation)return;

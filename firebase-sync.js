@@ -1,4 +1,4 @@
-/* LumoUp private, local-first cloud sync: flashcards and reviews here, EPUB books in book-sync.js. */
+/* Lexora private, local-first cloud sync: flashcards and reviews here, EPUB books in book-sync.js. */
 import {initializeApp} from "https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js";
 import {getAuth,GoogleAuthProvider,signInWithPopup,signInWithRedirect,getRedirectResult,signOut,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/13.0.0/firebase-auth.js";
 import {getFirestore,doc,runTransaction,onSnapshot} from "https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js";
@@ -91,7 +91,7 @@ async function synchronize(){
    setBadge(result.wrote?"☁ Desat al núvol":"☁ Sincronitzat");
   }
  }catch(e){
-  console.error("LumoUp cloud sync",e);
+  console.error("Lexora cloud sync",e);
   const code=e.code||e.message;
   if(["unavailable","deadline-exceeded","network-request-failed","failed-precondition"].includes(code))retryAfterConnection=true;
   const hint=code==="permission-denied"?" Revisa a Firebase → Firestore → Rules que la regla de users/{userId} estigui publicada, i que App Check no estigui en mode «Enforce» per a Firestore.":code==="unavailable"?" Sense connexió; es tornarà a provar quan canviïs alguna targeta.":"";
@@ -116,7 +116,7 @@ function queueSync(immediate=false){
  else clock=setTimeout(()=>{clock=null;void synchronize()},650);
 }
 function authError(e){
- console.error("LumoUp Google Sign-In:",e);
+ console.error("Lexora Google Sign-In:",e);
  const code=e?.code||"unknown";
  const hints={
   "auth/unauthorized-domain":"Falta autoritzar aquest domini a Firebase Authentication → Settings → Authorized domains.",
@@ -125,7 +125,7 @@ function authError(e){
   "auth/operation-not-supported-in-this-environment":"Aquest navegador o mode d'aplicació no permet aquest tipus d'inici de sessió.",
   "auth/network-request-failed":"No s'ha pogut contactar amb Google. Revisa la connexió o els bloquejadors."
  };
- loginFailure="Google Sign-In: "+code+". "+(hints[code]||e?.message||"Obre LumoUp en una pestanya normal del navegador.");
+ loginFailure="Google Sign-In: "+code+". "+(hints[code]||e?.message||"Obre Lexora en una pestanya normal del navegador.");
  authMessage(loginFailure);gateMessage(code==="auth/popup-closed-by-user"||code==="auth/cancelled-popup-request"?"":loginFailure);
 }
 async function signIn(button){

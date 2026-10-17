@@ -1,4 +1,4 @@
-/* LumoUp Dictionary Explorer v0.2
+/* Lexora Dictionary Explorer v0.2
  * First-party starter glossary: © 2026 Roger Beltran.
  * Dictionary shards are retrieved from GitHub Pages on demand.
  */
@@ -89,7 +89,7 @@ async function candidates(raw){
  return results.slice(0,15);
 }
 // Free dictionary fallback for individual English words (dictionaryapi.dev).
-// Phrase discovery still uses LumoUp's existing contextual dictionary.
+// Phrase discovery still uses Lexora's existing contextual dictionary.
 const builtInWords={
  "phrase":{ipa:"/freɪz/",type:"noun",senses:[["A small group of words that forms part of a sentence or expresses an idea.","frase; expressió","The phrase ‘come across’ is common in English."],["A particular way of saying something.","expressió; manera de dir","That's an interesting phrase."]]},
  "word":{ipa:"/wɝd/",type:"noun",senses:[["A single unit of language with meaning.","paraula","Choose a word to look up."]]},
@@ -146,7 +146,7 @@ function sourceSentence(raw,entry,passage){
 }
 // Where a reader selection came from. Optional on cards: older cards have no source.
 function readingSource(sentence){
- const guide=currentBook==="guide",book=guide?{name:"The LumoUp Guide"}:(bookNames.find(b=>b.id===currentBook)||{});
+ const guide=currentBook==="guide",book=guide?{name:"The Lexora Guide"}:(bookNames.find(b=>b.id===currentBook)||{});
  let location="";
  try{location=guide?"chapter "+(chapterIndex+1):(rendition?.currentLocation?.()?.start?.cfi||"")}catch{}
  return {kind:"book",title:book.name||"",bookId:currentBook,sentence,location,capturedAt:new Date().toISOString()};
@@ -194,7 +194,7 @@ function playDictionaryAudio(raw){
      onstart:()=>{started=true;button.textContent="🔊 Reproduint…"},
      onend:()=>{button.textContent="🔊 Escolta"},
      onerror:e=>{button.textContent="🔊 Torna-ho a provar";toast("La veu no s'ha reproduït ("+e+"). Prova la veu del dispositiu.")}});
-   setTimeout(()=>{if(!started&&!speechSynthesis.speaking&&button.isConnected&&button.textContent==="🔊 Reproduint…"){button.textContent="🔊 Torna-ho a provar";toast("L'iPhone no ha iniciat l'àudio. Comprova el volum i prova de nou.");}},4500);
+   setTimeout(()=>{if(!started&&!speechSynthesis.speaking&&button.isConnected&&button.textContent==="🔊 Reproduint…"){button.textContent="🔊 Torna-ho a provar";toast("L'àudio no s'ha iniciat. Comprova el volum i prova de nou.");}},4500);
  }catch(error){button.textContent="🔊 Torna-ho a provar";toast("No es pot reproduir l'àudio: "+error.message)}
 }
 function renderCandidates(raw,source,items,warning){
@@ -239,7 +239,7 @@ async function analyze(raw,source){
  }
 }
 window.lexoraAnalyze=analyze;
-window.lexoraDictionaryInfo={matching:"words, phrases and expressions",sources:["Wiktionary via Kaikki","LumoUp starter glossary"],cloudSync:false};
+window.lexoraDictionaryInfo={matching:"words, phrases and expressions",sources:["Wiktionary via Kaikki","Lexora starter glossary"],cloudSync:false};
 choose=function(term,source=""){
  selected=term.trim().slice(0,500);
  lastPassage=source.trim();

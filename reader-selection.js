@@ -18,7 +18,7 @@ document.head.appendChild(style);
 const action=document.createElement("button");
 action.id="lex-explore-selection";action.type="button";action.className="btn primary lex-selection-lookup";
 action.textContent="Explore selection";action.hidden=true;
-action.setAttribute("aria-label","Look up the selected phrase in LumoUp");
+action.setAttribute("aria-label","Look up the selected phrase in Lexora");
 panel.appendChild(action);
 const wordActions=document.createElement("div");wordActions.className="lex-word-actions";wordActions.hidden=true;wordActions.setAttribute("role","group");wordActions.setAttribute("aria-label","Word actions");
 wordActions.innerHTML='<button class="btn primary" type="button" data-action="read">▶ Read from here</button><button class="btn" type="button" data-action="lookup">Look up</button>';
