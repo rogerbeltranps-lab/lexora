@@ -1,5 +1,11 @@
 # Lexora changelog (repository: lexora)
 
+## 2026-10-21 · 48 — Kokoro actually speaks on computers
+- Fix Kokoro staying silent on every computer. The worker loaded kokoro-js from esm.sh, whose bundle includes a stand-in for Node's file system, so kokoro-js tried to read the voice file (`voices/af_heart.bin`) from disk and failed with "[unenv] fs.readFile is not implemented yet!" after the model had downloaded. The worker now loads the library's web build from jsdelivr, which downloads the voice.
+- If Kokoro cannot speak the first sentence for any reason, the device voice reads instead (before, only a model that failed to load fell back; a failing sentence left Read & Listen silent).
+- Tested on Roger's Windows PC (i7-1280P, Intel Iris Xe, WebGPU) in Chromium 152: the first time about 68 s to download and load the model, later about 20 s to load it from the browser cache; the first sentence takes about 6 s (GPU warm-up), the next ones about 1.2 s for 3.4 s of speech.
+- Kokoro and updater script URLs to v48; shell cache v48.
+
 ## 2026-10-17 · 47 — Lexora again, laptops only
 - Plan: Lexora is the laptop web app for Roger's students; LumoUp is now only the native iPhone app (`rogerbeltranps-lab/lumoup`). README → *Two apps, one plan* and the agent guidance file say so.
 - The web app's visible name is **Lexora** again (title, install name, sign-in, Settings, guide, messages); new backups are named `lexora-backup.json`. Data identifiers were never renamed, so nothing moves. The Kokoro first-run switch to Heart uses a new key, so it applies once more.
