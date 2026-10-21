@@ -25,7 +25,7 @@ try{if(!localStorage.getItem("lexora-kokoro-default")){localStorage.setItem("lex
 
 function start(gpu){
  return new Promise((ok,no)=>{
-  worker=new Worker(new URL("kokoro-worker.js?v=47",document.baseURI),{type:"module"});
+  worker=new Worker(new URL("kokoro-worker.js?v=48",document.baseURI),{type:"module"});
   worker.onmessage=e=>{
    const m=e.data;
    if(m.type==="progress"){status("Downloading natural voice… "+Math.round(m.progress)+"%");return}
@@ -103,8 +103,8 @@ function speak(text,options={}){
    try{buffer=await clips[k]}
    catch(error){
     if(!live())return;
-    // The model could not load: the device voice reads instead, so the narration never stays silent.
-    if(state==="failed"&&k===0){waiting=false;status("Natural voice unavailable; using the device voice");device?device.speak(text,options):options.onerror?.("kokoro-failed");return}
+    // The model could not load or could not speak the first sentence: the device voice reads instead, so the narration never stays silent.
+    if(k===0){waiting=false;console.warn("Kokoro could not speak; using the device voice",error);status("Natural voice unavailable; using the device voice");device?device.speak(text,options):options.onerror?.("kokoro-failed");return}
     waiting=false;options.onerror?.(String(error?.message||error));return;
    }
    if(!live())return;

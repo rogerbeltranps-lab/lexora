@@ -3,7 +3,8 @@ const MODEL="onnx-community/Kokoro-82M-v1.0-ONNX";
 let tts=null,serial=Promise.resolve();
 const progress=e=>{if(e?.status==="progress"&&e.total>1e6)self.postMessage({type:"progress",progress:e.progress||0})};
 async function load(gpuAllowed){
- const {KokoroTTS}=await import("https://esm.sh/kokoro-js@1.2.1?bundle");
+ // The web build: esm.sh bundles a Node fs stand-in, so kokoro-js tried to read the voice from disk and never spoke.
+ const {KokoroTTS}=await import("https://cdn.jsdelivr.net/npm/kokoro-js@1.2.1/dist/kokoro.web.js");
  // A computer's GPU makes speech many times faster than real time; without one, the 8-bit model runs on the CPU.
  let gpu=false;if(gpuAllowed){try{gpu=!!(await navigator.gpu?.requestAdapter())}catch{}}
  if(gpu){
