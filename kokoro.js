@@ -104,13 +104,13 @@ function speak(text,options={}){
    catch(error){
     if(!live())return;
     // The model could not load or could not speak the first sentence: the device voice reads instead, so the narration never stays silent.
-    if(k===0){waiting=false;console.warn("Kokoro could not speak; using the device voice",error);status("Natural voice unavailable; using the device voice");device?device.speak(text,options):options.onerror?.("kokoro-failed");return}
+    if(k===0){waiting=false;console.warn("Kokoro could not speak; using the device voice",error);status("Natural voice unavailable; using the device voice");options.onfallback?.();device?device.speak(text,options):options.onerror?.("kokoro-failed");return}
     waiting=false;options.onerror?.(String(error?.message||error));return;
    }
    if(!live())return;
    if(ctx.state!=="running")await Promise.race([ctx.resume(),new Promise(r=>setTimeout(r,2000))]).catch(()=>{});
    if(!live())return;
-   if(ctx.state!=="running"){waiting=false;stopKokoro();device?device.speak(text,options):options.onerror?.("audio-blocked");return}
+   if(ctx.state!=="running"){waiting=false;stopKokoro();options.onfallback?.();device?device.speak(text,options):options.onerror?.("audio-blocked");return}
    const now=ctx.currentTime,at=Math.max(now+0.03,end+(k?GAP:0)),node=ctx.createBufferSource();
    node.buffer=buffer;node.connect(ctx.destination);node.start(at);sources.push(node);end=at+buffer.duration;
    const piece={charIndex:starts[k],length:parts[k].length,seconds:buffer.duration,elapsed:0};
