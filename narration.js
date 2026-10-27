@@ -1,7 +1,7 @@
 (()=>{"use strict";
 const $=id=>document.getElementById(id);
 let mode="read",playing=false,items=[],index=0,run=0,marker=null,followingAudio=true,activeHighlightDoc=null,epubSentenceLayer=null,highlightRendition=null,lastAutoTurn=0,segmentTimers=[],wordStartOffset=0;
-const css=document.createElement("style");css.textContent=".lex-narr{display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:#eaf4f7;padding:10px;border-radius:12px;margin-bottom:12px}.lex-narr select{padding:9px;border:1px solid #cbd8df;border-radius:8px}.lex-narr-status{font-size:12px;color:#617589}.lex-tappable{cursor:pointer;border-radius:3px;-webkit-user-select:text;user-select:text}.lex-tappable:focus-visible{outline:2px solid #297eaa}.lex-active{background:rgba(229,195,123,.28)!important;color:inherit!important;border-radius:3px;-webkit-box-decoration-break:clone;box-decoration-break:clone}.reader.lex-audio-only .prose,.reader.lex-audio-only #epub-view{visibility:hidden}.lex-inspect{background:#edf6f9;padding:15px;border-radius:12px;margin:0 0 12px;border:1px solid #cbdfe6}.lex-inspect p{line-height:1.6}";
+const css=document.createElement("style");css.textContent=".lex-narr{display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:#eaf4f7;padding:10px;border-radius:12px;margin-bottom:12px}.lex-narr select{padding:9px;border:1px solid #cbd8df;border-radius:8px}.lex-narr-status{font-size:12px;color:#617589}.lex-tappable{cursor:pointer;border-radius:3px;-webkit-user-select:text;user-select:text}.lex-tappable:focus-visible{outline:2px solid #297eaa}.lex-active{background:rgba(229,195,123,.28)!important;color:inherit!important;border-radius:3px;-webkit-box-decoration-break:clone;box-decoration-break:clone}.reader.lex-audio-only .prose,.reader.lex-audio-only #epub-view{visibility:hidden}.lex-inspect{background:#edf6f9;padding:15px;border-radius:12px;margin:0 0 12px;border:1px solid #cbdfe6}.lex-inspect p{line-height:1.6}.lex-voice-loading{font-size:13px;color:#617589;margin:-4px 0 10px}.lex-voice-loading[hidden]{display:none!important}body.lex-reader-fullscreen .lex-voice-loading{position:absolute;top:calc(64px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:4;margin:0;padding:4px 12px;border-radius:999px;background:rgba(20,32,44,.72);color:#fff;font:500 13px/1.3 system-ui,-apple-system,sans-serif;pointer-events:none;white-space:nowrap}";
 css.textContent+=`
 body.lex-reader-fullscreen{overflow:hidden}
 body.lex-reader-fullscreen #read .grid>.panel:first-child, #read .grid>.panel:first-child:fullscreen{position:fixed;inset:0;z-index:1000;background:#fff;display:flex;flex-direction:column;min-height:0;padding:12px clamp(10px,3vw,32px);border-radius:0;border:0;box-shadow:none}
@@ -224,6 +224,13 @@ document.querySelector("#read .grid>.panel:first-child").appendChild(runningTitl
 function refreshRunningTitle(){const sel=$("booklist"),name=sel?.selectedOptions?.[0]?.textContent?.trim()||"Lexora";runningTitle.textContent=name}
 $("booklist").addEventListener("change",()=>setTimeout(refreshRunningTitle,0));
 refreshRunningTitle();
+// On a computer Kokoro can take a while before the first sentence (model download, then GPU warm-up): say so on screen,
+// outside the controls bar, which fades away. Shown after a moment, so a sentence that is already prepared does not flash it.
+const voiceLoading=document.createElement("div");voiceLoading.className="lex-voice-loading";voiceLoading.textContent="(loading voice)";voiceLoading.hidden=true;voiceLoading.setAttribute("role","status");
+document.querySelector("#read .grid>.panel:first-child").appendChild(voiceLoading);
+let voiceLoadingTimer=null;
+function showVoiceLoading(){clearTimeout(voiceLoadingTimer);voiceLoadingTimer=setTimeout(()=>{voiceLoading.hidden=false},400)}
+function hideVoiceLoading(){clearTimeout(voiceLoadingTimer);voiceLoading.hidden=true}
 const fontFamilyChoices={classic:'Georgia,"Times New Roman",serif',newyork:'ui-serif,"New York","Iowan Old Style",Palatino,serif',modern:'-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif'};
 const storedReaderFont=localStorage.getItem("lexora-reader-font-family");
 let readerFont=["classic","newyork","modern"].includes(storedReaderFont)?storedReaderFont:"modern";
@@ -655,7 +662,7 @@ function continueReading(){
  const resume=()=>{if(!autoContinue)return;autoContinue=false;if(prepare(true))play(true)};
  if(guide)setTimeout(resume,900);else{let done=false;const once=()=>{if(done)return;done=true;setTimeout(resume,400)};try{rendition.once?.("relocated",once)}catch{}setTimeout(once,4000)}
 }
-function stop(){autoContinue=false;run++;playing=false;cancelSegmentTimers();window.lexoraSpeech?.cancel();syncPlaybackButtons();
+function stop(){autoContinue=false;run++;playing=false;hideVoiceLoading();cancelSegmentTimers();window.lexoraSpeech?.cancel();syncPlaybackButtons();
  // Do not leave "Speaking…" on screen after Pause or Exit.
  $("lex-status").textContent=items.length?"Sentence "+(Math.min(index,items.length-1)+1)+" / "+items.length:""}
 function epubBody(){try{return document.querySelector("#epub-view iframe")?.contentDocument?.body}catch{return null}}
@@ -824,8 +831,10 @@ function play(auto=false){
    rate:speed(),
    voiceURI,
    onstatus:message=>{if(session===run&&playing&&!started)$("lex-status").textContent=message},
+   // Kokoro gave up and the device voice reads instead: it starts at once, so there is nothing to wait for.
+   onfallback:()=>{if(session===run)hideVoiceLoading()},
    onstart:()=>{
-    started=true;
+    started=true;hideVoiceLoading();
     if(session!==run||!playing)return;
     $("lex-status").textContent="Speaking…";
     planPageTurn(index,0,items[index]?.text.length||0,sentenceSeconds(index));
@@ -855,13 +864,14 @@ function play(auto=false){
    },
    onend:()=>{finished=true;if(session===run&&playing){cancelSegmentTimers();index=chunk.end;next()}},
    onerror:error=>{
-    finished=true;if(session!==run)return;
+    finished=true;if(session!==run)return;hideVoiceLoading();
     stop();$("lex-status").textContent=error==="interrupted"?"Paused":error==="speech-stalled"
      ?"Audio paused because the device voice stopped responding. Tap Play to resume."
      :(kokoro?"Voice failed (":"Device voice failed (")+error+"). Try Settings → Audio check.";
    }
   });
   if(ok===false){finished=true;return}
+  if(kokoro&&lexoraSpeech.engine?.()!=="failed")showVoiceLoading();
   setTimeout(()=>{if(session===run&&playing&&!started&&!finished&&!window.speechSynthesis.speaking&&!lexoraSpeech.preparing?.())$("lex-status").textContent="Speech did not start. Try Settings → Audio check."},4500);
  }
  next();
